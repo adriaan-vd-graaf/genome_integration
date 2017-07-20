@@ -1,0 +1,19 @@
+Metadata-Version: 1.2
+Name: genome-integration
+Version: 0.0.0.dev0
+Summary: A sample Python project
+Home-page: none
+Author: Adriaan van der Graaf
+Author-email: adriaan.vd.graaf@gmail.com
+License: Copyright 2017 Adriaan van der Graaf
+Description: Forthcoming.
+Keywords: multiomics
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Author
+Classifier: Topic :: Genome analysis :: multiomics integration
+Classifier: License :: Copyright 2017 Adriaan van der Graaf
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Requires-Python: !=3.0.*, !=3.1.*, !=3.2.*,!=3.3.*, !=3.4.*, >=3.5.*, <4
