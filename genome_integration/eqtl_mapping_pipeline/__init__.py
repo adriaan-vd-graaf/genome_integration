@@ -1,12 +1,14 @@
-from .. import file_utils
-
 """
 These functions are being used to help me traverse the eqtlgen things.
 """
 
+from .. import file_utils
+
+
 __author__      = "Adriaan van der Graaf"
 __copyright__   = "Copyright 2017, Adriaan van der Graaf"
 
+from . eqtl_mapping_utils import *
 
 class EQTLGenProbeMapping:
     def __init__(self, file_name):

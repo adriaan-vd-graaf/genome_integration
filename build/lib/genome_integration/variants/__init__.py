@@ -30,6 +30,9 @@ class SNP:
         self.has_allele_data = self.major_allele != None and self.minor_allele != None
         self.has_frequency_data = self.minor_allele_frequency != None
 
+    def add_frequency(self, frq):
+        self.minor_allele_frequency = frq
+        self.has_frequency_data = True
 
 
 class BimFile:
@@ -141,3 +144,11 @@ class BimLine:
 
     def chromosome(self):
         return self.snp.chromosome
+
+    def add_minor_allele_frequency(self,  major, minor, freq):
+        if (self.snp.major_allele == major) and (self.snp.minor_allele == minor):
+            self.snp.add_frequency(freq)
+        elif (self.snp.major_allele == minor) and (self.snp.minor_allele == major):
+            self.snp.add_frequency(1 - freq)
+        else:
+            raise RuntimeError("Alleles do not match in snp" + self.snp_name())
