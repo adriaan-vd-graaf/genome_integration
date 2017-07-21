@@ -145,6 +145,15 @@ class BimLine:
     def chromosome(self):
         return self.snp.chromosome
 
+    def minor_allele(self):
+        return self.snp.minor_allele
+
+    def major_allele(self):
+        return self.snp.major_allele
+
+    def minor_allele_frequency(self):
+        return self.snp.minor_allele_frequency
+
     def add_minor_allele_frequency(self,  major, minor, freq):
         if (self.snp.major_allele == major) and (self.snp.minor_allele == minor):
             self.snp.add_frequency(freq)

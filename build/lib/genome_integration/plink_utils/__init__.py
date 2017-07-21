@@ -5,7 +5,7 @@ These functions are used to use plink that should be installed in your system.
 import subprocess
 from .. import gcta_utils
 from .. import file_utils
-
+from .. import variants
 
 def isolate_snps_of_interest_make_bed(eqtl_file, eqtl_name, b_file, snp_file_out, plink_files_out):
 
@@ -33,7 +33,7 @@ def isolate_snps_of_interest_make_bed(eqtl_file, eqtl_name, b_file, snp_file_out
                          stdout=subprocess.DEVNULL  # to DEVNULL, because plink saves a log of everything
                          )
 
-    bim_file = BimFile(plink_files_out + '.bim')
+    bim_file = variants.BimFile(plink_files_out + '.bim')
     bim_file.add_ld_mat(plink_files_out + '.ld')
 
     return ma_data, bim_file
