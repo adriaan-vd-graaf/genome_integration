@@ -1,5 +1,6 @@
 import numpy as np
 from .. import variants
+from .. import file_utils
 
 class CojoCmaFile:
     def __init__(self, file_loc, name):
@@ -57,6 +58,9 @@ class CojoCmaLine:
 
     def get_beta(self):
         return self.beta_corrected
+
+    def get_se(self):
+        return self.se_corrected
 
     def get_z_score(self):
         if self.has_corrected_se:

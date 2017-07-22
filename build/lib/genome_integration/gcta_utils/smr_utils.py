@@ -1,4 +1,4 @@
-import scipy
+import scipy.stats
 
 class SmrMaFile:
     def __init__(self, file_loc, name):
@@ -16,34 +16,41 @@ class SmrMaFile:
 
 
 class SmrResult:
-    def __init__(self, line):
-        split = [x for x in line[:-1].split() if x != ""]
+    def __init__(self, line=None, outcome_result=None, exposure_result=None):
+        if line != None:
+            split = [x for x in line[:-1].split() if x != ""]
 
-        self.probe_id = split[0]
-        self.probe_chr = int(split[1])
-        self.gene = split[2]
-        self.probe_bp = int(split[3])
-        self.top_snp = split[4]
-        self.top_snp_chr = int(split[5])
-        self.top_snp_bp = int(split[6])
-        self.allele_1 = split[7]
-        self.allele_2 = split[8]
-        self.allele_freq = float(split[9])
-        self.beta_gwas = float(split[10])
-        self.se_gwas = float(split[11])
-        self.p_gwas = float(split[12])
-        self.beta_eqtl = float(split[13])
-        self.se_eqtl = float(split[14])
-        self.p_eqtl = float(split[15])
-        self.beta_smr = float(split[16])
-        self.se_smr = float(split[17])
-        self.p_smr = float(split[18])
-        try:
-            self.p_het = float(split[19])
-            self.nsnp_het = float(split[20])
-            self.has_het_test = True
-        except ValueError:
-            self.has_het_test = False
+            self.probe_id = split[0]
+            self.probe_chr = int(split[1])
+            self.gene = split[2]
+            self.probe_bp = int(split[3])
+            self.top_snp = split[4]
+            self.top_snp_chr = int(split[5])
+            self.top_snp_bp = int(split[6])
+            self.allele_1 = split[7]
+            self.allele_2 = split[8]
+            self.allele_freq = float(split[9])
+            self.beta_gwas = float(split[10])
+            self.se_gwas = float(split[11])
+            self.p_gwas = float(split[12])
+            self.beta_eqtl = float(split[13])
+            self.se_eqtl = float(split[14])
+            self.p_eqtl = float(split[15])
+            self.beta_smr = float(split[16])
+            self.se_smr = float(split[17])
+            self.p_smr = float(split[18])
+            try:
+                self.p_het = float(split[19])
+                self.nsnp_het = float(split[20])
+                self.has_het_test = True
+            except ValueError:
+                self.has_het_test = False
+        else: #construct using two MA like objects
+            self.beta_gwas = outcome_result.get_beta()
+            self.se_gwas = outcome_result.get_se()
+
+            self.beta_eqtl = exposure_result.get_beta()
+            self.se_eqtl = exposure_result.get_se()
 
     def get_beta_outcome(self):
         beta = self.beta_gwas
@@ -60,6 +67,8 @@ class SmrResult:
 
 
 
+
+# probably want to turn this into a method at some time.
 def estimate_beta_se_smr(smr_result):
     """
     Determine SMR test effect and standard error.

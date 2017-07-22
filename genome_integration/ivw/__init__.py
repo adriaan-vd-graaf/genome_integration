@@ -38,7 +38,7 @@ class IVWResult:
             beta_top += smr_result[0] * (smr_result[1] ** -2)
             beta_bottom += (smr_result[1] ** -2)
 
-        self.beta_ivw = beta_top / beta_bottom
+        self.00 = beta_top / beta_bottom
         self.se_ivw = math.sqrt(1 / beta_bottom)
 
         self.p_value = scipy.stats.norm.sf(abs(self.beta_ivw / self.se_ivw)) * 2

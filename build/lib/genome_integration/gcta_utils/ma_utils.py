@@ -1,3 +1,4 @@
+
 from .. import file_utils
 
 class MaFile:
@@ -62,6 +63,14 @@ class MaLine():
         self.chr = chr
         self.has_pos_chr = True
 
+    def get_beta(self):
+        return self.beta
+
+    def get_se(self):
+        return self.se
+
+    def get_z_score(self):
+        return self.beta / self.se
 
 def isolate_snps_from_list(snp_loc, gwas_in, gwas_out):
     snp_list = {}
