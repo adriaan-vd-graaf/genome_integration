@@ -9,7 +9,7 @@ License: Copyright 2017 Adriaan van der Graaf
 Description: Forthcoming.
 Keywords: multiomics
 Platform: UNKNOWN
-Classifier: Development Status :: 3 - Alpha
+Classifier: Development Status :: 1 - Work in progress
 Classifier: Intended Audience :: Author
 Classifier: Topic :: Genome analysis :: multiomics integration
 Classifier: License :: Copyright 2017 Adriaan van der Graaf

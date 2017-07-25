@@ -44,6 +44,21 @@ class MaFile:
                                                bim_data.bim_results[i].chromosome()
                                                )
 
+    def delete_everything_except_set(self, snp_set):
+        """
+        DANGEROUS TO USE, do not use, except if you really want to delete some data.
+
+        :param snp_set:
+        :return:
+        """
+        snp_set = set(snp_set) # make it a set, so I can add lists and stuff.
+        temp_dict = {}
+        for snp in snp_set:
+            if snp in self.ma_results.keys():
+                temp_dict[snp] = self.ma_results[snp]
+
+        self.ma_results = temp_dict
+
 
 class MaLine():
     def __init__(self, line):

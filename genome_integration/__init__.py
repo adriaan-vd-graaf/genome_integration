@@ -1,7 +1,3 @@
 
-
-
-
 def main():
-    """Entry point for the application script"""
-    print("Call your main application code here")
+    print("Not really anything necessary in this function.")

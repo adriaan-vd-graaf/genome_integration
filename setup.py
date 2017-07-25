@@ -5,10 +5,22 @@ https://github.com/pypa/sampleproject
 """
 
 # Always prefer setuptools over distutils
-from setuptools import setup, find_packages
+from distutils.core import setup
+from setuptools import find_packages
+from setuptools.extension import Extension
 # To use a consistent encoding
+from Cython.Build import cythonize
+# setuptools DWIM monkey-patch madness
+# http://mail.python.org/pipermail/distutils-sig/2007-September/thread.html#8204
+# import sys
+# if 'setuptools.extension' in sys.modules:
+#     m = sys.modules['setuptools.extension']
+#     m.Extension.__dict__ = m._Extension.__dict__
+
+
 from codecs import open
 from os import path
+import numpy as np
 
 here = path.abspath(path.dirname(__file__))
 
@@ -45,7 +57,7 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 1 - Work in progress',
 
         # Indicate who your project is intended for
         'Intended Audience :: Author',
@@ -68,41 +80,17 @@ setup(
     # simple. Or you can use find_packages().
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
 
-    # Alternatively, if you want to distribute just a my_module.py, uncomment
-    # this:
-    #   py_modules=["my_module"],
+    install_requires=['numpy', 'scipy', 'Cython'],
 
-    # List run-time dependencies here.  These will be installed by pip when
-    # your project is installed. For an analysis of "install_requires" vs pip's
-    # requirements files see:
-    # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['numpy', 'scipy'],
 
-    # List additional groups of dependencies here (e.g. development
-    # dependencies). You can install these using the following syntax,
-    # for example:
-    # $ pip install -e .[dev,test]
     extras_require={
         'dev': ['check-manifest'],
         'test': ['coverage'],
     },
+    setup_requires=[],
 
-    # If there are data files included in your packages that need to be
-    # installed, specify them here.  If using Python 2.6 or less, then these
-    # have to be included in MANIFEST.in as well.
-    # package_data={
-    #     'sample': ['package_data.dat'],
-    # },
+    # ext_modules = cythonize(["hello_world.pyx"]),
 
-    # Although 'package_data' is the preferred approach, in some case you may
-    # need to place data files outside of your packages. See:
-    # http://docs.python.org/3.4/distutils/setupscript.html#installing-additional-files # noqa
-    # In this case, 'data_file' will be installed into '<sys.prefix>/my_data'
-    # data_files=[('my_data', ['data/data_file'])],
-
-    # To provide executable scripts, use entry points in preference to the
-    # "scripts" keyword. Entry points provide cross-platform support and allow
-    # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
             'genome_integration=genome_integration:main',
