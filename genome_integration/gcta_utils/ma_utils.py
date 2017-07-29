@@ -1,4 +1,3 @@
-
 from .. import file_utils
 
 class MaFile:
@@ -46,10 +45,10 @@ class MaFile:
 
     def delete_everything_except_set(self, snp_set):
         """
-        DANGEROUS TO USE, do not use, except if you really want to delete some data.
+        DANGEROUS TO USE, do not use, except if you really want to delete some data in this class
 
         :param snp_set:
-        :return:
+        :returns: itself.
         """
         snp_set = set(snp_set) # make it a set, so I can add lists and stuff.
         temp_dict = {}
@@ -60,7 +59,7 @@ class MaFile:
         self.ma_results = temp_dict
 
 
-class MaLine():
+class MaLine:
     def __init__(self, line):
         split = [x for x in line[:-1].split() if x != ""]
         self.snp_name = split[0]

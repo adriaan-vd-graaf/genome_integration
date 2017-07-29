@@ -38,13 +38,16 @@ class SNP:
 class BimFile:
     def __init__(self, file_name):
         self.bim_results = {}
+        self.bim_results_by_pos = {}
         self.snp_names = []
         self.has_ld_data = False
         with open(file_name, 'r') as f:
             for line in f:
                 tmp = BimLine(line)
+                posname = str(tmp.snp.chromosome) + ":" + str(tmp.snp.position)
                 self.snp_names.append(tmp.snp_name())
                 self.bim_results[tmp.snp_name()] = tmp
+                self.bim_results_by_pos[posname] = tmp
 
     def write_bim(self, filename):
         with open(filename, 'w') as f:
@@ -52,6 +55,14 @@ class BimFile:
             for i in self.bim_results:
                 tmp = self.bim_results[i]
                 f.write('\t'.join(tmp.split) + "\n")
+
+    def add_frq_information(self, file_name):
+        with open(file_name, 'r') as f:
+            f.readline()
+            for line in f:
+                split = [x for x in line.split() if x != ""]
+                snp_name = split[1]
+                self.bim_results[snp_name].add_minor_allele_frequency(split[2], split[3], float(split[4]))
 
     def add_ld_mat(self, file_name):
         self.has_ld_data = True

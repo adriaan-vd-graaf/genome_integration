@@ -78,7 +78,7 @@ def find_n_based_on_cohort_line(cohort_line):
 
     return total
 
-def make_probes_(args):
+def main(args):
 
     frq_loc = args.frq
     eqtl_loc = args.eqtl
@@ -122,7 +122,6 @@ def make_probes_(args):
     shutil.rmtree(directory)
     time.sleep(5)
     os.makedirs(directory)
-
 
 
     # Iterate over all files, and make sure it works.
@@ -172,7 +171,7 @@ def make_probes_(args):
                 z_score = z_score * -1.0
             # taken from (Zhu et al. 2016)
             beta = z_score / math.sqrt(2 * freq * (1 - freq) * (n + z_score ** 2))
-                se = 1 / math.sqrt(2 * freq * (1 - freq) * (n + z_score ** 2))
+            se = 1 / math.sqrt(2 * freq * (1 - freq) * (n + z_score ** 2))
 
             writefile_esd.write(this_eqtl[2] + "\t")
             writefile_esd.write(this_eqtl[1] + "\t")
@@ -190,6 +189,7 @@ def make_probes_(args):
 
         writefile_esd.close()
         writefile_ma.close()
+
 
 
 if __name__ == "__main__":
