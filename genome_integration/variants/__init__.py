@@ -9,12 +9,20 @@ __copyright__   = "Copyright 2017, Adriaan van der Graaf"
 import numpy as np
 from .. import file_utils
 
-class SNP:
+class BaseSNP:
+    """
+
+    This is the base SNP class.
+    Inherit from this class. If you want to use this class,
+    please use SNP, as it is just a wrapper.
+
+    """
+
     def __init__(self,
                  snp_name,
                  chromosome=None,
                  position=None,
-                 major_allele =None,
+                 major_allele=None,
                  minor_allele=None,
                  minor_allele_frequency=None
                  ):
@@ -30,9 +38,126 @@ class SNP:
         self.has_allele_data = self.major_allele != None and self.minor_allele != None
         self.has_frequency_data = self.minor_allele_frequency != None
 
-    def add_frequency(self, frq):
-        self.minor_allele_frequency = frq
-        self.has_frequency_data = True
+
+    def add_snp_data(self, snp_data, overwrite=False):
+
+        """
+        UNTESTED
+
+        This class will return itself with updated snp data.
+        It will only change data from a class if the snp_name is the same, or if the position
+
+        Author comment: This is bloody hard to get right.
+
+        :param snp_data, a baseSNP object or bigger.:
+        :return self:
+
+        """
+
+        # runtime checks.
+        if snp_data.snp_name != self.snp_name or snp_data.snp_name != (
+                        str(snp_data.chromosome) + ":" + str(snp_data.position)):
+            raise RuntimeError(
+                "No match in SNPs between Association: " + self.snp_name + " and " + snp_data.snp_name)
+
+        if overwrite:
+            print("Overwriting snp data, effect directions may be lost.")
+
+        #assuming you want the name ot be changed if you do this.
+        if not snp_data.snp_name != self.snp_name:
+            self.snp_name == snp_data.snp_name
+
+        if (not self.has_position_data) or overwrite:
+            self.position = snp_data.position
+            self.chromosome = snp_data.position
+            # update the presence of position_data
+            self.has_position_data = self.position != None and self.chromosome != None
+
+        elif str(self.chromosome) + ":" + str(self.position) != \
+                                str(snp_data.chromosome) + ":" + str(snp_data.position):
+            # if there is already data, make sure that the positions are the same.
+            raise RuntimeError(
+                "No position match in SNPs between Association: " + self.snp_name + " and " + snp_data.snp_name)
+
+        swapped = False
+
+        # get the alleles right, takes more logic that I really wanted.
+        if (not self.has_allele_data) or overwrite:
+
+            # make sure there is no funny allele swaps if there is information for one allele.
+            # if there are allele swaps. then swap the alleles in the data that is passed to the function.
+            if (self.major_allele != None or self.minor_allele != None) and not overwrite:
+                # there is information for the major alle   le.
+                raise RuntimeError("A SNP with a single allele present is being updated, has not been implemented")
+
+            # elif self.minor_allele != None and not overwrite:
+            #     # there is information for the minor allele
+            #     if self.minor_allele != snp_data.minor_allele:
+            #         # make the switch of alleles
+            #         tmp = snp_data.major_allele
+            #         snp_data.major_allele = snp_data.minor_allele
+            #         snp_data.minor_allele = tmp
+            #         swapped = True
+
+            # save it up.
+            self.major_allele = snp_data.major_allele
+            self.minor_allele = snp_data.minor_allele
+            self.has_allele_data = self.major_allele != None and self.minor_allele != None
+
+        elif self.major_allele == snp_data.minor_allele and self.minor_allele == snp_data.major_allele_allele:
+            # if there is an allele swap, change the swapped to true, so that the data is there.
+            swapped = True
+
+        elif self.major_allele != snp_data.major_allele or self.minor_allele != snp_data.minor_allele:
+            raise RuntimeError(
+                "No allele match in SNPs between Association: " + self.snp_name + " and " + snp_data.snp_name)
+
+        # Because the last checks made sure the alleles are right (let's hope) I can just change the alleles.
+        if (not self.has_frequency_data) or overwrite:
+            if swapped:
+                snp_data.minor_allele_frequency -= 1
+
+            self.minor_allele_frequency = snp_data.minor_allele_frequency
+
+
+
+    def add_pos_chr(self, pos, chr):
+        self.position = pos
+        self.chromosome = chr
+        self.has_position_data = True
+
+
+    def add_minor_allele_frequency(self,  major, minor, freq):
+        #if there are no alleles, then just use this.
+        if not self.has_allele_data:
+            self.minor_allele_frequency = freq
+            self.has_allele_data = True
+            return
+
+        #allele data is present, so we need to check what it is.
+        if (self.major_allele == major) and (self.minor_allele == minor):
+            self.minor_allele_frequency = freq
+            self.has_frequency_data = True
+        elif (self.major_allele == minor) and (self.minor_allele == major):
+            self.minor_allele_frequency = 1 - freq
+            self.has_frequency_data = True
+        else:
+            raise RuntimeError("Alleles do not match in snp" + self.snp_name)
+
+        return
+
+class SNP(BaseSNP):
+    #I use this, so that I can use the __slots__ function here.
+    __slots__ = ['snp_name', 'chromosome', 'position', 'major_allele', 'minor_allele', 'minor_allele_frequency']
+    def __init__(self,
+                 snp_name,
+                 chromosome=None,
+                 position=None,
+                 major_allele=None,
+                 minor_allele=None,
+                 minor_allele_frequency=None
+                 ):
+        super().__init__(snp_name, chromosome, position, major_allele, minor_allele, minor_allele_frequency)
 
 
 class BimFile:
@@ -44,9 +169,9 @@ class BimFile:
         with open(file_name, 'r') as f:
             for line in f:
                 tmp = BimLine(line)
-                posname = str(tmp.snp.chromosome) + ":" + str(tmp.snp.position)
-                self.snp_names.append(tmp.snp_name())
-                self.bim_results[tmp.snp_name()] = tmp
+                posname = str(tmp.chromosome) + ":" + str(tmp.position)
+                self.snp_names.append(tmp.snp_name)
+                self.bim_results[tmp.snp_name] = tmp
                 self.bim_results_by_pos[posname] = tmp
 
     def write_bim(self, filename):
@@ -75,6 +200,8 @@ class BimFile:
 
     #todo perhaps add a method to change the se based on the ld, implemented in the cojoLine object.
     #todo make sure the algorithm is correct, making sure snps in high ld are not chosen twice.
+
+    # Todo, This may be ripe for removal as I'll ensure this method not necessary anymore
     def isolate_LD_similar_snps(self, snp_list_1, snp_list_2, min_ld):
 
         if not self.has_ld_data:
@@ -114,6 +241,7 @@ class BimFile:
 
         return best_ld
 
+    # Todo, This may be ripe for removal as I'll ensure this method not necessary anymore
     def write_ld_mat(self, filename):
         snpnames = self.snp_names
 
@@ -121,7 +249,7 @@ class BimFile:
 
         for i in snpnames:
             try:
-                position.append(self.bim_results[i].position())
+                position.append(self.bim_results[i].position)
             except:
                 position.append(np.NaN)
 
@@ -129,8 +257,8 @@ class BimFile:
         string_list = ['chr\tbp\tsnp_name\t' + '\t'.join(np.array(snpnames)[ordering])]
         for i in ordering:
             try:
-                tmp = self.bim_results[snpnames[i]].chromosome() + '\t' \
-                      + self.bim_results[snpnames[i]].position() + '\t' \
+                tmp = self.bim_results[snpnames[i]].chromosome + '\t' \
+                      + self.bim_results[snpnames[i]].position + '\t' \
                       + snpnames[i] + '\t'
             except:
                 tmp = 'NA\tNA\t' + snpnames[i] + '\t'
@@ -141,34 +269,8 @@ class BimFile:
         file_utils.write_list_to_newline_separated_file(string_list, filename)
 
 
-class BimLine:
+class BimLine(BaseSNP):
+    __slots__ = ['snp_name', 'chromosome', 'position', 'major_allele', 'minor_allele', 'minor_allele_frequency']
     def __init__(self, line):
-        self.split = [x for x in line[:-1].split() if x != ""]
-        self.line = line
-        self.snp = SNP(self.split[1], self.split[0], self.split[3], self.split[4], self.split[5])
-
-    def snp_name(self):
-        return self.snp.snp_name
-
-    def position(self):
-        return self.snp.position
-
-    def chromosome(self):
-        return self.snp.chromosome
-
-    def minor_allele(self):
-        return self.snp.minor_allele
-
-    def major_allele(self):
-        return self.snp.major_allele
-
-    def minor_allele_frequency(self):
-        return self.snp.minor_allele_frequency
-
-    def add_minor_allele_frequency(self,  major, minor, freq):
-        if (self.snp.major_allele == major) and (self.snp.minor_allele == minor):
-            self.snp.add_frequency(freq)
-        elif (self.snp.major_allele == minor) and (self.snp.minor_allele == major):
-            self.snp.add_frequency(1 - freq)
-        else:
-            raise RuntimeError("Alleles do not match in snp" + self.snp_name())
+        split = [x for x in line[:-1].split() if x != ""]
+        super().__init__(split[1], split[0], split[3], split[4], split[5])

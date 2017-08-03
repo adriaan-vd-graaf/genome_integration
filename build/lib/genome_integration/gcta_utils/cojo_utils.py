@@ -1,6 +1,8 @@
 import numpy as np
 from .. import variants
+from .. import association
 from .. import file_utils
+
 
 class CojoCmaFile:
     def __init__(self, file_loc, name):
@@ -9,7 +11,7 @@ class CojoCmaFile:
         with open(file_loc, 'r') as f:
             f.readline()
             for line in f:
-                tmp = CojoCmaLine(line)
+                tmp = CojoCmaLine(line, name)
                 self.ma_results[tmp.snp_name] = tmp
 
     def snps_with_data(self):
@@ -22,11 +24,11 @@ class CojoCmaFile:
         for i in list(self.ma_results.keys()):
             tmp = self.ma_results[i]
             lines[indice] = '\t'.join([tmp.snp_name,
-                               str(tmp.chr),
-                               str(tmp.bp),
-                               str(tmp.beta_corrected),
-                               str(tmp.se_corrected),
-                               str(tmp.p_corrected),
+                               str(tmp.chromosome),
+                               str(tmp.position),
+                               str(tmp.beta),
+                               str(tmp.se),
+                               str(tmp.wald_p_val),
                                str(self.name)
                                ]
                               )
@@ -36,54 +38,76 @@ class CojoCmaFile:
         file_utils.write_list_to_newline_separated_file(lines, file_name)
 
 
-class CojoCmaLine:
-    def __init__(self, line):
-        split = [x for x in line[:-1].split() if x != ""]
-        self.chr = int(split[0])
-        self.snp_name = split[1]
-        self.bp = int(split[2])
-        self.ref_allele = split[3]
-        self.allele_freq = float(split[4])
+class CojoCmaLine(association.GeneticAssociation):
+    """
+    From the GCTA website:
+    Columns are:
+
+    chromosome;
+    SNP;
+    physical position;
+    frequency of the effect allele in the original data;
+    the effect allele;
+    effect size,
+    standard error and
+    p-value from the original GWAS or meta-analysis;
+    estimated effective sample size;
+    frequency of the effect allele in the reference sample;
+    effect size,
+    standard error and
+    p-value from a joint analysis of all the selected SNPs;
+    LD correlation between the SNP i and SNP i + 1 for the SNPs on the list.
+    """
+
+    __slots__ = ['snp_name', 'chromosome', 'position', 'major_allele', 'minor_allele', 'minor_allele_frequency',
+                 'has_position_data', 'has_allele_data', 'has_frequency_data', 'dependent_name', 'explanatory_name',
+                 'beta', 'se', 'n_observations', 'r_squared', 'z_score', 'wald_p_val', 'snp', 'beta_initial',
+                 'se_initial', 'p_initial', 'freq_geno', 'n_estimated']
+
+    def __init__(self, line, name):
+        split = [x for x in line.split() if x != ""]
+
+        if float(split[3]) > 0.5:
+            major = split[4]
+            minor = "N" #if I don't know it, it could be N, maybe change later.
+            beta = -1 * float(split[10])
+            frq = 1 - float(split[3])
+        else:
+            minor = split[4]
+            major = "N"
+            frq = float(split[3])
+
+
+        super().__init__(
+            dependent_name=name,
+            explanatory_name=split[1],
+            n_observations=float(split[9]),
+            beta=beta,
+            se=float(split[11]),
+            r_squared=None,
+            chromosome=split[0],
+            position=int(split[2]),
+            major_allele=major,
+            minor_allele=minor,
+            minor_allele_frequency=frq
+        )
+
         self.beta_initial = float(split[5])
         self.se_initial = float(split[6])
-        self.p_initial = float(split[7])
-        self.freq_geno  = float(split[8])
+        self.p_initial = float(split[7]) # initial p value.
+        self.freq_geno  = float(split[8]) #frequency from reference population.
         self.n_estimated = float(split[9])
-        self.beta_corrected = float(split[10])
-        self.se_corrected = float(split[11])
-        self.se_corrected_original = self.se_corrected
-        self.p_corrected = float(split[12])
-        self.z_score_corrected = self.beta_corrected / self.se_corrected
-        self.has_corrected_se = False
 
-    def get_beta(self):
-        return self.beta_corrected
-
-    def get_se(self):
-        return self.se_corrected
-
-    def get_z_score(self):
-        if self.has_corrected_se:
-            self.z_score_corrected_ld = self.beta_corrected / self.se_corrected_ld
-            return self.z_score_corrected_ld
-        else:
-            self.z_score_corrected = self.beta_corrected / self.se_corrected
-            return self.z_score_corrected
-
-    #todo This method needs to be validated
-    def correct_score_based_on_ld(self, r):
-        self.has_corrected_se = True
-        self.se_corrected_ld = self.se_corrected / abs(r)
-        self.z_score_corrected_ld = self.beta_corrected / self.se_corrected_ld
-
+        self.wald_p_val = float(split[12])
 
 
 class CojoLdrFile:
+
     def __init__(self, file_loc, name):
         self.name = name
         with open(file_loc, 'r') as f:
             # first line contains the SNPs
-            self.snps = [variants.SNP(x) for x in f.readline()[:-1].split() if (x != '') and (x != 'SNP')]
+            self.snps = [variants.BaseSNP(x) for x in f.readline()[:-1].split() if (x != '') and (x != 'SNP')]
             self.snp_names = [x.snp_name for x in self.snps]
             self.ld_mat = np.zeros((len(self.snps),len(self.snps)))
             indice = 0
@@ -107,7 +131,7 @@ class CojoLdrFile:
 
         for i in snpnames:
             try:
-                position.append(bim_data.bim_results[i].position())
+                position.append(bim_data.bim_results[i].position)
             except:
                 position.append(np.NaN)
 
@@ -115,8 +139,8 @@ class CojoLdrFile:
         string_list = ['chr\tbp\tsnp_name\t' + '\t'.join(np.array(snpnames)[ordering])]
         for i in ordering:
             try:
-                tmp = bim_data.bim_results[snpnames[i]].chromosome() + '\t' \
-                      + bim_data.bim_results[snpnames[i]].position() + '\t' \
+                tmp = bim_data.bim_results[snpnames[i]].chromosome + '\t' \
+                      + bim_data.bim_results[snpnames[i]].position + '\t' \
                       + snpnames[i] + '\t'
             except:
                 tmp = 'NA\tNA\t' + snpnames[i] + '\t'

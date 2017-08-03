@@ -1,5 +1,6 @@
-
+import numpy as np
 from .. import file_utils
+from .. import association
 
 class MaFile:
     def __init__(self, file_loc, name):
@@ -40,16 +41,16 @@ class MaFile:
     def add_bim_data(self, bim_data):
         for i in self.ma_results.keys():
             if i in bim_data.bim_results.keys():
-                self.ma_results[i].add_pos_chr(bim_data.bim_results[i].position(),
-                                               bim_data.bim_results[i].chromosome()
+                self.ma_results[i].add_pos_chr(bim_data.bim_results[i].position,
+                                               bim_data.bim_results[i].chromosome
                                                )
 
     def delete_everything_except_set(self, snp_set):
         """
-        DANGEROUS TO USE, do not use, except if you really want to delete some data.
+        DANGEROUS TO USE, do not use, except if you really want to delete some data in this class
 
         :param snp_set:
-        :return:
+        :returns: itself.
         """
         snp_set = set(snp_set) # make it a set, so I can add lists and stuff.
         temp_dict = {}
@@ -60,32 +61,33 @@ class MaFile:
         self.ma_results = temp_dict
 
 
-class MaLine():
+class MaLine(association.GeneticAssociation):
     def __init__(self, line):
+
         split = [x for x in line[:-1].split() if x != ""]
-        self.snp_name = split[0]
-        self.allele_1 = split[1]
-        self.allele_2 = split[2]
-        self.allele_freq = float(split[3])
-        self.beta = float(split[4])
-        self.se = float(split[5])
-        self.p_value = float(split[6])
-        self.n_individuals = float(split[7])
-        self.has_pos_chr = False
+        allele_1 = split[1]
+        allele_2 = split[2]
+        frq = float(split[3])
+        if frq > 0.5:
+            major = allele_2
+            minor = allele_1
+        else:
+            major = allele_1
+            minor = allele_2
 
-    def add_pos_chr(self, pos, chr):
-        self.pos = pos
-        self.chr = chr
-        self.has_pos_chr = True
-
-    def get_beta(self):
-        return self.beta
-
-    def get_se(self):
-        return self.se
-
-    def get_z_score(self):
-        return self.beta / self.se
+        super().__init__(
+            dependent_name="unknown",
+            explanatory_name=split[0],
+            n_observations=int(split[7]),
+            beta=float(split[4]),
+            se=float(split[5]),
+            r_squared=None,
+            chromosome=None,
+            position=None,
+            major_allele=major,
+            minor_allele=minor,
+            minor_allele_frequency=frq
+        )
 
 def isolate_snps_from_list(snp_loc, gwas_in, gwas_out):
     snp_list = {}

@@ -7,6 +7,9 @@ genome_integration.egg-info/dependency_links.txt
 genome_integration.egg-info/entry_points.txt
 genome_integration.egg-info/requires.txt
 genome_integration.egg-info/top_level.txt
+genome_integration/association/__init__.py
+genome_integration/association/association_classes.py
+genome_integration/association/binary_files.py
 genome_integration/eqtl_mapping_pipeline/__init__.py
 genome_integration/eqtl_mapping_pipeline/eqtl_mapping_utils.py
 genome_integration/file_utils/__init__.py
