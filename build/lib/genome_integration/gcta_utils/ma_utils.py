@@ -19,7 +19,7 @@ class MaFile:
             palindromic = ["GC", "CG", "AT", "TA"]
             snpnames = []
             for i in self.ma_results.keys():
-                if self.ma_results[i].allele_1 + self.ma_results[i].allele_2 not in palindromic:
+                if self.ma_results[i].major_allele + self.ma_results[i].minor_allele not in palindromic:
                     snpnames.append(i)
             return snpnames
 
@@ -44,6 +44,14 @@ class MaFile:
                 self.ma_results[i].add_pos_chr(bim_data.bim_results[i].position,
                                                bim_data.bim_results[i].chromosome
                                                )
+
+    #this is ugly.
+    def update_snp_names(self):
+        tmp_results = {}
+        for x in self.ma_results:
+            tmp_results[self.ma_results[x].snp_name] = self.ma_results[x]
+
+        self.ma_results = tmp_results
 
     def delete_everything_except_set(self, snp_set):
         """

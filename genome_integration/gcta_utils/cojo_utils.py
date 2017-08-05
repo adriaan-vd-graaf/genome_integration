@@ -70,15 +70,16 @@ class CojoCmaLine(association.GeneticAssociation):
     def __init__(self, line, name):
         split = [x for x in line.split() if x != ""]
 
-        if float(split[3]) > 0.5:
-            major = split[4]
-            minor = "N" #if I don't know it, it could be N, maybe change later.
+        if float(split[4]) > 0.5:
+            major = split[3]
+            minor = "N" #if I don't know it, it could be N, maybe change later. Use the add_snp_data to update with info
             beta = -1 * float(split[10])
             frq = 1 - float(split[3])
         else:
-            minor = split[4]
+            minor = split[3]
             major = "N"
-            frq = float(split[3])
+            beta = float(split[10])
+            frq = float(split[4])
 
 
         super().__init__(
@@ -154,6 +155,7 @@ class CojoLdrFile:
         file_utils.write_list_to_newline_separated_file(string_list, filename)
 
 
+# todo make this work into a single function that accepts a dict and a temporary folder.
 def do_gcta_cojo_slct(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.01'):
 
     std_out = open(out_prepend + '.out', 'w')

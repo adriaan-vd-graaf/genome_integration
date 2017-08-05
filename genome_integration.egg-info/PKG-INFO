@@ -7,6 +7,18 @@ Author: Adriaan van der Graaf
 Author-email: adriaan.vd.graaf@gmail.com
 License: Copyright 2017 Adriaan van der Graaf
 Description: Forthcoming.
+        This is more than certainly not a comprehensive README. Please contact the author if there are problems.
+        
+        Requirements:
+        
+        python >= 3.5
+        with
+        numpy, scipy
+        
+        gcta64 and plink should be in your PATH as the subprocess module will directly refer to them.
+        
+        Could be more stay tuned.
+        
 Keywords: multiomics
 Platform: UNKNOWN
 Classifier: Development Status :: 1 - Work in progress

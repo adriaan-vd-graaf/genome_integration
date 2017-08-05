@@ -102,7 +102,7 @@ class GeneticAssociation(Association, variants.BaseSNP):
 
         # runtime checks.
 
-        if (not self.snp_name ==  snp_data.snp_name)  and \
+        if (not self.snp_name == snp_data.snp_name)  and \
                 (not self.snp_name == str(snp_data.chromosome) + ":" + str(snp_data.position)):
 
             raise RuntimeError(
@@ -112,20 +112,25 @@ class GeneticAssociation(Association, variants.BaseSNP):
         if overwrite:
             print("Overwriting snp data, effect directions may be lost.")
 
+        #if the snp_name is a position, update it to an rs number.
+        if self.snp_name != snp_data.snp_name:
+            self.snp_name = snp_data.snp_name
+
         if (not self.has_position_data) or overwrite:
             self.position = snp_data.position
-            self.chromosome = snp_data.position
+            self.chromosome = snp_data.chromosome
             # update the presence of position_data
             self.has_position_data = self.position != None and self.chromosome != None
 
         elif str(self.chromosome) + ":" + str(self.position) != \
                                 str(snp_data.chromosome) + ":" + str(snp_data.position):
+
             # if there is already data, make sure that the positions are the same.
             raise RuntimeError(
                 "No position match in SNPs between Association: " + self.snp_name + " and " + snp_data.snp_name)
 
-        swapped = False
 
+        swapped = False
         # get the alleles right, takes more logic that I really wanted.
         if (not self.has_allele_data) or overwrite:
 
@@ -168,7 +173,7 @@ class GeneticAssociation(Association, variants.BaseSNP):
             self.has_frequency_data = True
 
     def make_gcta_ma_header(self):
-        return "SNP\tA1\tA2\tfreq\tb\tse\tp\tN\n"
+        return "SNP\tA1\tA2\tfreq\tb\tse\tp\tN"
 
 
     def make_gcta_ma_line(self):
@@ -189,7 +194,7 @@ class GeneticAssociation(Association, variants.BaseSNP):
         if self.wald_p_val == None:
             raise RuntimeError("No p value present")
 
-        return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(self.snp_name, self.major_allele, self.minor_allele,
+        return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(self.snp_name, self.major_allele, self.minor_allele,
                                                          self.minor_allele_frequency, self.beta, self.se, self.wald_p_val,
                                                          self.n_observations)
 
