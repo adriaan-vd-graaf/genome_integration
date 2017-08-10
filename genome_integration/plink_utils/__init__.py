@@ -19,6 +19,7 @@ def make_ld_mat_from_genetic_associations(genetic_associations, bfile, tmp_dir):
                           '--extract', snp_out,
                           '--make-bed',
                           '--r', 'square',
+                          '--threads', '1'
                           '--out', bfile_out
                           ],
                          check=True,
