@@ -8,6 +8,8 @@ Author-email: adriaan.vd.graaf@gmail.com
 License: Copyright 2017 Adriaan van der Graaf
 Description: Forthcoming.
         This is more than certainly not a comprehensive README. Please contact the author if there are problems.
+        But really, you should not be using it in any way if you are not confidennt in changing the code itself.
+        There will be a lot of bugs.
         
         Requirements:
         
@@ -17,7 +19,7 @@ Description: Forthcoming.
         
         gcta64 and plink should be in your PATH as the subprocess module will directly refer to them.
         
-        Could be more stay tuned.
+        Gonna make this more comprehensive, stay tuned.
         
 Keywords: multiomics
 Platform: UNKNOWN

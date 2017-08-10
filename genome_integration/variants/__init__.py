@@ -104,7 +104,7 @@ class BaseSNP:
             self.minor_allele = snp_data.minor_allele
             self.has_allele_data = self.major_allele != None and self.minor_allele != None
 
-        elif self.major_allele == snp_data.minor_allele and self.minor_allele == snp_data.major_allele_allele:
+        elif self.major_allele == snp_data.minor_allele and self.minor_allele == snp_data.major_allele:
             # if there is an allele swap, change the swapped to true, so that the data is there.
             swapped = True
 

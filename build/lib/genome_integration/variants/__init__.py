@@ -38,6 +38,7 @@ class BaseSNP:
         self.has_allele_data = self.major_allele != None and self.minor_allele != None
         self.has_frequency_data = self.minor_allele_frequency != None
 
+
     def add_snp_data(self, snp_data, overwrite=False):
 
         """
@@ -61,6 +62,10 @@ class BaseSNP:
 
         if overwrite:
             print("Overwriting snp data, effect directions may be lost.")
+
+        #assuming you want the name ot be changed if you do this.
+        if not snp_data.snp_name != self.snp_name:
+            self.snp_name == snp_data.snp_name
 
         if (not self.has_position_data) or overwrite:
             self.position = snp_data.position
@@ -99,7 +104,7 @@ class BaseSNP:
             self.minor_allele = snp_data.minor_allele
             self.has_allele_data = self.major_allele != None and self.minor_allele != None
 
-        elif self.major_allele == snp_data.minor_allele and self.minor_allele == snp_data.major_allele_allele:
+        elif self.major_allele == snp_data.minor_allele and self.minor_allele == snp_data.major_allele:
             # if there is an allele swap, change the swapped to true, so that the data is there.
             swapped = True
 

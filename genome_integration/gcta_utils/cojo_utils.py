@@ -5,7 +5,7 @@ import numpy as np
 from .. import variants
 from .. import association
 from .. import file_utils
-
+from .. import plink_utils
 
 class CojoCmaFile:
     def __init__(self, file_loc, name):
@@ -14,8 +14,12 @@ class CojoCmaFile:
         with open(file_loc, 'r') as f:
             f.readline()
             for line in f:
-                tmp = CojoCmaLine(line, name)
-                self.ma_results[tmp.snp_name] = tmp
+                try:
+                    tmp = CojoCmaLine(line, name)
+                    self.ma_results[tmp.snp_name] = tmp
+                except ValueError as x:
+                    # print("Could not find a valid line in the following line: {}".format(line))
+                    continue
 
     def snps_with_data(self):
         return set(self.ma_results.keys())
@@ -60,6 +64,7 @@ class CojoCmaLine(association.GeneticAssociation):
     standard error and
     p-value from a joint analysis of all the selected SNPs;
     LD correlation between the SNP i and SNP i + 1 for the SNPs on the list.
+
     """
 
     __slots__ = ['snp_name', 'chromosome', 'position', 'major_allele', 'minor_allele', 'minor_allele_frequency',
@@ -69,7 +74,6 @@ class CojoCmaLine(association.GeneticAssociation):
 
     def __init__(self, line, name):
         split = [x for x in line.split() if x != ""]
-
         if float(split[4]) > 0.5:
             major = split[3]
             minor = "N" #if I don't know it, it could be N, maybe change later. Use the add_snp_data to update with info
@@ -187,3 +191,62 @@ def do_gcta_cojo_slct(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.
             raise IOError('Cojo analysis was finished, but did not find valid log file here:' + out_prepend + '.out')
 
     return CojoCmaFile(out_prepend + ".jma.cojo", out_prepend)
+
+
+def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepend,
+                                         p_val_thresh=0.05, maf=0.01, calculate_ld = False):
+    """
+    :param genetic_associations: a dict of genetic associations,  keys should be explantory name
+    :param bfile: plink bed file
+    :param tmp_prepend: temporary name of files where to store.
+    :param p_val_thresh: p value threshold as a float
+    :param maf: minor allele frequency as a float
+
+    :return: Cojo results a Cojo CMA file object, which is an extension of the geneticassociation file.
+    """
+
+
+    # define the names.
+    ma_name = tmp_prepend + "_temp.ma"
+    snp_out = tmp_prepend + "_snp_list.txt"
+    plink_pruned = tmp_prepend + "_plink_pruned"
+    cojo_out = tmp_prepend + "_cojo_out"
+
+    snps = list(genetic_associations.keys())
+    try:
+        gene_name = genetic_associations[snps[0]].dependent_name.decode("utf8")
+    except AttributeError:
+        gene_name = genetic_associations[snps[0]].dependent_name
+
+
+    ma_lines = [genetic_associations[snps[0]].make_gcta_ma_header()]
+
+    [
+        ma_lines.append(genetic_associations[x].make_gcta_ma_line()) for x in genetic_associations
+    ]
+
+    file_utils.write_list_to_newline_separated_file(ma_lines, ma_name)
+
+    try:
+        plink_utils.isolate_snps_of_interest_make_bed(ma_file=ma_name, exposure_name=gene_name, b_file=bfile,
+                                                      snp_file_out=snp_out, plink_files_out=plink_pruned,
+                                                      calculate_ld=calculate_ld)
+
+    except Exception as x:
+        print("isolating snps raised an exception while processing " + gene_name )
+        subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
+        raise x
+
+
+    try:
+        cojo_eqtl = do_gcta_cojo_slct(plink_pruned, ma_name, cojo_out, p_val='{:6.2e}'.format(p_val_thresh), maf='{:8.6f}'.format(maf))
+    except Exception as x:
+        print("GCTA cojo raised an exception while processing" + gene_name)
+        subprocess.run(["rm {} {} {}* {}*".format(ma_name, snp_out, plink_pruned, cojo_out)], shell=True, check=True)
+        raise x
+
+    subprocess.run(["rm -f {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)
+
+    return cojo_eqtl
+
+

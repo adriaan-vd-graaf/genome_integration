@@ -84,7 +84,6 @@ class IVWResult:
         else:
             raise RuntimeError('The estimation is not done, so no estimates were made.')
 
-
     def do_smr_estimate(self, exposure_tuple, outcome_tuple):
         """
         Determine SMR test effect and standard error.

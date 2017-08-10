@@ -1,3 +1,4 @@
+import scipy
 from .. import variants
 
 
@@ -9,9 +10,9 @@ class Association:
     def __init__(self, dependent_name, explanatory_name, n_observations, beta, se, r_squared=None):
         self.dependent_name = dependent_name
         self.explanatory_name = explanatory_name
-        self.beta = beta
-        self.se = se
-        self.n_observations = n_observations
+        self.beta = float(beta)
+        self.se = float(se)
+        self.n_observations = int(float(n_observations))
         self.r_squared = r_squared
 
         self.z_score = self.beta / self.se #doing this ensures that beta and se are not none.
@@ -154,13 +155,15 @@ class GeneticAssociation(Association, variants.BaseSNP):
             self.minor_allele = snp_data.minor_allele
             self.has_allele_data = self.major_allele != None and self.minor_allele != None
 
-        elif self.major_allele == snp_data.minor_allele and self.minor_allele == snp_data.major_allele_allele:
+        elif self.major_allele == snp_data.minor_allele and self.minor_allele == snp_data.major_allele:
             # if there is an allele swap, change the swapped to true, so that the data is there.
             swapped = True
 
         elif self.major_allele != snp_data.major_allele or self.minor_allele != snp_data.minor_allele:
             raise RuntimeError(
-                "No allele match in SNPs between Association: " + self.snp_name + " and " + snp_data.snp_name)
+                "No allele match in SNPs between Association: " + self.snp_name +
+                " {}/{} and ".format(self.major_allele, self.minor_allele) + snp_data.snp_name +
+                " {}/{}.".format(snp_data.major_allele, snp_data.minor_allele) )
 
         # Because the last checks made sure the alleles are right (let's hope) I can just change the alleles.
         if (not self.has_frequency_data) or overwrite:
@@ -199,5 +202,28 @@ class GeneticAssociation(Association, variants.BaseSNP):
                                                          self.n_observations)
 
 
+    def do_smr_estimate_using_self_as_exposure(self, outcome_Genetic_association):
+        """
+            Determine SMR test effect and standard error.
+        """
 
+        z_score_exposure = self.z_score
+        z_score_outcome = outcome_Genetic_association.z_score
+
+
+        # from SMR paper.
+        t_stat = ((z_score_exposure ** 2) * (z_score_outcome ** 2)) \
+                 / \
+                 ((z_score_exposure ** 2) + (z_score_outcome ** 2))
+
+        # this needs a check,
+        # checked it with results from Zhy et al. see validate_SMR_estimates.py
+        p_value = scipy.stats.chi2.sf(t_stat, 1)
+        z_score = scipy.stats.norm.isf(p_value / 2)
+
+        # also from Zhu et al.
+        beta_smr = outcome_Genetic_association.beta / self.beta
+        se_smr = abs(beta_smr / z_score)
+
+        return beta_smr, se_smr, p_value
 
