@@ -27,7 +27,7 @@ class IVWResult:
 
         self.beta_ivw = np.nan
         self.se_ivw = np.nan
-        self.p_ivw = np.nan
+        self.p_value = np.nan
 
     # this is perhaps slow as you are appending betas all the time.
     # but I expect there to be at most 100 betas, so later, if it seems slow, adding the functionality.
@@ -123,6 +123,25 @@ class IVWResult:
         self.exposure_tuples.append(exposure_tuple)
 
 
+    def write_ivw_header(self):
+        return "exposure\toutcome\tchromosome\tn_snps\tbeta_ivw\tse_ivw\tp_ivw\testimation_snp_names\testimation_snp_names\testimation_snp_betas\testimation_snp_se"
+
+    def write_ivw_line(self, exposure, outcome, chromosome):
+        if not self.estimation_done:
+            return None
+
+        return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
+            exposure,
+            outcome,
+            chromosome, #this requires that the estimation snps are well defined.
+            len(self.estimation_data),
+            self.beta_ivw,
+            self.se_ivw,
+            self.p_value,
+            ','.join([x[0] for x in self.estimation_snps]),
+            ','.join([str(x[0]) for x in self.estimation_data]),
+            ','.join([str(x[1]) for x in self.estimation_data])
+        )
 
     def write_ivw_estimates(self, filename):
         strings = ["beta_ivw\tse_ivw\tp_val_ivw\testimate_type\tsnp_1\tbp\tchr\tsnp_2",

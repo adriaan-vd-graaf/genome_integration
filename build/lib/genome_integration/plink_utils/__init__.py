@@ -7,7 +7,7 @@ from .. import gcta_utils
 from .. import file_utils
 from .. import variants
 
-def make_ld_mat_from_genetic_associations(genetic_associations, bfile, tmp_dir):
+def make_ld_mat_from_genetic_associations(genetic_associations, bfile, tmp_dir, thread_num=1):
 
     bfile_out = tmp_dir + "_bed_file"
     snp_out = tmp_dir + "snps"
@@ -19,6 +19,7 @@ def make_ld_mat_from_genetic_associations(genetic_associations, bfile, tmp_dir):
                           '--extract', snp_out,
                           '--make-bed',
                           '--r', 'square',
+                          '--threads', str(int(thread_num)),
                           '--out', bfile_out
                           ],
                          check=True,
