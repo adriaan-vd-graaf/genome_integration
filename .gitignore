@@ -12,3 +12,4 @@ __*
 *.iml
 *egg
 *.png
+dist/*
