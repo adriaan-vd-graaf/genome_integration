@@ -190,8 +190,7 @@ class BimFile:
 
         """
         with open(file_name, 'r') as f:
-            split  = f.readline().split()
-
+            split = f.readline()[:-1].split("\t")
             # frq file.
             if len(split) == 5:
                 for line in f:
@@ -205,7 +204,7 @@ class BimFile:
                         except KeyError:
                             continue
             # frqx file
-            if len(split) == 9:
+            elif len(split) == 10:
                 for line in f:
                     split = [x for x in line.split() if x != ""]
                     snp_name = split[1]
@@ -228,6 +227,8 @@ class BimFile:
                             self.bim_results_by_pos[snp_name].add_minor_allele_frequency(major, minor, float(maf))
                         except:
                             continue
+            else:
+                RuntimeError("The frq file header was not in any correct formatting.")
 
 
     def add_ld_mat(self, file_name):
