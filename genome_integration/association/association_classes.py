@@ -108,7 +108,7 @@ class GeneticAssociation(Association, variants.BaseSNP):
 
             raise RuntimeError(
                 "No match in SNPs between Association: " + self.snp_name + " and " +
-                str(snp_data.chromosome) + ":" + str(snp_data.position) + "a")
+                str(snp_data.chromosome) + ":" + str(snp_data.position))
 
         if overwrite:
             print("Overwriting snp data, effect directions may be lost.")
@@ -165,7 +165,7 @@ class GeneticAssociation(Association, variants.BaseSNP):
                 " {}/{} and ".format(self.major_allele, self.minor_allele) + snp_data.snp_name +
                 " {}/{}.".format(snp_data.major_allele, snp_data.minor_allele) )
 
-        # Because the last checks made sure the alleles are right (let's hope) I can just change the alleles.
+        # Because the last checks made sure the alleles are right I can just change the alleles.
         if (not self.has_frequency_data) or overwrite:
             if swapped:
                 snp_data.minor_allele_frequency *= -1
@@ -177,7 +177,6 @@ class GeneticAssociation(Association, variants.BaseSNP):
 
     def make_gcta_ma_header(self):
         return "SNP\tA1\tA2\tfreq\tb\tse\tp\tN"
-
 
     def make_gcta_ma_line(self):
         """
