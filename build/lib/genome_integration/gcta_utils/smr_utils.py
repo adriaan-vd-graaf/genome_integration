@@ -63,7 +63,7 @@ class SmrResult:
         return self.beta_eqtl
 
     def get_z_score_exposure(self):
-        return self.beta_gwas / self.se_gwas
+        return self.beta_eqtl / self.se_eqtl
 
 
 

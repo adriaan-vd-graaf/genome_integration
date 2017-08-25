@@ -130,8 +130,11 @@ class BaseSNP:
     def add_minor_allele_frequency(self,  major, minor, freq):
         #if there are no alleles, then just use this.
         if not self.has_allele_data:
+            self.minor_allele = minor
+            self.major_allele = major
             self.minor_allele_frequency = freq
             self.has_allele_data = True
+            self.has_frequency_data = True
             return
 
         #allele data is present, so we need to check what it is.
@@ -139,8 +142,14 @@ class BaseSNP:
             self.minor_allele_frequency = freq
             self.has_frequency_data = True
         elif (self.major_allele == minor) and (self.minor_allele == major):
-            self.minor_allele_frequency = 1 - freq
+            #need to swap alleles, we just assign them as shown.
+            self.major_allele = major
+            self.minor_allele = minor
+
+            self.minor_allele_frequency = freq
             self.has_frequency_data = True
+
+
         else:
             raise RuntimeError("Alleles do not match in snp" + self.snp_name)
 
@@ -181,13 +190,55 @@ class BimFile:
                 tmp = self.bim_results[i]
                 f.write('\t'.join(tmp.split) + "\n")
 
+
     def add_frq_information(self, file_name):
+        """
+
+        :param file_name: file name of the plink frq or frqx file.
+        :return: self, with added frq information
+
+        """
         with open(file_name, 'r') as f:
-            f.readline()
-            for line in f:
-                split = [x for x in line.split() if x != ""]
-                snp_name = split[1]
-                self.bim_results[snp_name].add_minor_allele_frequency(split[2], split[3], float(split[4]))
+            split = f.readline()[:-1].split("\t")
+            # frq file.
+            if len(split) == 5:
+                for line in f:
+                    split = [x for x in line.split() if x != ""]
+                    snp_name = split[1]
+                    try:
+                        self.bim_results[snp_name].add_minor_allele_frequency(split[3], split[2], float(split[4]))
+                    except KeyError:
+                        try:
+                            self.bim_results_by_pos[snp_name].add_minor_allele_frequency(split[3], split[2], float(split[4]))
+                        except KeyError:
+                            continue
+            # frqx file
+            elif len(split) == 10:
+                for line in f:
+                    split = [x for x in line.split() if x != ""]
+                    snp_name = split[1]
+                    a_one_count = int(split[4])*2 + int(split[5])
+                    a_two_count = int(split[6])*2 + int(split[5])
+                    if a_one_count <= a_two_count:
+                        minor = split[2]
+                        major = split[3]
+                        maf = float(a_one_count) / float(a_one_count + a_two_count)
+
+                    else:
+                        minor = split[3]
+                        major = split[2]
+
+                        maf = float(a_two_count) / float((a_one_count + a_two_count))
+                    try:
+                        self.bim_results[snp_name].add_minor_allele_frequency(major, minor, float(maf))
+                    except KeyError:
+                        try:
+                            self.bim_results_by_pos[snp_name].add_minor_allele_frequency(major, minor, float(maf))
+                        except:
+                            continue
+            else:
+                RuntimeError("The frq file header was not in any correct formatting.")
+
 
     def add_ld_mat(self, file_name):
         self.has_ld_data = True
@@ -198,10 +249,7 @@ class BimFile:
                 self.ld_mat[i,:] = [float(x) for x in line[:-1].split("\t")]
                 i += 1
 
-    #todo perhaps add a method to change the se based on the ld, implemented in the cojoLine object.
-    #todo make sure the algorithm is correct, making sure snps in high ld are not chosen twice.
-
-    # Todo, This may be ripe for removal as I'll ensure this method not necessary anymore
+    #todo, This may be ripe for removal as I'll ensure this method not necessary anymore
     def isolate_LD_similar_snps(self, snp_list_1, snp_list_2, min_ld):
 
         if not self.has_ld_data:
@@ -241,7 +289,7 @@ class BimFile:
 
         return best_ld
 
-    # Todo, This may be ripe for removal as I'll ensure this method not necessary anymore
+    # todo, This may be ripe for removal as I'll ensure this method not necessary anymore
     def write_ld_mat(self, filename):
         snpnames = self.snp_names
 
@@ -271,6 +319,13 @@ class BimFile:
 
 class BimLine(BaseSNP):
     __slots__ = ['snp_name', 'chromosome', 'position', 'major_allele', 'minor_allele', 'minor_allele_frequency']
+
     def __init__(self, line):
         split = [x for x in line[:-1].split() if x != ""]
-        super().__init__(split[1], split[0], split[3], split[4], split[5])
+        super().__init__(snp_name=split[1],
+                 chromosome=split[0],
+                 position=split[3],
+                 major_allele=split[5],
+                 minor_allele=split[4],
+                 minor_allele_frequency=None
+                )

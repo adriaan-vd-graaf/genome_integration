@@ -68,7 +68,10 @@ class StartEndRegion:
     def region_overlaps(self, other_region):
         if self.chromosome == other_region.chromosome:
             #this may contain an error, and could be done more efficiently.
-            if self.start <= other_region.start <= self.end or self.start <= other_region.end <= self.end:
+            if self.start <= other_region.start <= self.end \
+                    or self.start <= other_region.end <= self.end\
+                    or other_region.start <= self.start <= other_region.end \
+                    or other_region.start <= self.end <= other_region.end:
                 return True
 
         return False

@@ -19,7 +19,6 @@ class IVWResult:
         self.estimation_data = []     # will be filled with tuples containing betas and standard error
         self.estimation_snps = []
 
-
         #these are optional
 
         self.outcome_tuples = []
@@ -31,6 +30,20 @@ class IVWResult:
 
     # this is perhaps slow as you are appending betas all the time.
     # but I expect there to be at most 100 betas, so later, if it seems slow, adding the functionality.
+
+    def write_for_smr_style_plot(self, filename):
+        with open(filename, "w") as f:
+            f.write("snp_name\tbeta_exposure\tse_exposure\tbeta_outcome\tse_outcome\tbeta_smr\tse_ivw\n")
+            for i in range(len(self.estimation_data)):
+                f.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(self.estimation_snps[i][0],
+                                                              self.exposure_tuples[i][0],
+                                                              self.exposure_tuples[i][1],
+                                                              self.outcome_tuples[i][0],
+                                                              self.outcome_tuples[i][1],
+                                                              self.estimation_data[i][0],
+                                                              self.estimation_data[i][1]))
+
+
 
     def add_estimate(self, beta_se_tuple, snp_name_1, pos, chr, snp_name_2):
         self.estimation_done = False

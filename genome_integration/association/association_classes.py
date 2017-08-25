@@ -114,7 +114,7 @@ class GeneticAssociation(Association, variants.BaseSNP):
             print("Overwriting snp data, effect directions may be lost.")
 
         #if the snp_name is a position, update it to an rs number.
-        if self.snp_name != snp_data.snp_name:
+        if self.snp_name == str(snp_data.chromosome) + ":" + str(snp_data.position):
             self.snp_name = snp_data.snp_name
 
         if (not self.has_position_data) or overwrite:
@@ -132,6 +132,7 @@ class GeneticAssociation(Association, variants.BaseSNP):
 
 
         swapped = False
+
         # get the alleles right, takes more logic that I really wanted.
         if (not self.has_allele_data) or overwrite:
 
@@ -225,4 +226,3 @@ class GeneticAssociation(Association, variants.BaseSNP):
         se_smr = abs(beta_smr / z_score)
 
         return beta_smr, se_smr, p_value
-

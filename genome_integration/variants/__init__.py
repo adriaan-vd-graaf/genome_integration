@@ -130,8 +130,11 @@ class BaseSNP:
     def add_minor_allele_frequency(self,  major, minor, freq):
         #if there are no alleles, then just use this.
         if not self.has_allele_data:
+            self.minor_allele = minor
+            self.major_allele = major
             self.minor_allele_frequency = freq
             self.has_allele_data = True
+            self.has_frequency_data = True
             return
 
         #allele data is present, so we need to check what it is.
@@ -139,8 +142,14 @@ class BaseSNP:
             self.minor_allele_frequency = freq
             self.has_frequency_data = True
         elif (self.major_allele == minor) and (self.minor_allele == major):
-            self.minor_allele_frequency = 1 - freq
+            #need to swap alleles, we just assign them as shown.
+            self.major_allele = major
+            self.minor_allele = minor
+
+            self.minor_allele_frequency = freq
             self.has_frequency_data = True
+
+
         else:
             raise RuntimeError("Alleles do not match in snp" + self.snp_name)
 
@@ -240,7 +249,7 @@ class BimFile:
                 self.ld_mat[i,:] = [float(x) for x in line[:-1].split("\t")]
                 i += 1
 
-    # Todo, This may be ripe for removal as I'll ensure this method not necessary anymore
+    #todo, This may be ripe for removal as I'll ensure this method not necessary anymore
     def isolate_LD_similar_snps(self, snp_list_1, snp_list_2, min_ld):
 
         if not self.has_ld_data:
@@ -280,7 +289,7 @@ class BimFile:
 
         return best_ld
 
-    # Todo, This may be ripe for removal as I'll ensure this method not necessary anymore
+    # todo, This may be ripe for removal as I'll ensure this method not necessary anymore
     def write_ld_mat(self, filename):
         snpnames = self.snp_names
 
