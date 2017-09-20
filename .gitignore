@@ -1,15 +1,6 @@
-EUR.all*
-MAF0*
-ivw_working_directory/*
-probes_for_besd/*
-tmp
-__*
-*.gz
-*zip
-*pdf
 *.p
 *.xml
-*.iml
 *egg
-*.png
 dist/*
+build*
+genome_integration.egg-info*

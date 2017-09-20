@@ -121,7 +121,7 @@ class IVWResult:
         z_score = scipy.stats.norm.isf(p_value / 2)
 
         # also from Zhu et al.
-        beta_smr = outcome_tuple[0] / exposure_tuple[0]
+        beta_smr = exposure_tuple[0] / outcome_tuple[0]
         se_smr = abs(beta_smr / z_score)
 
 
