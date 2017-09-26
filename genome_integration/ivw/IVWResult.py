@@ -9,6 +9,8 @@ __copyright__   = "Copyright 2017, Adriaan van der Graaf"
 import math
 import scipy
 import numpy as np
+import scipy.stats
+
 from .. import file_utils
 
 
@@ -121,9 +123,8 @@ class IVWResult:
         z_score = scipy.stats.norm.isf(p_value / 2)
 
         # also from Zhu et al.
-        beta_smr = exposure_tuple[0] / outcome_tuple[0]
+        beta_smr = outcome_tuple[0] / exposure_tuple[0]
         se_smr = abs(beta_smr / z_score)
-
 
         return beta_smr, se_smr, p_value
 
@@ -184,7 +185,7 @@ class IVWResult:
                          str(self.estimation_snps[i][2]),
                          str(self.estimation_snps[i][3])
                         ]
-                          )
+                        )
             )
 
         file_utils.write_list_to_newline_separated_file(strings, filename)
