@@ -87,7 +87,9 @@ setup(
         'dev': ['check-manifest'],
         'test': ['coverage'],
     },
-    setup_requires=[],
+
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
 
     # ext_modules = cythonize(["hello_world.pyx"]),
 
