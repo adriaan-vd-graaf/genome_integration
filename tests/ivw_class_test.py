@@ -17,7 +17,7 @@ def test_smr_results():
         file_thing = open("/home/adriaan/PhD/MR/SMR_explore/smr_comparison/eQTL_gen_full_smr.smr", "r")
         tolerance = 5e-5 #this file contains five significant digits per value
     except FileNotFoundError:
-        file_thing = open("test_resources/smr_example.txt", "r")
+        file_thing = open("tests/test_resources/smr_example.txt", "r")
         tolerance = 5e-2 #this file contains two significant digits per value.
 
     with file_thing as f:
@@ -38,8 +38,70 @@ def test_smr_results():
 
 
 
+def test_giant_celiac_from_r_implementation():
+
+    beta_outcome = []
+    se_outcome = []
+    beta_exposure = []
+    se_exposure = []
+
+    beta_smr = []
+    se_smr = []
+
+    beta_ivw = -0.111134
+    se_ivw = .2355676
+
+    with open("tests/test_resources/celiac_compared_to_giant.txt", "r") as f:
+        f.readline()
+        i = 0
+        ivw_thing = ivw.IVWResult()
+        ivw_addition = ivw.IVWResult()
+        for line in f:
+            split = line.split()
+
+            beta_outcome.append(float(split[1]))
+            beta_exposure.append(float(split[2]))
+            se_outcome.append(float(split[3]))
+            se_exposure.append(float(split[4]))
+            beta_smr.append(float(split[5]))
+            se_smr.append(float(split[6]))
+
+            outcome_tuple = (beta_outcome[i], se_outcome[i])
+            exposure_tuple = (beta_exposure[i], se_exposure[i])
+
+            smr_tuple = ivw.IVWResult().do_smr_estimate(exposure_tuple=exposure_tuple, outcome_tuple=outcome_tuple)
+
+            ivw_addition.do_and_add_smr_estimation(exposure_tuple, outcome_tuple, "lll", 12, 12, "lll")
+
+
+            assert isclose(smr_tuple[0], beta_smr[i], rel_tol=5e-10)
+            assert isclose(smr_tuple[1], se_smr[i], rel_tol=5e-10)
+
+            ivw_thing.add_estimate(smr_tuple, "lala", 12, 12, "lala")
+
+            i+=1
+
+        my_ivw = ivw_thing.do_ivw_estimation()
+
+        addition_ivw = ivw_addition.do_ivw_estimation()
+
+        integrated_ivw = ivw.IVWResult()
+
+        integrated_result = integrated_ivw.do_ivw_estimation_on_estimate_vector([(beta_smr[j], se_smr[j]) for j in range(i)])
+
+        assert isclose(my_ivw[0], addition_ivw[0])
+        assert isclose(my_ivw[1], addition_ivw[1])
+        assert isclose(my_ivw[0], integrated_result[0])
+        assert isclose(my_ivw[1], integrated_result[1])
+
+        assert isclose(my_ivw[0], beta_ivw, rel_tol=5e-5)
+        assert isclose(my_ivw[1], se_ivw, rel_tol=5e-5)
+
+
+
 
 def test_ivw_estimates():
+
     """
     This is a unit test to check if if ivw happens correctly.
     simulating some true beta, standard errors and finally some ivw.
@@ -79,109 +141,78 @@ def test_ivw_estimates():
 
 
     # weirdly this 'seems' to be biassed towards lower values, perhaps meaning that we're underestimating the effect.
+    # probably above my paygrade to figure this out.
+
     # print(np.mean(z_score_difference))
     # print(np.sum(np.sign(z_score_difference)))
 
     # print(np.max(np.abs(z_score_difference)))
 
+#
+# def test_smr_ivw_integration():
+#     """
+#     This script will make sure that when you have beta smr and se smr, it will produce correct estimates.
+#
+#     """
+#     np.random.seed(1337)
+#
+#     num_samples = 10
+#     num_replicates = 1
+#
+#     z_score_difference = []
+#
+#     for replicate in range(num_replicates):
+#
+#         true_beta = np.random.normal()
+#         se_smr = abs(np.random.normal(size=num_samples))
+#         beta_smr = np.random.normal(loc=true_beta, scale=se_smr, size=num_samples)
+#
+#
+#         """
+#
+#         Now we do some math. We know the following:
+#
+#         beta_smr^2  / se_smr^2 = (z_outcome^2 * z_exposure^2) / (z_outcome^2 + z_exposure^2)
+#
+#         0
+#         after some algebra, I come to the following:
+#
+#         z_outcome^2 = - ( (beta_smr^2  / se_smr^2 ) * z_exposure^2 ) / ( (beta_smr^2  / se_smr^2) - z_exposure^2 ))
+#
+#         se_outcome = (beta_outcome * np.sqrt( (beta_exposure^2 / (beta_smr^2  / se_smr^2 ) - se_exposure^2)) / beta_exposure
+#
+#         If I then simulate some beta_exposure, with a se_exposure,
+#         I have z_exposure, and through some algebra, I get z_outcome as well.
+#
+#         """
+#
+#         se_exposure = np.abs(np.random.normal(size=num_samples))
+#         beta_exposure = np.random.normal(scale=se_exposure, size=num_samples)
+#
+#         z_exposure = beta_exposure / se_exposure
+#
+#         z_sq_smr = beta_smr ** 2 / se_smr ** 2
+#         z_outcome_sq = ( z_sq_smr * z_exposure ** 2) / ( z_sq_smr - z_exposure ** 2)
+#
+#         z_outcome = np.sign(z_outcome_sq) * np.sqrt(np.abs(z_outcome_sq))
+#
+#         exp_beta_outcome = beta_exposure * beta_smr
+#
+#         print(exp_beta_outcome)
+#
+#         se_outcome = beta_exposure / z_outcome
+#         print(se_outcome)
+#         beta_outcome = np.random.normal(exp_beta_outcome, se_outcome, num_samples)
+#
+#
+#
+#
+#         print(np.mean(beta_outcome / beta_exposure))
+#
+#         print(true_beta)
 
 
-
-def test_ivw_estimates():
-    """
-    This is a unit test to check if if ivw happens correctly.
-    simulating some true beta, standard errors and finally some ivw.
-
-    Assertion is done ensuring that the Z score is never lower than expected.
-    Perhaps slightly cheating with the seed, but random is random sometimes.
-
-    :return:
-    """
-    np.random.seed(1337)
-
-    num_samples = 1000
-    num_replicates = 100
-
-    z_score_difference = []
-
-    for replicate in range(num_replicates):
-
-        true_beta = np.random.normal()
-        se_smr = abs(np.random.normal(size=num_samples))
-        beta_smr = np.random.normal(loc=true_beta, scale=se_smr, size=num_samples)
-
-        this_result = ivw.IVWResult()
-
-        for i in range(num_samples):
-            this_result.add_estimate((beta_smr[i], se_smr[i]), "check", 1337, 1, "other")
-
-        my_results = this_result.do_ivw_estimation()
-
-        #H_0: beta_ivw == true_beta
-        #H_a: beta_ivw != true_beta
-        # z score to figure this out.
-        z_score_difference.append((my_results[0] - true_beta) / (my_results[1]))
-
-        assert abs(z_score_difference[len(z_score_difference)-1]) < 2.3 # corresponding to 0.01 probability, as expected with 100 individuals.
-
-
-#this does not work... so we're going to simulate beta_smr, and then make
-def test_smr_ivw_integration():
-    """
-    This script will make sure that there
-
-    """
-    np.random.seed(1337)
-
-    num_samples = 100
-    num_replicates = 1
-
-    z_score_difference = []
-
-    for replicate in range(num_replicates):
-
-        true_beta = np.random.normal()
-        se_smr = abs(np.random.normal(size=num_samples))
-        beta_smr = np.random.normal(loc=true_beta, scale=se_smr, size=num_samples)
-
-        z_sq_smr = beta_smr ** 2 / se_smr ** 2
-
-        """
-        
-        Now we do some math. We know the following:
-        
-        beta_smr^2  / se_smr^2 = (z_outcome^2 * z_exposure^2) / (z_outcome^2 + z_exposure^2)
-        
-        0
-        after some algebra, I come to the following:
-        
-        z_outcome^2 = - ( (beta_smr^2  / se_smr^2 ) * z_exposure^2 ) / ( (beta_smr^2  / se_smr^2) - z_exposure^2 ))
-         
-        se_outcome = (beta_outcome * np.sqrt( (beta_exposure^2 / (beta_smr^2  / se_smr^2 ) - se_exposure^2)) / beta_exposure 
-        
-        If I then simulate some beta_exposure, with a se_exposure, 
-        I have z_exposure, and through some algebra, I get z_outcome as well.
-        
-        """
-
-        se_exposure = np.abs(np.random.normal(size=num_samples))
-        beta_exposure = np.random.normal(scale=se_exposure, size=num_samples)
-
-        z_exposure = beta_exposure / se_exposure
-        z_outcome = np.sqrt(np.abs(( z_sq_smr * z_exposure ** 2) / ( z_sq_smr - z_exposure ** 2)))
-
-
-        se_outcome = np.abs(( beta_smr * beta_exposure  * np.sqrt(np.abs(beta_exposure ** 2 / (beta_smr ** 2 / se_smr ** 2) - se_exposure ** 2))) / beta_exposure)
-
-        print(se_outcome)
-
-        beta_outcome = np.random.normal(z_outcome * se_outcome, se_outcome, num_samples)
-
-        print(np.mean(beta_outcome / beta_exposure))
-
-        print(true_beta)
-
-
-test_smr_ivw_integration()
 test_ivw_estimates()
+test_giant_celiac_from_r_implementation()
 test_smr_results()
+# test_smr_ivw_integration()

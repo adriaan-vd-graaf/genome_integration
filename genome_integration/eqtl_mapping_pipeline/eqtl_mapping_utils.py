@@ -1,8 +1,9 @@
 """
 This class is used to read in eqtl mapping pipeline formats.
 """
-import gzip
+
 import numpy as np
+import gzip
 from .. association import *
 
 class EQTLMappingAssociation(GeneticAssociation):

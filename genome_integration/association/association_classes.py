@@ -1,4 +1,5 @@
-import scipy
+import scipy.stats
+import numpy as np
 from .. import variants
 
 
@@ -15,7 +16,11 @@ class Association:
         self.n_observations = int(float(n_observations))
         self.r_squared = r_squared
 
-        self.z_score = self.beta / self.se #doing this ensures that beta and se are not none.
+        if self.se == 0:
+            self.se = np.nextafter(0.0, 1)
+            self.z_score = np.sign(beta) * 1337 #big enough. this will introduce some bug in super low p values. but whatever.
+        else:
+            self.z_score = self.beta / self.se
 
         self.wald_p_val = None  # not calculating it here, is better if calculation is done later.
 
@@ -169,12 +174,12 @@ class GeneticAssociation(Association, variants.BaseSNP):
         # Because the last checks made sure the alleles are right I can just change the alleles.
         if (not self.has_frequency_data) or overwrite:
             if swapped:
-                snp_data.minor_allele_frequency *= -1
+                snp_data.minor_allele_frequency = 1 - snp_data.minor_allele_frequency
                 self.beta *= -1
                 self.z_score *= -1
 
             self.minor_allele_frequency = snp_data.minor_allele_frequency
-            self.has_frequency_data = True
+            self.has_frequency_data = snp_data.minor_allele_frequency is not None
 
     def make_gcta_ma_header(self):
         return "SNP\tA1\tA2\tfreq\tb\tse\tp\tN"
