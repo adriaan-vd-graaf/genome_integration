@@ -166,6 +166,7 @@ def do_gcta_cojo_slct(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.
     base_file = None
     for chr in range(1, 23):
         std_out = open(out_prepend + '.out', 'w')
+        std_err = open(out_prepend + '.err', 'w')
         subprocess.run(['gcta64',
                         '--chr', str(chr),
                         '--bfile', bfile_prepend,
@@ -177,9 +178,11 @@ def do_gcta_cojo_slct(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.
                         '--thread-num', '1'
                         ],
                        stdout=std_out,
+                       stderr=std_err,
                        check=True
                        )
         std_out.close()
+        std_err.close()
         try:
             tmp_cojo = CojoCmaFile(out_prepend + ".jma.cojo", out_prepend)
         except:
