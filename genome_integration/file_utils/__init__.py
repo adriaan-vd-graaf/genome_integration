@@ -8,7 +8,7 @@ __all__ = ['write_list_to_newline_separated_file',
            'read_newline_separated_gz_file_into_list']
 
 __author__      = "Adriaan van der Graaf"
-__copyright__   = "Copyright 2017, Adriaan van der Graaf"
+__copyright__   = "Copyright 2017, Adriaan van der Graaf, Matthijs Knigge"
 
 def write_list_to_newline_separated_file(in_list, file_name):
     with open(file_name, 'w') as f:

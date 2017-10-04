@@ -262,7 +262,7 @@ def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepen
 
     [
         ma_lines.append(genetic_associations[x].make_gcta_ma_line()) for x in genetic_associations
-        if genetic_associations[x].explanatory_name in clumped_snps
+        if genetic_associations[x].snp_name in clumped_snps
     ]
 
     file_utils.write_list_to_newline_separated_file(ma_lines, ma_name)
@@ -333,7 +333,7 @@ def do_gcta_cojo_joint_on_genetic_associations(genetic_associations, bfile, tmp_
     [
         ma_lines.append(genetic_associations[x].make_gcta_ma_line())
         for x in genetic_associations
-        if genetic_associations[x].explanatory_name in clumped_snps
+        if genetic_associations[x].snp_name in clumped_snps
     ]
 
     file_utils.write_list_to_newline_separated_file(ma_lines, ma_name)
