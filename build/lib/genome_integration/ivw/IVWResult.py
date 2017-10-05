@@ -9,6 +9,8 @@ __copyright__   = "Copyright 2017, Adriaan van der Graaf"
 import math
 import scipy
 import numpy as np
+import scipy.stats
+
 from .. import file_utils
 
 
@@ -23,6 +25,11 @@ class IVWResult:
 
         self.outcome_tuples = []
         self.exposure_tuples = []
+
+        # this will be used to do meta analysis techniques.
+        # meaning there will be some
+        self.ivw_intermediate_top = []
+        self.ivw_intermediate_bottom = []
 
         self.beta_ivw = np.nan
         self.se_ivw = np.nan
@@ -52,23 +59,8 @@ class IVWResult:
 
     def do_ivw_estimation(self):
 
-        if len(self.estimation_data) == 0:
-            raise RuntimeError('No estimates supplied to do estimation')
-
-        beta_top = 0.0
-        beta_bottom = 0.0
-
-        for smr_result in self.estimation_data:
-            beta_top += smr_result[0] * (smr_result[1] ** -2)
-            beta_bottom += (smr_result[1] ** -2)
-
-        self.beta_ivw = beta_top / beta_bottom
-        self.se_ivw = math.sqrt(1 / beta_bottom)
-
-        self.p_value = scipy.stats.norm.sf(abs(self.beta_ivw / self.se_ivw)) * 2
-
+        self.beta_ivw, self.se_ivw, self.p_value = self.do_ivw_estimation_on_estimate_vector(self.estimation_data)
         self.estimation_done = True
-
         return self.beta_ivw, self.se_ivw, self.p_value
 
     def do_ivw_estimation_on_estimate_vector(self, estimation_vec):
@@ -79,9 +71,15 @@ class IVWResult:
         beta_top = 0.0
         beta_bottom = 0.0
 
+        i = 0
         for smr_result in estimation_vec:
-            beta_top += smr_result[0] * (smr_result[1] ** -2)
-            beta_bottom += (smr_result[1] ** -2)
+
+            self.ivw_intermediate_top.append(smr_result[0] * (smr_result[1] ** -2))
+            self.ivw_intermediate_bottom.append((smr_result[1] ** -2))
+
+            beta_top += self.ivw_intermediate_top[i]
+            beta_bottom += self.ivw_intermediate_bottom[i]
+            i += 1
 
         beta_ivw = beta_top / beta_bottom
         se_ivw = math.sqrt(1 / beta_bottom)
@@ -123,7 +121,6 @@ class IVWResult:
         # also from Zhu et al.
         beta_smr = outcome_tuple[0] / exposure_tuple[0]
         se_smr = abs(beta_smr / z_score)
-
 
         return beta_smr, se_smr, p_value
 
@@ -184,7 +181,35 @@ class IVWResult:
                          str(self.estimation_snps[i][2]),
                          str(self.estimation_snps[i][3])
                         ]
-                          )
+                        )
             )
 
         file_utils.write_list_to_newline_separated_file(strings, filename)
+
+
+    def do_chochrans_q_meta_analysis(self, p_value_threshold):
+
+        if len(self.estimation_data) < 3:
+            raise ValueError("Less than three estimates supplied, cannot do cochrans q analysis")
+
+        if not self.estimation_done:
+            raise ValueError("No ivw estimation done.")
+
+        q_terms = [
+                    self.ivw_intermediate_bottom[i] * (self.estimation_data[i][0] - self.beta_ivw) ** 2
+                    for i in range(len(self.estimation_data))
+                   ]
+
+        initial_q_stat = np.sum(q_terms)
+        initial_p_val = scipy.stats.chi2.sf(initial_q_stat,  len(q_terms) -1)
+
+        estimation = np.array()
+
+
+        p_val = initial_p_val
+        while p_val < p_value_threshold or len(q_terms) < 3:
+
+
+
+
+

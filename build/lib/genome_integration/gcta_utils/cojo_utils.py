@@ -6,6 +6,7 @@ from .. import variants
 from .. import association
 from .. import file_utils
 from .. import plink_utils
+from collections import Counter
 
 class CojoCmaFile:
     def __init__(self, file_loc, name):
@@ -162,6 +163,47 @@ class CojoLdrFile:
 # todo make this work into a single function that accepts a dict and a temporary folder.
 def do_gcta_cojo_slct(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.01'):
 
+    base_file = None
+    for chr in range(1, 23):
+        std_out = open(out_prepend + '.out', 'w')
+        std_err = open(out_prepend + '.err', 'w')
+        subprocess.run(['gcta64',
+                        '--chr', str(chr),
+                        '--bfile', bfile_prepend,
+                        '--cojo-file', ma_file,
+                        '--cojo-slct',
+                        '--out', out_prepend,
+                        '--cojo-p', p_val,
+                        '--maf', maf,
+                        '--thread-num', '1'
+                        ],
+                       stdout=std_out,
+                       stderr=std_err,
+                       check=True
+                       )
+        std_out.close()
+        std_err.close()
+        try:
+            tmp_cojo = CojoCmaFile(out_prepend + ".jma.cojo", out_prepend)
+        except:
+            continue
+
+        if base_file is None:
+            base_file = tmp_cojo
+        else:
+            for i in tmp_cojo.ma_results.keys():
+                base_file.ma_results[i] = tmp_cojo.ma_results[i]
+
+    return base_file
+
+
+
+
+
+
+def do_gcta_cojo_joint(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.01'):
+
+
     std_out = open(out_prepend + '.out', 'w')
     subprocess.run(['gcta64',
                     '--bfile', bfile_prepend,
@@ -177,24 +219,13 @@ def do_gcta_cojo_slct(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.
                    )
     std_out.close()
 
-    ##make sure the process is finished.
-    regex = re.compile("^Analysis finished:.*")
+    tmp_cojo = CojoCmaFile(out_prepend + ".jma.cojo", out_prepend)
 
-    #make sure the log file is valid, assuming the other files are valid as well.
-    for i in range(2):
-        log_file = file_utils.read_newline_separated_file_into_list(out_prepend + '.out')
-        if sum([regex.match(x) != None for x in log_file]) != 1:
-            time.sleep(1)
-        else:
-            break
-        if i == 9:
-            raise IOError('Cojo analysis was finished, but did not find valid log file here:' + out_prepend + '.out')
-
-    return CojoCmaFile(out_prepend + ".jma.cojo", out_prepend)
+    return tmp_cojo
 
 
 def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepend,
-                                         p_val_thresh=0.05, maf=0.01, calculate_ld = False):
+                                         p_val_thresh=0.05, maf=0.01, calculate_ld = False, clump=False):
     """
     :param genetic_associations: a dict of genetic associations,  keys should be explantory name
     :param bfile: plink bed file
@@ -212,6 +243,17 @@ def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepen
     plink_pruned = tmp_prepend + "_plink_pruned"
     cojo_out = tmp_prepend + "_cojo_out"
 
+    #clump.
+    if clump:
+        clumped_snps = plink_utils.plink_isolate_clump(bed_file=bfile,
+                                                   associations=genetic_associations,
+                                                   threshold=p_val_thresh,
+                                                   r_sq=0.5,
+                                                   tmploc=tmp_prepend
+                                                   )
+    else:
+        clumped_snps = list(genetic_associations.keys())
+
     snps = list(genetic_associations.keys())
     try:
         gene_name = genetic_associations[snps[0]].dependent_name.decode("utf8")
@@ -223,6 +265,7 @@ def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepen
 
     [
         ma_lines.append(genetic_associations[x].make_gcta_ma_line()) for x in genetic_associations
+        if genetic_associations[x].snp_name in clumped_snps
     ]
 
     file_utils.write_list_to_newline_separated_file(ma_lines, ma_name)
@@ -234,19 +277,89 @@ def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepen
 
     except Exception as x:
         print("isolating snps raised an exception while processing " + gene_name )
-        subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
+        # subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
         raise x
 
 
     try:
         cojo_eqtl = do_gcta_cojo_slct(plink_pruned, ma_name, cojo_out, p_val='{:6.2e}'.format(p_val_thresh), maf='{:8.6f}'.format(maf))
     except Exception as x:
-        print("GCTA cojo raised an exception while processing" + gene_name)
-        subprocess.run(["rm {} {} {}* {}*".format(ma_name, snp_out, plink_pruned, cojo_out)], shell=True, check=True)
+        print("GCTA cojo raised an exceptqion while processing" + gene_name)
+        # subprocess.run(["rm {} {} {}* {}*".format(ma_name, snp_out, plink_pruned, cojo_out)], shell=True, check=True)
         raise x
 
     subprocess.run(["rm -f {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)
 
     return cojo_eqtl
 
+
+def do_gcta_cojo_joint_on_genetic_associations(genetic_associations, bfile, tmp_prepend,
+                                         p_val_thresh=0.05, maf=0.01, calculate_ld = False, clump=False):
+    """
+    :param genetic_associations: a dict of genetic associations,  keys should be explantory name
+    :param bfile: plink bed file
+    :param tmp_prepend: temporary name of files where to store.
+    :param p_val_thresh: p value threshold as a float
+    :param maf: minor allele frequency as a float
+
+    :return: Cojo results a Cojo CMA file object, which is an extension of the geneticassociation file.
+    """
+
+
+    # define the names.
+    ma_name = tmp_prepend + "_temp.ma"
+    snp_out = tmp_prepend + "_snp_list.txt"
+    plink_pruned = tmp_prepend + "_plink_pruned"
+    cojo_out = tmp_prepend + "_cojo_out"
+
+    #clump.
+    if clump:
+        clumped_snps = plink_utils.plink_isolate_clump(bed_file=bfile,
+                                                   associations=genetic_associations,
+                                                   threshold=p_val_thresh,
+                                                   r_sq=0.5,
+                                                   tmploc=tmp_prepend
+                                                   )
+    else:
+        clumped_snps = list(genetic_associations.keys())
+
+
+    snps = list(genetic_associations.keys())
+    try:
+        gene_name = genetic_associations[snps[0]].dependent_name.decode("utf8")
+    except AttributeError:
+        gene_name = genetic_associations[snps[0]].dependent_name
+
+
+    ma_lines = [genetic_associations[snps[0]].make_gcta_ma_header()]
+
+    [
+        ma_lines.append(genetic_associations[x].make_gcta_ma_line())
+        for x in genetic_associations
+        if genetic_associations[x].snp_name in clumped_snps
+    ]
+
+    file_utils.write_list_to_newline_separated_file(ma_lines, ma_name)
+
+    try:
+        plink_utils.isolate_snps_of_interest_make_bed(ma_file=ma_name, exposure_name=gene_name, b_file=bfile,
+                                                      snp_file_out=snp_out, plink_files_out=plink_pruned,
+                                                      calculate_ld=calculate_ld)
+
+    except Exception as x:
+        print("isolating snps raised an exception while processing " + gene_name )
+        # subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
+        raise x
+
+
+    try:
+        cojo_eqtl = do_gcta_cojo_joint(plink_pruned, ma_name, cojo_out, p_val='{:6.2e}'.format(p_val_thresh), maf='{:8.6f}'.format(maf))
+    except Exception as x:
+        print("GCTA cojo raised an exceptqion while processing " + gene_name)
+        # subprocess.run(["rm {} {} {}* {}*".format(ma_name, snp_out, plink_pruned, cojo_out)], shell=True, check=True)
+        raise x
+
+    subprocess.run(["rm -f {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)
+
+    return cojo_eqtl
 

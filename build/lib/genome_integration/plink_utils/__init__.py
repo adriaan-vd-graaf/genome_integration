@@ -7,6 +7,52 @@ from .. import gcta_utils
 from .. import file_utils
 from .. import variants
 
+
+def plink_isolate_clump(bed_file, associations, threshold, r_sq=0.5  ,tmploc="", return_snp_file=False):
+    """
+
+    will prune for ld in a list of snps.
+    will output a list after prune.
+
+    :param bed_file:
+    :param associations:
+    :return: list of snps after prune
+    """
+    clump_file = tmploc +  "_" + str(threshold) +"_clump_file.txt"
+    tmp_plink_out = tmploc +  "_" + str(threshold) + "_plink_out"
+    snp_out = tmploc + "_" + str(threshold) + "clumped.txt"
+
+    association_lines = ["SNP\tP"]
+    [association_lines.append("{}\t{}".format(
+        associations[x].snp_name,
+        associations[x].wald_p_val
+    )) for x in associations.keys()]
+
+    file_utils.write_list_to_newline_separated_file(association_lines, clump_file)
+
+    subprocess.run(["plink --bfile " + bed_file  +
+                    " --clump " + clump_file +
+                    " --clump-p1 " + str(threshold) +
+                    " --clump-r2 " + str(r_sq) +
+                    " --clump-kb 1000 "+
+                    " --out " + tmp_plink_out], shell=True, check=True, stdout=subprocess.DEVNULL)
+
+    clumpdat = file_utils.read_newline_separated_file_into_list(tmp_plink_out + ".clumped")
+
+    snps_to_keep = [x.split()[2] for x in clumpdat[1:] if len(x.split())]
+
+    if return_snp_file:
+        file_utils.write_list_to_newline_separated_file(snps_to_keep, snp_out)
+
+    subprocess.run(["rm " + tmp_plink_out + ".* " + clump_file ], shell=True, check=True)
+
+    if return_snp_file:
+        return snps_to_keep, snp_out
+
+    else:
+        return snps_to_keep
+
+
 def make_ld_mat_from_genetic_associations(genetic_associations, bfile, tmp_dir, thread_num=1):
 
     bfile_out = tmp_dir + "_bed_file"

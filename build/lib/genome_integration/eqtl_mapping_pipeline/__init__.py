@@ -3,6 +3,7 @@ These functions are being used to help me traverse the eqtlgen things.
 """
 
 from .. import file_utils
+from .. import association
 
 
 __author__      = "Adriaan van der Graaf"

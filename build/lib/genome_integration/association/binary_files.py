@@ -4,9 +4,7 @@ import scipy.stats
 from . association_classes import *
 
 
-
 def add_p_values_to_associations_dict(associations):
-
     """
     This class will add wald p values to Association classes.
 

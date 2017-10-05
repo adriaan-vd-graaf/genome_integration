@@ -3,4 +3,4 @@
 *egg
 dist/*
 build*
-genome_integration.egg-info*
+genome_integration.egg-info/*

@@ -212,7 +212,68 @@ def test_ivw_estimates():
 #         print(true_beta)
 
 
+def test_q_meta_analysis_without_heterogeneity():
+    np.random.seed(1337)
+
+    num_samples = 100
+    num_replicates = 20
+
+    z_score_difference = []
+
+    for replicate in range(num_replicates):
+
+        true_beta = np.random.normal()
+        se_smr = abs(np.random.normal(size=num_samples))
+        beta_smr = np.random.normal(loc=true_beta, scale=se_smr, size=num_samples)
+
+        this_result = ivw.IVWResult()
+
+        for i in range(num_samples):
+            this_result.add_estimate((beta_smr[i], se_smr[i]), "check", 1337, 1, "other")
+
+        my_results = this_result.do_ivw_estimation()
+
+        assert len(this_result.do_chochrans_q_meta_analysis(0.05)[1]) == num_samples
+
+
+def test_q_meta_analysis_with_heterogeneity():
+    np.random.seed(1337)
+
+
+    num_bad_samples = 5
+    num_good_samples = 10
+    num_replicates = 100
+
+    z_scores = []
+    for replicate in range(num_replicates):
+
+        true_beta = np.random.normal()
+        good_se_smr = abs(np.random.normal(loc = 0.1, size=num_good_samples))
+        good_beta_smr = np.random.normal(loc=true_beta, scale=good_se_smr, size=num_good_samples)
+
+        bad_beta = np.random.normal(loc=-1*true_beta, size=num_bad_samples)
+        bad_se_smr = abs(np.random.normal(loc=0.1, size=num_bad_samples))
+        bad_beta_smr = np.random.normal(loc=bad_beta, scale=bad_se_smr, size=num_bad_samples)
+
+        beta_smr  = list(good_beta_smr) + list(bad_beta_smr)
+        se_smr = list(good_se_smr) + list(bad_se_smr)
+
+        this_result = ivw.IVWResult()
+
+        for i in range(num_good_samples + num_bad_samples):
+            this_result.add_estimate((beta_smr[i], se_smr[i]), "check", 1337, 1, "other")
+
+        this_result.do_ivw_estimation()
+        #
+        z_score_difference = abs(true_beta - this_result.do_chochrans_q_meta_analysis(0.2)[0][0]) / this_result.do_chochrans_q_meta_analysis(0.2)[0][1]
+
+        z_scores.append(z_score_difference)
+
+    assert np.median(z_scores) < 1.0
+
 test_ivw_estimates()
 test_giant_celiac_from_r_implementation()
 test_smr_results()
 # test_smr_ivw_integration()
+test_q_meta_analysis_without_heterogeneity()
+test_q_meta_analysis_with_heterogeneity()

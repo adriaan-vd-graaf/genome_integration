@@ -1,4 +1,5 @@
 README.rst
+setup.cfg
 setup.py
 genome_integration/__init__.py
 genome_integration.egg-info/PKG-INFO
