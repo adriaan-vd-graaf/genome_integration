@@ -7,7 +7,6 @@ __author__      = "Adriaan van der Graaf"
 __copyright__   = "Copyright 2017, Adriaan van der Graaf"
 
 import math
-import scipy
 import copy
 import numpy as np
 import scipy.stats
@@ -22,7 +21,7 @@ class IVWResult:
         self.estimation_data = []     # will be filled with tuples containing betas and standard error
         self.estimation_snps = []
 
-        #these are optional
+        # these are optional
 
         self.outcome_tuples = []
         self.exposure_tuples = []
@@ -36,10 +35,27 @@ class IVWResult:
         self.se_ivw = np.nan
         self.p_value = np.nan
 
+        #cochrans q done.
+        self.q_test_done = False
+        self.q_test_p_value = None
+        self.q_test_indices_remaining = None
+
+        self.q_test_beta = None
+        self.q_test_se = None
+        self.q_test_p_value = None
+
+
+
     # this is perhaps slow as you are appending betas all the time.
     # but I expect there to be at most 100 betas, so later, if it seems slow, adding the functionality.
+    def write_for_smr_style_plot_without_q_data(self, filename):
+        """
+        will write the cross style plot.
 
-    def write_for_smr_style_plot(self, filename):
+
+        :param filename:
+        :return:
+        """
         with open(filename, "w") as f:
             f.write("snp_name\tbeta_exposure\tse_exposure\tbeta_outcome\tse_outcome\tbeta_smr\tse_ivw\n")
             for i in range(len(self.estimation_data)):
@@ -50,6 +66,39 @@ class IVWResult:
                                                               self.outcome_tuples[i][1],
                                                               self.estimation_data[i][0],
                                                               self.estimation_data[i][1]))
+
+
+
+    def write_for_smr_style_plot_with_q_data(self, filename):
+        """
+        Contains an extra column.
+
+        :param filename:
+        :return:
+        """
+        with open(filename, "w") as f:
+            f.write("snp_name\tbeta_exposure\tse_exposure\tbeta_outcome\tse_outcome\tbeta_smr\tse_ivw\tq_pruned\n")
+            for i in range(len(self.estimation_data)):
+                f.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(self.estimation_snps[i][0],
+                                                              self.exposure_tuples[i][0],
+                                                              self.exposure_tuples[i][1],
+                                                              self.outcome_tuples[i][0],
+                                                              self.outcome_tuples[i][1],
+                                                              self.estimation_data[i][0],
+                                                              self.estimation_data[i][1],
+                                                              0.6 + 0.4 * float(i in self.q_test_indices_remaining),
+                                                              ))
+
+
+
+    def write_for_smr_style_plot(self, filename):
+
+        if self.q_test_done:
+            self.write_for_smr_style_plot_with_q_data(filename)
+        else:
+            self.write_for_smr_style_plot_without_q_data(filename)
+
+
 
 
 
@@ -74,6 +123,10 @@ class IVWResult:
 
         i = 0
         for smr_result in estimation_vec:
+
+            # make sure the standard error cannot be zero.
+            if smr_result[1] == 0:
+                smr_result[1] = np.nextafter(0,1)
 
             self.ivw_intermediate_top.append(smr_result[0] * (smr_result[1] ** -2))
             self.ivw_intermediate_bottom.append((smr_result[1] ** -2))
@@ -196,6 +249,7 @@ class IVWResult:
         if not self.estimation_done:
             raise ValueError("No ivw estimation done.")
 
+
         #base the calculations on indices that are remaining
         indices_remaining = list(range(len(self.estimation_data)))
         old_indices = indices_remaining
@@ -209,7 +263,7 @@ class IVWResult:
         p_val = 0.0
 
         while (p_value_threshold > p_val) and (len(indices_remaining) >= 3):
-            old_indices = copy.copy(indices_remaining)
+            old_indices = copy.deepcopy(indices_remaining)
 
             #determine the Q statistic, per estimate.
             q_terms = [
@@ -234,6 +288,14 @@ class IVWResult:
             tmp_beta_ivw, tmp_se_ivw, tmp_p_ivw = \
                 self.do_ivw_estimation_on_estimate_vector([self.estimation_data[i] for i in indices_remaining])
 
+        #save it now.
+        self.q_test_done = True
+        self.q_test_p_value = p_value_threshold
+        self.q_test_indices_remaining = old_indices
+
+        self.q_test_beta = save_beta_ivw
+        self.q_test_se = save_se_ivw
+        self.q_test_p_value = save_p_ivw
 
         return (save_beta_ivw, save_se_ivw, save_p_ivw), old_indices, p_val
 
