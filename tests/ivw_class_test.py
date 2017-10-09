@@ -39,6 +39,11 @@ def test_smr_results():
 
 
 def test_giant_celiac_from_r_implementation():
+    """
+    This is used to test another MR and ivw implementation.
+
+    :return:
+    """
 
     beta_outcome = []
     se_outcome = []
@@ -139,79 +144,6 @@ def test_ivw_estimates():
         assert abs(z_score_difference[len(z_score_difference)-1]) < 2.3 # corresponding to 0.01 probability, as expected with 100 individuals.
 
 
-
-    # weirdly this 'seems' to be biassed towards lower values, perhaps meaning that we're underestimating the effect.
-    # probably above my paygrade to figure this out.
-
-    # print(np.mean(z_score_difference))
-    # print(np.sum(np.sign(z_score_difference)))
-
-    # print(np.max(np.abs(z_score_difference)))
-
-#
-# def test_smr_ivw_integration():
-#     """
-#     This script will make sure that when you have beta smr and se smr, it will produce correct estimates.
-#
-#     """
-#     np.random.seed(1337)
-#
-#     num_samples = 10
-#     num_replicates = 1
-#
-#     z_score_difference = []
-#
-#     for replicate in range(num_replicates):
-#
-#         true_beta = np.random.normal()
-#         se_smr = abs(np.random.normal(size=num_samples))
-#         beta_smr = np.random.normal(loc=true_beta, scale=se_smr, size=num_samples)
-#
-#
-#         """
-#
-#         Now we do some math. We know the following:
-#
-#         beta_smr^2  / se_smr^2 = (z_outcome^2 * z_exposure^2) / (z_outcome^2 + z_exposure^2)
-#
-#         0
-#         after some algebra, I come to the following:
-#
-#         z_outcome^2 = - ( (beta_smr^2  / se_smr^2 ) * z_exposure^2 ) / ( (beta_smr^2  / se_smr^2) - z_exposure^2 ))
-#
-#         se_outcome = (beta_outcome * np.sqrt( (beta_exposure^2 / (beta_smr^2  / se_smr^2 ) - se_exposure^2)) / beta_exposure
-#
-#         If I then simulate some beta_exposure, with a se_exposure,
-#         I have z_exposure, and through some algebra, I get z_outcome as well.
-#
-#         """
-#
-#         se_exposure = np.abs(np.random.normal(size=num_samples))
-#         beta_exposure = np.random.normal(scale=se_exposure, size=num_samples)
-#
-#         z_exposure = beta_exposure / se_exposure
-#
-#         z_sq_smr = beta_smr ** 2 / se_smr ** 2
-#         z_outcome_sq = ( z_sq_smr * z_exposure ** 2) / ( z_sq_smr - z_exposure ** 2)
-#
-#         z_outcome = np.sign(z_outcome_sq) * np.sqrt(np.abs(z_outcome_sq))
-#
-#         exp_beta_outcome = beta_exposure * beta_smr
-#
-#         print(exp_beta_outcome)
-#
-#         se_outcome = beta_exposure / z_outcome
-#         print(se_outcome)
-#         beta_outcome = np.random.normal(exp_beta_outcome, se_outcome, num_samples)
-#
-#
-#
-#
-#         print(np.mean(beta_outcome / beta_exposure))
-#
-#         print(true_beta)
-
-
 def test_q_meta_analysis_without_heterogeneity():
     np.random.seed(1337)
 
@@ -271,9 +203,10 @@ def test_q_meta_analysis_with_heterogeneity():
 
     assert np.median(z_scores) < 1.0
 
+
+#now do the tests for easy debugging.
 test_ivw_estimates()
 test_giant_celiac_from_r_implementation()
 test_smr_results()
-# test_smr_ivw_integration()
 test_q_meta_analysis_without_heterogeneity()
 test_q_meta_analysis_with_heterogeneity()

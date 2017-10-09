@@ -12,11 +12,14 @@ import numpy as np
 import scipy.stats
 
 from .. import file_utils
+from .. import association
 
 
-class IVWResult:
+class IVWResult(association.BaseAssociation):
 
     def __init__(self):
+        super().__init__()
+
         self.estimation_done = False  # when the estimation is called, this will return true
         self.estimation_data = []     # will be filled with tuples containing betas and standard error
         self.estimation_snps = []
@@ -31,9 +34,9 @@ class IVWResult:
         self.ivw_intermediate_top = []
         self.ivw_intermediate_bottom = []
 
-        self.beta_ivw = np.nan
-        self.se_ivw = np.nan
-        self.p_value = np.nan
+        self.beta = np.nan
+        self.se = np.nan
+        self.wald_p_val = np.nan
 
         #cochrans q done.
         self.q_test_done = False
@@ -109,9 +112,9 @@ class IVWResult:
 
     def do_ivw_estimation(self):
 
-        self.beta_ivw, self.se_ivw, self.p_value = self.do_ivw_estimation_on_estimate_vector(self.estimation_data)
+        self.beta, self.se, self.wald_p_val = self.do_ivw_estimation_on_estimate_vector(self.estimation_data)
         self.estimation_done = True
-        return self.beta_ivw, self.se_ivw, self.p_value
+        return self.beta, self.se, self.wald_p_val
 
     def do_ivw_estimation_on_estimate_vector(self, estimation_vec):
 
@@ -145,7 +148,7 @@ class IVWResult:
 
     def get_ivw_estimates(self):
         if self.estimation_done:
-            return self.beta_ivw, self.se_ivw, self.p_value
+            return self.beta, self.se, self.wald_p_val
         else:
             raise RuntimeError('The estimation is not done, so no estimates were made.')
 
@@ -199,9 +202,9 @@ class IVWResult:
             outcome,
             chromosome, #this requires that the estimation snps are well defined.
             len(self.estimation_data),
-            self.beta_ivw,
-            self.se_ivw,
-            self.p_value,
+            self.beta,
+            self.se,
+            self.wald_p_val,
             ','.join([x[0] for x in self.estimation_snps]),
             ','.join([str(x[0]) for x in self.estimation_data]),
             ','.join([str(x[1]) for x in self.estimation_data])
@@ -211,9 +214,9 @@ class IVWResult:
         strings = ["beta_ivw\tse_ivw\tp_val_ivw\testimate_type\tsnp_1\tbp\tchr\tsnp_2",
                    "\t".join(
                             [
-                            str(self.beta_ivw),
-                            str(self.se_ivw),
-                            str(self.p_value),
+                            str(self.beta),
+                            str(self.se),
+                            str(self.wald_p_val),
                             "ivw_estimate",
                             "NA",
                             "NA",
@@ -255,9 +258,9 @@ class IVWResult:
         old_indices = indices_remaining
 
         #these will change while the algorithm is running.
-        tmp_beta_ivw = self.beta_ivw
-        tmp_se_ivw = self.se_ivw
-        tmp_p_ivw = self.p_value
+        tmp_beta_ivw = self.beta
+        tmp_se_ivw = self.se
+        tmp_p_ivw = self.wald_p_val
         save_beta_ivw, save_se_ivw, save_p_ivw = tmp_beta_ivw, tmp_se_ivw, tmp_p_ivw
 
         p_val = 0.0
