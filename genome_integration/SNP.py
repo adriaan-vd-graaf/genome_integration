@@ -233,6 +233,33 @@ class BaseSNP:
         self.minor_allele = tmp
 
 
+    def add_minor_allele_frequency(self,  major, minor, freq):
+        #if there are no alleles, then just use this.
+        if not self.has_allele_data:
+            self.minor_allele = minor
+            self.major_allele = major
+            self.minor_allele_frequency = freq
+            self.has_allele_data = True
+            self.has_frequency_data = True
+            return
+
+        #allele data is present, so we need to check what it is.
+        if (self.major_allele == major) and (self.minor_allele == minor):
+            self.minor_allele_frequency = freq
+            self.has_frequency_data = True
+        elif (self.major_allele == minor) and (self.minor_allele == major):
+            #need to swap alleles, we just assign them as shown.
+            self.major_allele = major
+            self.minor_allele = minor
+
+            self.minor_allele_frequency = freq
+            self.has_frequency_data = True
+
+
+        else:
+            raise RuntimeError("Alleles do not match in snp" + self.snp_name)
+
+        return
 
 
 class SNP(BaseSNP):
