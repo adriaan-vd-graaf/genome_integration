@@ -225,9 +225,6 @@ def test_overwrite_snp_data():
 
 
 
-
-
-
 test_add_snp_snp_acceptance()
 test_update_position()
 test_update_alleles()

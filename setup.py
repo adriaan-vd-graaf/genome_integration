@@ -80,7 +80,7 @@ setup(
     # simple. Or you can use find_packages().
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
 
-    install_requires=['numpy', 'scipy', 'Cython'],
+    install_requires=['numpy', 'scipy', 'Cython', 'sklearn'],
 
 
     extras_require={

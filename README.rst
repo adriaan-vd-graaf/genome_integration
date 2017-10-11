@@ -7,7 +7,7 @@ Requirements:
 
 python >= 3.5
 with
-numpy, scipy installed.
+numpy, scipy, sci kit learn installed.
 
 gcta64 and plink should be in your PATH as the subprocess module will directly refer to them.
 
