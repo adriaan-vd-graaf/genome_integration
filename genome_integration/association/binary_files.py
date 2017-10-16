@@ -39,10 +39,11 @@ def read_bin_file(file_name, bim_data):
     for i in range(int(len(eqtl_data) / eqtl_size)):
         data = turn_bin_into_plink_assoc(eqtl_data[i * eqtl_size:(i * eqtl_size) + eqtl_size])
         pos_name = str(data[0]) + ":" + str(data[1])
-        association = GeneticAssociation(gene_name, pos_name, data[2], data[3], data[4], data[5])
+        association = GeneticAssociation(gene_name, pos_name, data[2], data[3], data[4], data[5], chromosome=data[0], position=data[1])
 
         try:
             association.add_snp_data(bim_data.bim_results_by_pos[pos_name])
+            association.snp_name = bim_data.bim_results_by_pos[pos_name].snp_name
             associations[pos_name] = association
         except KeyError:  # No SNP data present for the variant, do nothing.
             continue

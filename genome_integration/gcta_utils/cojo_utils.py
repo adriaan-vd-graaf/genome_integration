@@ -348,7 +348,7 @@ def do_gcta_cojo_joint_on_genetic_associations(genetic_associations, bfile, tmp_
 
     except Exception as x:
         print("isolating snps raised an exception while processing " + gene_name )
-        # subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
+        subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
         raise x
 
 
@@ -356,7 +356,7 @@ def do_gcta_cojo_joint_on_genetic_associations(genetic_associations, bfile, tmp_
         cojo_eqtl = do_gcta_cojo_joint(plink_pruned, ma_name, cojo_out, p_val='{:6.2e}'.format(p_val_thresh), maf='{:8.6f}'.format(maf))
     except Exception as x:
         print("GCTA cojo raised an exceptqion while processing " + gene_name)
-        # subprocess.run(["rm {} {} {}* {}*".format(ma_name, snp_out, plink_pruned, cojo_out)], shell=True, check=True)
+        subprocess.run(["rm {} {} {}* {}*".format(ma_name, snp_out, plink_pruned, cojo_out)], shell=True, check=True)
         raise x
 
     subprocess.run(["rm -f {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)

@@ -65,6 +65,14 @@ class StartEndRegion:
     def snp_in_region(self, chr, position):
         return (self.chromosome == str(chr)) and (self.start <= int(position) <= self.end)
 
+    def snp_object_in_region(self, snp_object):
+        """
+        :param snp_object:
+        :return: True or false if snp in region
+        """
+        return self.snp_in_region(snp_object.chromosome, snp_object.position)
+
+
     def region_overlaps(self, other_region):
         if self.chromosome == other_region.chromosome:
             #this may contain an error, and could be done more efficiently.

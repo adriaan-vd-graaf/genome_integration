@@ -46,8 +46,9 @@ class BaseSNP:
         # check if we can merge these snps based on names.
         same_name = self.snp_name == snp_data.snp_name
         name_is_position = snp_data.snp_name == "{}:{}".format(self.chromosome, self.position)
+        position_is_name = "{}:{}".format(snp_data.chromosome, snp_data.position) == self.snp_name
 
-        if (not same_name) and (not name_is_position):
+        if (not same_name) and (not name_is_position) and (not position_is_name):
             raise ValueError("Names of these snps do not match, or the position of these snps do not match")
 
         # now the snp is accepted, and we look at what we're going to do. in this order.
@@ -260,6 +261,9 @@ class BaseSNP:
             raise RuntimeError("Alleles do not match in snp" + self.snp_name)
 
         return
+
+    def set_pos_name(self):
+        self.snp_name = "{}:{}".format(self.chromosome, self.position)
 
 
 class SNP(BaseSNP):

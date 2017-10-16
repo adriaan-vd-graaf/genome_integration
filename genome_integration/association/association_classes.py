@@ -52,6 +52,8 @@ class Association(BaseAssociation):
 
         self.snp = None
 
+    def set_wald_p_value(self, pval):
+        self.wald_p_val = pval
 
 
 class GeneticAssociation(Association, variants.BaseSNP):
