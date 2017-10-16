@@ -47,6 +47,8 @@ def read_bin_file(file_name, bim_data):
             associations[pos_name] = association
         except KeyError:  # No SNP data present for the variant, do nothing.
             continue
+        except RuntimeError:
+            continue
 
         gene_num += 1
 
