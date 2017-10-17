@@ -129,7 +129,6 @@ def isolate_snps_of_interest_make_bed(ma_file, exposure_name, b_file, snp_file_o
 
         return ma_data, bim_file
 
-
 def score_individuals(genetic_associations, bed_file, tmp_file = "tmp_score", p_value_thresh = 1):
     """
     Used to score individual.
@@ -143,6 +142,7 @@ def score_individuals(genetic_associations, bed_file, tmp_file = "tmp_score", p_
 
 
     file_for_scoring = tmp_file + "_snps_beta.txt"
+    pos_name_scoring = tmp_file + "_posname_beta.txt"
     prepend_for_plink = tmp_file + "_score"
 
     with open(file_for_scoring, "w") as f:
@@ -151,15 +151,33 @@ def score_individuals(genetic_associations, bed_file, tmp_file = "tmp_score", p_
             if tmp_assoc.wald_p_val < p_value_thresh:
                 f.write("{}\t{}\t{}\n".format(tmp_assoc.snp_name, tmp_assoc.minor_allele, tmp_assoc.beta))
 
-    subprocess.run(["plink",
-                    "--bfile", bed_file,
-                    "--score",  file_for_scoring,
-                    "--out", prepend_for_plink
-                    ],
-                   check=True,
-                   stdout=subprocess.DEVNULL,
-                   stderr=subprocess.DEVNULL
-                   )
+    with open(pos_name_scoring, "w") as f:
+        for snp in genetic_associations.keys():
+            tmp_assoc = genetic_associations[snp]
+            if tmp_assoc.wald_p_val < p_value_thresh:
+                f.write("{}\t{}\t{}\n".format("{}:{}".format(tmp_assoc.chromosome, tmp_assoc.position), tmp_assoc.minor_allele, tmp_assoc.beta))
+    try:
+        subprocess.run(["plink",
+                        "--bfile", bed_file,
+                        "--score",  file_for_scoring,
+                        "--out", prepend_for_plink
+                        ],
+                       check=True,
+                       stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL
+                       )
+    except subprocess.CalledProcessError:
+        # something went wrong. Now trying it with snps which have their name as position.
+        subprocess.run(["plink",
+                        "--bfile", bed_file,
+                        "--score", pos_name_scoring,
+                        "--out", prepend_for_plink
+                        ],
+                       check=True,
+                       stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL
+                       )
+
 
     # scoring done, now read the file.
     pheno_score = {}
@@ -169,10 +187,7 @@ def score_individuals(genetic_associations, bed_file, tmp_file = "tmp_score", p_
             split = line.split()
             pheno_score[split[1]] = (float(split[2]), float(split[5]))
 
-    subprocess.run(['rm -f ' + file_for_scoring + " " + prepend_for_plink + ".*"], shell=True, check=True)
-
-    # clean up.
-    subprocess.run(['rm -f ' + file_for_scoring + " " + prepend_for_plink + ".*"], shell=True, check=True)
+    subprocess.run(['rm -f ' + file_for_scoring + " " + pos_name_scoring + " " + prepend_for_plink + ".*"], shell=True, check=True)
 
     return pheno_score
 
