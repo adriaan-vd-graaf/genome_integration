@@ -183,6 +183,6 @@ class GeneticAssociation(Association, variants.BaseSNP):
         if self.wald_p_val == None:
             raise RuntimeError("No p value present")
 
-        return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(self.snp_name, self.major_allele, self.minor_allele,
+        return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(self.snp_name, self.minor_allele, self.major_allele,
                                                          self.minor_allele_frequency, self.beta, self.se, self.wald_p_val,
                                                          self.n_observations)
