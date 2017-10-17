@@ -2,6 +2,8 @@
 These functions are used to use plink that should be installed in your system.
 """
 
+import numpy as np
+import sklearn
 import subprocess
 from .. import gcta_utils
 from .. import file_utils
@@ -126,3 +128,95 @@ def isolate_snps_of_interest_make_bed(ma_file, exposure_name, b_file, snp_file_o
         bim_file = variants.BimFile(plink_files_out + '.bim')
 
         return ma_data, bim_file
+
+def score_individuals(genetic_associations, bed_file, tmp_file = "tmp_score", p_value_thresh = 1):
+    """
+    Used to score individual.
+    :param genetic_associations:
+    :param bed_file: prepend of a bed file
+    :param tmp_file: prepend of temporary files.
+    :param p_value_thresh: p value threshold of which the genetic associations should be part of.
+    :return: dict with keys corresponding to individuals,
+            values: tuple with the phenotype [0]  and score [1]  of the individual.
+    """
+
+
+    file_for_scoring = tmp_file + "_snps_beta.txt"
+    pos_name_scoring = tmp_file + "_posname_beta.txt"
+    prepend_for_plink = tmp_file + "_score"
+
+    with open(file_for_scoring, "w") as f:
+        for snp in genetic_associations.keys():
+            tmp_assoc = genetic_associations[snp]
+            if tmp_assoc.wald_p_val < p_value_thresh:
+                f.write("{}\t{}\t{}\n".format(tmp_assoc.snp_name, tmp_assoc.minor_allele, tmp_assoc.beta))
+
+    with open(pos_name_scoring, "w") as f:
+        for snp in genetic_associations.keys():
+            tmp_assoc = genetic_associations[snp]
+            if tmp_assoc.wald_p_val < p_value_thresh:
+                f.write("{}\t{}\t{}\n".format("{}:{}".format(tmp_assoc.chromosome, tmp_assoc.position), tmp_assoc.minor_allele, tmp_assoc.beta))
+    try:
+        subprocess.run(["plink",
+                        "--bfile", bed_file,
+                        "--score",  file_for_scoring,
+                        "--out", prepend_for_plink
+                        ],
+                       check=True,
+                       stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL
+                       )
+    except subprocess.CalledProcessError:
+        # something went wrong. Now trying it with snps which have their name as position.
+        subprocess.run(["plink",
+                        "--bfile", bed_file,
+                        "--score", pos_name_scoring,
+                        "--out", prepend_for_plink
+                        ],
+                       check=True,
+                       stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL
+                       )
+
+
+    # scoring done, now read the file.
+    pheno_score = {}
+    with open(prepend_for_plink + ".profile", "r") as f:
+        f.readline()
+        for line in f:
+            split = line.split()
+            pheno_score[split[1]] = (float(split[2]), float(split[5]))
+
+    subprocess.run(['rm -f ' + file_for_scoring + " " + pos_name_scoring + " " + prepend_for_plink + ".*"], shell=True, check=True)
+
+    return pheno_score
+
+
+
+def score_and_assess_auc(genetic_associations, bed_file, tmp_file = "tmp_score", p_value_thresh = 1, resolution = 500):
+    """
+    Using scoring, we determine the auc
+
+    :param genetic_associations:
+    :param bed_file:
+    :param tmp_file:
+    :param p_value_thresh:
+    :param resolution:
+    :return:
+    """
+
+    pheno_score = score_individuals(genetic_associations, bed_file, tmp_file, p_value_thresh)
+
+    pheno = np.array([pheno_score[x][0] for x in pheno_score.keys()])
+    scores = np.array([pheno_score[x][1] for x in pheno_score.keys()])
+
+    thresholds = np.arange(min(scores), max(scores), (max(scores) - min(scores)) / resolution)
+
+    # Using 2 as the phenotype celiac disease.
+    tpr = [sum(pheno[scores > x] == 2.0) / sum(pheno == 2.0) for x in thresholds]
+    fpr  = [sum(pheno[scores > x] == 1.0) / sum(pheno == 1.0) for x in thresholds]
+
+    auc = sklearn.metrics.auc(fpr,tpr)
+
+
+    return tpr, fpr, auc

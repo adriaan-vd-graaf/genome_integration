@@ -1,6 +1,6 @@
 Metadata-Version: 1.2
 Name: genome-integration
-Version: 0.0.0.dev0
+Version: 0.0.1.dev0
 Summary: A sample Python project
 Home-page: none
 Author: Adriaan van der Graaf
@@ -15,7 +15,7 @@ Description: Forthcoming.
         
         python >= 3.5
         with
-        numpy, scipy installed.
+        numpy, scipy, sci kit learn installed.
         
         gcta64 and plink should be in your PATH as the subprocess module will directly refer to them.
         

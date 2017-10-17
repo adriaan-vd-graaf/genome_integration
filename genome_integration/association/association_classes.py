@@ -171,7 +171,7 @@ class GeneticAssociation(Association, variants.BaseSNP):
 
         Makes a GCTA line of the genetic variant.
 
-        Will only submit a string, will not write to a file, the user is expected to do this himself.
+        Will only return a string, will not write to a file, the user is expected to do this himself.
 
         :return tab separated string that can be part of ma file:
         """
