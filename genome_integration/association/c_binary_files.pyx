@@ -26,7 +26,7 @@ def turn_bin_into_plink_assoc(bytes):
 def read_bin_file(file_name, bim_data):
     # read the gene name:
     with gzip.open(file_name, "rb") as f:
-        full_array = f.read()  # should not be so big, couple hundred Mb
+        full_array = f.read()  # should not be so big, maybe a hundred Mb
 
     gene_name, sep, eqtl_data = full_array.partition(b'\0')  # sep is the separator.
 

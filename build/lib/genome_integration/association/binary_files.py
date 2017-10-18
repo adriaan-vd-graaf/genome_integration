@@ -3,6 +3,14 @@ import struct
 import scipy.stats
 from . association_classes import *
 
+def turn_plink_assoc_line_into_bin(line):
+    try:
+        split = [x for x in line.split() if x != ""]
+        bytes = struct.pack('hiifff',int(split[0]), int(split[2]), int(split[3]), float(split[4]), float(split[5]), float(split[6]))
+        return bytes
+    except:
+        return b''
+
 
 def add_p_values_to_associations_dict(associations):
     """
@@ -26,7 +34,7 @@ def turn_bin_into_plink_assoc(bytes):
 def read_bin_file(file_name, bim_data):
     # read the gene name:
     with gzip.open(file_name, "rb") as f:
-        full_array = f.read()  # should not be so big, couple hundred Mb
+        full_array = f.read()  # should not be so big, up to a couple hundred Mb if MAF filtering is done on variants.
 
     gene_name, sep, eqtl_data = full_array.partition(b'\0')  # sep is the separator.
 
