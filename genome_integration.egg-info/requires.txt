@@ -1,6 +1,7 @@
 Cython
 numpy
 scipy
+sklearn
 
 [dev]
 check-manifest

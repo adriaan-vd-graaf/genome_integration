@@ -5,28 +5,23 @@ https://github.com/pypa/sampleproject
 """
 
 # Always prefer setuptools over distutils
-from setuptools import  setup
+from setuptools import setup
 from setuptools import find_packages
-from setuptools.extension import Extension
+from distutils.extension import Extension
+
 # To use a consistent encoding
-from Cython.Build import cythonize
-# setuptools DWIM monkey-patch madness
-# http://mail.python.org/pipermail/distutils-sig/2007-September/thread.html#8204
-# import sys
-# if 'setuptools.extension' in sys.modules:
-#     m = sys.modules['setuptools.extension']
-#     m.Extension.__dict__ = m._Extension.__dict__
+
 
 
 from codecs import open
 from os import path
-import numpy as np
 
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
+
 
 setup(
     name='genome_integration',
@@ -87,11 +82,24 @@ setup(
         'dev': ['check-manifest'],
         'test': ['coverage'],
     },
+    ext_modules=[
+        Extension(
+        "genome_integration.association.c_binary_files",
+        ["genome_integration/association/c_binary_files.pyx"],
+    ),
+        Extension(
+            "genome_integration.variants.bim_file",
+            ["genome_integration/variants/bim_file.pyx"],
+        ),
+        Extension(
+            "genome_integration.SNP",
+            ["genome_integration/SNP.pyx"],
+        )
+    ],
 
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
 
-    # ext_modules = cythonize(["hello_world.pyx"]),
 
     entry_points={
         'console_scripts': [
