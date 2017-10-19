@@ -201,7 +201,7 @@ def do_gcta_cojo_slct(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.
 
 
 
-def do_gcta_cojo_joint(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.01'):
+def do_gcta_cojo_joint(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.01', gc=1.0):
 
 
     std_out = open(out_prepend + '.out', 'w')
@@ -210,6 +210,7 @@ def do_gcta_cojo_joint(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0
                     '--cojo-file', ma_file,
                     '--cojo-slct',
                     '--out', out_prepend,
+                    '--cojo-gc', str(gc),
                     '--cojo-p', p_val,
                     '--maf', maf,
                     '--thread-num', '1'
