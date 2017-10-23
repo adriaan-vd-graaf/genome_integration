@@ -158,6 +158,7 @@ def score_individuals(genetic_associations, bed_file, tmp_file = "tmp_score", p_
                 f.write("{}\t{}\t{}\n".format("{}:{}".format(tmp_assoc.chromosome, tmp_assoc.position), tmp_assoc.minor_allele, tmp_assoc.beta))
     try:
         subprocess.run(["plink",
+                        "--allow-no-sex",
                         "--bfile", bed_file,
                         "--score",  file_for_scoring,
                         "--out", prepend_for_plink
