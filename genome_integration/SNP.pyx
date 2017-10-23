@@ -89,7 +89,7 @@ class BaseSNP:
                 self.minor_allele_frequency = 1 - self.minor_allele_frequency
 
             return True
-
+    
         else:
             if flipped:
                 self.minor_allele_frequency = 1 - self.minor_allele_frequency
