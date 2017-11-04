@@ -167,6 +167,7 @@ def score_individuals(genetic_associations, bed_file, tmp_file = "tmp_score", p_
                        stdout=subprocess.DEVNULL,
                        stderr=subprocess.DEVNULL
                        )
+        profile_file = open(prepend_for_plink + ".pos_name.profile", "r")
 
     except subprocess.CalledProcessError:
         # something went wrong. Now trying it with snps which have their name as position.
@@ -180,11 +181,11 @@ def score_individuals(genetic_associations, bed_file, tmp_file = "tmp_score", p_
                        stdout=subprocess.DEVNULL,
                        stderr=subprocess.DEVNULL
                        )
-
+        profile_file = open(prepend_for_plink + ".pos_name.profile", "r")
 
     # scoring done, now read the file.
     pheno_score = {}
-    with open(prepend_for_plink + ".profile", "r") as f:
+    with profile_file as f:
         f.readline()
         for line in f:
             split = line.split()
