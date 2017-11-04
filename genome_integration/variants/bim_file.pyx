@@ -1,5 +1,6 @@
 from genome_integration import file_utils
 from genome_integration.SNP import *
+import numpy as np
 
 class BimFile:
     def __init__(self, file_name):
