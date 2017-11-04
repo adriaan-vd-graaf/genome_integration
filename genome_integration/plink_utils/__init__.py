@@ -161,19 +161,20 @@ def score_individuals(genetic_associations, bed_file, tmp_file = "tmp_score", p_
                         "--allow-no-sex",
                         "--bfile", bed_file,
                         "--score",  file_for_scoring,
-                        "--out", prepend_for_plink
+                        "--out", prepend_for_plink + ".snp_name"
                         ],
                        check=True,
                        stdout=subprocess.DEVNULL,
                        stderr=subprocess.DEVNULL
                        )
+
     except subprocess.CalledProcessError:
         # something went wrong. Now trying it with snps which have their name as position.
         subprocess.run(["plink",
                         "--allow-no-sex",
                         "--bfile", bed_file,
                         "--score", pos_name_scoring,
-                        "--out", prepend_for_plink
+                        "--out", prepend_for_plink + ".pos_name"
                         ],
                        check=True,
                        stdout=subprocess.DEVNULL,
