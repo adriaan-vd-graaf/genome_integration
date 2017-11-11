@@ -8,7 +8,6 @@ https://github.com/pypa/sampleproject
 from setuptools import setup
 from setuptools import find_packages
 from distutils.extension import Extension
-
 # To use a consistent encoding
 
 
@@ -75,7 +74,7 @@ setup(
     # simple. Or you can use find_packages().
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
 
-    install_requires=['numpy', 'scipy', 'Cython', 'sklearn'],
+    install_requires=['numpy', 'scipy', 'Cython', 'sklearn', 'statsmodels'],
 
 
     extras_require={
