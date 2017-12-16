@@ -1,7 +1,3 @@
-import scipy.stats
-from .. import variants
-import gzip
-
 
 """
 These classes and functions are used to store and deal with generic associations, and genetic associations..

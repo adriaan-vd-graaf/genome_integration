@@ -29,7 +29,6 @@ class BaseSNP:
 
 
     def add_snp_data(self, snp_data, overwrite=False):
-
         """
 
         This class will return itself with updated snp data.

@@ -129,6 +129,7 @@ def isolate_snps_of_interest_make_bed(ma_file, exposure_name, b_file, snp_file_o
 
         return ma_data, bim_file
 
+
 def score_individuals(genetic_associations, bed_file, tmp_file = "tmp_score", p_value_thresh = 1):
     """
     Used to score individual.
