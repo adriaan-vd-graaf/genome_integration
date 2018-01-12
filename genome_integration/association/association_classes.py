@@ -130,6 +130,23 @@ class GeneticAssociation(Association, variants.BaseSNP):
         if (not (effect_allele is None)) and (effect_allele in self.alleles):
             raise ValueError("Effect allele does not match major or minor allele")
 
+    def __str__(self):
+        try:
+            return "{}-{}, {}/{}, {}, {}, {}".format(self.explanatory_name,
+                                                     self.dependent_name,
+                                                     self.major_allele,
+                                                     self.minor_allele,
+                                                     self.beta,
+                                                     self.se,
+                                                     self.wald_p_val)
+        except:
+            return "{}-{}, {}/{}, {}, {}".format(self.explanatory_name,
+                                                     self.dependent_name,
+                                                     self.major_allele,
+                                                     self.minor_allele,
+                                                     self.beta,
+                                                     self.se)
+
 
 
 

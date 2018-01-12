@@ -37,7 +37,7 @@ class BaseSNP:
 
         Author comment: This is bloody hard to get right.
 
-        :param snp_data, a baseSNP object or bigger.:
+        :param snp_data, a baseSNP  object or bigger.:
         :return self:
 
         """
@@ -67,6 +67,7 @@ class BaseSNP:
         frequency_updated = self.add_frequency_data(snp_data, alleles_flipped, overwrite)
 
         return position_updated, alleles_updated, alleles_flipped, frequency_updated
+
 
 
     def add_frequency_data(self, snp_data, flipped, overwrite):
@@ -146,7 +147,8 @@ class BaseSNP:
             updated = True
             return updated, flipped
 
-        if not self.has_allele_data:
+        if (not self.has_allele_data) or self.major_allele == "N" or self.minor_allele == "N" :
+
             if (self.major_allele is None) and (self.minor_allele is None):
                 """
                 This is the case where there is no allele data present.

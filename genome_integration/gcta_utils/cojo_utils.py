@@ -1,12 +1,10 @@
-import re
-import time
 import subprocess
 import numpy as np
 from .. import variants
 from .. import association
 from .. import file_utils
 from .. import plink_utils
-from collections import Counter
+
 
 class CojoCmaFile:
     def __init__(self, file_loc, name):
@@ -77,12 +75,12 @@ class CojoCmaLine(association.GeneticAssociation):
         split = [x for x in line.split() if x != ""]
         if float(split[4]) > 0.5:
             major = split[3]
-            minor = "N" #if I don't know it, it could be N, maybe change later. Use the add_snp_data to update with info
+            minor = None  #if I don't know it, it could be N, maybe change later. Use the add_snp_data to update with info
             beta = -1 * float(split[10])
             frq = 1 - float(split[3])
         else:
             minor = split[3]
-            major = "N"
+            major = None
             beta = float(split[10])
             frq = float(split[4])
 
