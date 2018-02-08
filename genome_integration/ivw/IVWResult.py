@@ -188,7 +188,7 @@ class IVWResult(association.BaseAssociation):
         beta_smr = outcome_tuple[0] / exposure_tuple[0]
         se_smr = abs(beta_smr / z_score)
 
-        return beta_smr, se_smr, p_value
+        return [beta_smr, se_smr, p_value]
 
     def do_and_add_smr_estimation(self, exposure_tuple, outcome_tuple, snp_name_1, pos, chr, snp_name_2):
         estimates = self.do_smr_estimate(exposure_tuple, outcome_tuple)
