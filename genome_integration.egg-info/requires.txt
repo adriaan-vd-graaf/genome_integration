@@ -1,7 +1,8 @@
-Cython
 numpy
 scipy
+Cython
 sklearn
+statsmodels
 
 [dev]
 check-manifest

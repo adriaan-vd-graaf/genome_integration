@@ -2,6 +2,7 @@ README.rst
 setup.cfg
 setup.py
 genome_integration/SNP.c
+genome_integration/SNP.pyx
 genome_integration/__init__.py
 genome_integration.egg-info/PKG-INFO
 genome_integration.egg-info/SOURCES.txt
@@ -12,6 +13,7 @@ genome_integration.egg-info/top_level.txt
 genome_integration/association/__init__.py
 genome_integration/association/association_classes.py
 genome_integration/association/c_binary_files.c
+genome_integration/association/c_binary_files.pyx
 genome_integration/eqtl_mapping_pipeline/__init__.py
 genome_integration/eqtl_mapping_pipeline/eqtl_mapping_utils.py
 genome_integration/file_utils/__init__.py
@@ -25,3 +27,4 @@ genome_integration/ivw/__init__.py
 genome_integration/plink_utils/__init__.py
 genome_integration/variants/__init__.py
 genome_integration/variants/bim_file.c
+genome_integration/variants/bim_file.pyx
