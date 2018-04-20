@@ -86,3 +86,13 @@ class StartEndRegion:
 
     def __str__(self):
         return '{}:{}-{}'.format(self.chromosome, self.start, self.end)
+
+    def __lt__(self, other):
+
+        if not other.__class__ is self.__class__:
+            return NotImplemented
+
+        if not self.chromosome == other.chromosome:
+            return self.chromosome < other.chromosome
+
+        return self.start < other.start
