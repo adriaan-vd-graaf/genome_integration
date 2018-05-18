@@ -81,20 +81,6 @@ setup(
         'dev': ['check-manifest'],
         'test': ['coverage'],
     },
-    ext_modules=[
-        Extension(
-        "genome_integration.association.c_binary_files",
-        ["genome_integration/association/c_binary_files.pyx"],
-    ),
-        Extension(
-            "genome_integration.variants.bim_file",
-            ["genome_integration/variants/bim_file.pyx"],
-        ),
-        Extension(
-            "genome_integration.SNP",
-            ["genome_integration/SNP.pyx"],
-        )
-    ],
 
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],

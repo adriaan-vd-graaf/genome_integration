@@ -129,6 +129,7 @@ def isolate_snps_of_interest_make_bed(ma_file, exposure_name, b_file, snp_file_o
 
         return ma_data, bim_file
 
+
 def score_individuals(genetic_associations, bed_file, tmp_file = "tmp_score", p_value_thresh = 1):
     """
     Used to score individual.
@@ -158,30 +159,34 @@ def score_individuals(genetic_associations, bed_file, tmp_file = "tmp_score", p_
                 f.write("{}\t{}\t{}\n".format("{}:{}".format(tmp_assoc.chromosome, tmp_assoc.position), tmp_assoc.minor_allele, tmp_assoc.beta))
     try:
         subprocess.run(["plink",
+                        "--allow-no-sex",
                         "--bfile", bed_file,
                         "--score",  file_for_scoring,
-                        "--out", prepend_for_plink
+                        "--out", prepend_for_plink + ".snp_name"
                         ],
                        check=True,
                        stdout=subprocess.DEVNULL,
                        stderr=subprocess.DEVNULL
                        )
+        profile_loc = prepend_for_plink + ".snp_name.profile"
+
     except subprocess.CalledProcessError:
         # something went wrong. Now trying it with snps which have their name as position.
         subprocess.run(["plink",
+                        "--allow-no-sex",
                         "--bfile", bed_file,
                         "--score", pos_name_scoring,
-                        "--out", prepend_for_plink
+                        "--out", prepend_for_plink + ".pos_name"
                         ],
                        check=True,
                        stdout=subprocess.DEVNULL,
                        stderr=subprocess.DEVNULL
                        )
-
+        profile_loc = prepend_for_plink + ".pos_name.profile"
 
     # scoring done, now read the file.
     pheno_score = {}
-    with open(prepend_for_plink + ".profile", "r") as f:
+    with open(profile_loc, "r") as f:
         f.readline()
         for line in f:
             split = line.split()

@@ -1,12 +1,10 @@
-import re
-import time
 import subprocess
 import numpy as np
 from .. import variants
 from .. import association
 from .. import file_utils
 from .. import plink_utils
-from collections import Counter
+
 
 class CojoCmaFile:
     def __init__(self, file_loc, name):
@@ -77,12 +75,12 @@ class CojoCmaLine(association.GeneticAssociation):
         split = [x for x in line.split() if x != ""]
         if float(split[4]) > 0.5:
             major = split[3]
-            minor = "N" #if I don't know it, it could be N, maybe change later. Use the add_snp_data to update with info
+            minor = None  #if I don't know it, it could be N, maybe change later. Use the add_snp_data to update with info
             beta = -1 * float(split[10])
             frq = 1 - float(split[3])
         else:
             minor = split[3]
-            major = "N"
+            major = None
             beta = float(split[10])
             frq = float(split[4])
 
@@ -201,7 +199,7 @@ def do_gcta_cojo_slct(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.
 
 
 
-def do_gcta_cojo_joint(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.01'):
+def do_gcta_cojo_joint(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.01', gc=1.0):
 
 
     std_out = open(out_prepend + '.out', 'w')
@@ -210,6 +208,7 @@ def do_gcta_cojo_joint(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0
                     '--cojo-file', ma_file,
                     '--cojo-slct',
                     '--out', out_prepend,
+                    '--cojo-gc', str(gc),
                     '--cojo-p', p_val,
                     '--maf', maf,
                     '--thread-num', '1'
@@ -348,18 +347,153 @@ def do_gcta_cojo_joint_on_genetic_associations(genetic_associations, bfile, tmp_
 
     except Exception as x:
         print("isolating snps raised an exception while processing " + gene_name )
-        # subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
+        subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
         raise x
 
 
     try:
         cojo_eqtl = do_gcta_cojo_joint(plink_pruned, ma_name, cojo_out, p_val='{:6.2e}'.format(p_val_thresh), maf='{:8.6f}'.format(maf))
     except Exception as x:
-        print("GCTA cojo raised an exceptqion while processing " + gene_name)
-        # subprocess.run(["rm {} {} {}* {}*".format(ma_name, snp_out, plink_pruned, cojo_out)], shell=True, check=True)
+        print("GCTA cojo raised an exception while processing " + gene_name)
+        subprocess.run(["rm {} {} {}* {}*".format(ma_name, snp_out, plink_pruned, cojo_out)], shell=True, check=True)
         raise x
 
     subprocess.run(["rm -f {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)
 
     return cojo_eqtl
 
+
+def do_cojo_conditioning_on_effects(conditioning_snps, bfile, tmp_prepend, p_val_thresh=0.05, maf=0.01):
+
+    """
+    Untested! will conditionally do all the effects, will often produce errrors or just provide unreasonable input.
+
+    :param conditioning_snps:
+    :param bfile:
+    :param tmp_prepend:
+    :param p_val_thresh:
+    :param maf:
+    :return:
+    """
+
+
+    plink_pruned = tmp_prepend + "_plink_pruned"
+    snp_file_out = tmp_prepend + "_extract.txt"
+    tmp_ma = tmp_prepend + "_tmp_ma"
+    cojo_out = tmp_prepend + "_cojo_out"
+    tmp_conditioning = tmp_prepend + "_tmp_conditioning"
+
+    file_utils.write_list_to_newline_separated_file([x for x in conditioning_snps.keys()], snp_file_out)
+
+    try:
+        tmp = subprocess.run(['plink',
+                              '--bfile', bfile,
+                              '--extract', snp_file_out,
+                              '--make-bed',
+                              '--out', plink_pruned
+                              ],
+                             check=True,
+                             stdout=subprocess.DEVNULL  # to DEVNULL, because plink saves a log of everything
+                             )
+
+    except Exception as x:
+        subprocess.run(['rm', "-f", plink_pruned + "*", snp_file_out, tmp_ma, cojo_out + "*", tmp_conditioning], shell=True, stdout=subprocess.DEVNULL)
+        raise x
+
+    #write the ma file for all SNPs
+    snps = list(conditioning_snps.keys())
+    ma_lines = [conditioning_snps[snps[0]].make_gcta_ma_header()]
+
+    [
+        ma_lines.append(conditioning_snps[x].make_gcta_ma_line())
+        for x in conditioning_snps.keys()
+    ]
+
+    file_utils.write_list_to_newline_separated_file(ma_lines, tmp_ma)
+
+    ##now for every SNP, do a conditional analysis, conditioning on all but one SNP
+
+    effects_conditioned = {}
+
+    for snp in snps:
+
+        #write what to condition on.
+        file_utils.write_list_to_newline_separated_file([x for x in snps if snp != x], tmp_conditioning)
+        try:
+            std_out = open(cojo_out + '.out', 'w')
+            subprocess.run(['gcta64',
+                            '--bfile', bfile,
+                            '--cojo-file', tmp_ma,
+                            '--cojo-cond', tmp_conditioning,
+                            '--out', cojo_out,
+                            '--cojo-gc', str(1.0),
+                            '--cojo-p', str(p_val_thresh),
+                            '--maf', str(maf),
+                            '--thread-num', '1'
+                            ],
+                           stdout=std_out,
+                           check=True
+                           )
+            std_out.close()
+            #read the cojo file back in.
+            tmp_cojo = CojoCmaFile(cojo_out + ".cma.cojo", cojo_out)
+
+            #only save the effect of interest.
+            effects_conditioned[snp] = tmp_cojo.ma_results[snp]
+
+        except KeyError:
+            ##cojo does not find a solution, so we continue without these effects.
+            continue
+
+        except Exception as x:
+            subprocess.run(['rm', "-f", plink_pruned + "*", snp_file_out, tmp_ma, cojo_out + "*", tmp_conditioning],
+                           shell=True, stdout=subprocess.DEVNULL)
+            raise x
+
+    #clean up.
+    subprocess.run(['rm', "-f", plink_pruned + "*", snp_file_out, tmp_ma, cojo_out + "*", tmp_conditioning],
+                   shell=True, stdout=subprocess.DEVNULL)
+
+    return effects_conditioned
+
+def do_conditional_joint_on_exposure_and_correct_outcome(exposure_associations, outcome_associations, bfile,
+                                                         tmp_prepend, p_val_thresh=0.05, maf=0.01,
+                                                         calculate_ld = False, clump=False):
+    """
+
+    Untested! will conditionally do all the effects, will often produce errrors or just provide unreasonable input.
+
+    :param exposure_associations:
+    :param outcome_associations:
+    :param bfile:
+    :param tmp_prepend:
+    :param p_val_thresh:
+    :param maf:
+    :param calculate_ld:
+    :param clump:
+    :return:
+    """
+
+
+    ##first make sure there is full overlap between effects.
+
+    overlapping_snps = exposure_associations.keys() & outcome_associations.keys()
+
+    if len(overlapping_snps) == 0:
+        raise ValueError("No overlap between exposure and outcome associations")
+
+    #now isolate both asssociations
+    exposure_associations = {x : exposure_associations[x] for x in exposure_associations.keys() if x in overlapping_snps}
+    outcome_associations = {x: outcome_associations[x] for x in outcome_associations.keys() if x in overlapping_snps}
+
+    exposure_cojo = do_gcta_cojo_joint_on_genetic_associations(exposure_associations, bfile, tmp_prepend,
+                                               p_val_thresh, maf, calculate_ld, clump)
+
+    if len(exposure_cojo.ma_results.keys()) == 0:
+        raise ValueError("COJO did not find any independent effects.")
+
+    associations_for_conditioning = {x: outcome_associations[x] for x in exposure_cojo.ma_results.keys()}
+
+    outcome_conditional = do_cojo_conditioning_on_effects(associations_for_conditioning, bfile, tmp_prepend + "_conditional", p_val_thresh, maf)
+
+    return exposure_cojo, outcome_conditional
