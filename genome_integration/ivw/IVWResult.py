@@ -357,7 +357,6 @@ class IVWResult(association.BaseAssociation):
                     )
 
 
-
         wls_model = WLS(y_dat, x_dat, weights=w_dat)
         results = wls_model.fit()
 
