@@ -1,3 +1,5 @@
 
+from genome_integration.variants.SNP import *
+
 def main():
-    print("Not really anything necessary in this function.")
+    pass

@@ -48,8 +48,6 @@ class StartEndRegions:
 
 
 class StartEndRegion:
-    __slots__ = ['chromosome', 'start', 'end']
-
     def __init__(self, list):
         self.chromosome = str(list[0])
         self.start = int(list[1])

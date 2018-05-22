@@ -28,8 +28,8 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.0.1.dev0',
-    python_requires='!=3.0.*, !=3.1.*, !=3.2.*,!=3.3.*, !=3.4.*, >=3.5.*, <4',
+    version='0.1.0.dev0',
+    python_requires='!=3.0.*, !=3.1.*, !=3.2.*,!=3.3.*, !=3.4.*, >=3.6.*, <4',
 
 
     description='A sample Python project',
@@ -63,7 +63,6 @@ setup(
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6'
     ],
 
@@ -74,8 +73,7 @@ setup(
     # simple. Or you can use find_packages().
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
 
-    install_requires=['numpy', 'scipy', 'Cython', 'sklearn', 'statsmodels'],
-
+    install_requires=['numpy', 'scipy', 'sklearn', 'statsmodels'],
 
     extras_require={
         'dev': ['check-manifest'],
@@ -90,5 +88,6 @@ setup(
         'console_scripts': [
             'genome_integration=genome_integration:main',
         ],
-    }
+    },
+    include_package_data=True,
 )
