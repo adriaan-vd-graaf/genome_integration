@@ -121,11 +121,12 @@ class IVWResult(association.BaseAssociation):
 
     def do_ivw_estimation(self):
 
-        self.beta, self.se, self.wald_p_val = self.do_ivw_estimation_on_estimate_vector(self.estimation_data)
+        self.beta, self.se, self.wald_p_val = self.do_ivw_estimation_on_estimate_vector(
+            self.estimation_data, self.ivw_intermediate_top, self.ivw_intermediate_bottom)
         self.estimation_done = True
         return self.beta, self.se, self.wald_p_val
 
-    def do_ivw_estimation_on_estimate_vector(self, estimation_vec):
+    def do_ivw_estimation_on_estimate_vector(self, estimation_vec, ivw_intermediate_top=None, ivw_intermediate_bottom=None):
 
         if len(estimation_vec) == 0:
             raise RuntimeError('No estimates supplied to do estimation')
@@ -133,18 +134,23 @@ class IVWResult(association.BaseAssociation):
         beta_top = 0.0
         beta_bottom = 0.0
 
+        if ivw_intermediate_top is None or ivw_intermediate_bottom is None:
+            ivw_intermediate_top = []
+            ivw_intermediate_bottom = []
+
         i = 0
+
         for smr_result in estimation_vec:
 
             # make sure the standard error cannot be zero.
             if smr_result[1] == 0:
                 smr_result[1] = np.nextafter(0,1)
 
-            self.ivw_intermediate_top.append(smr_result[0] * (smr_result[1] ** -2))
-            self.ivw_intermediate_bottom.append((smr_result[1] ** -2))
+            ivw_intermediate_top.append(smr_result[0] * (smr_result[1] ** -2))
+            ivw_intermediate_bottom.append((smr_result[1] ** -2))
 
-            beta_top += self.ivw_intermediate_top[i]
-            beta_bottom += self.ivw_intermediate_bottom[i]
+            beta_top += ivw_intermediate_top[i]
+            beta_bottom += ivw_intermediate_bottom[i]
             i += 1
 
         beta_ivw = beta_top / beta_bottom
@@ -154,12 +160,11 @@ class IVWResult(association.BaseAssociation):
 
         return beta_ivw, se_ivw, p_value
 
-
     def get_ivw_estimates(self):
         if self.estimation_done:
             return self.beta, self.se, self.wald_p_val
         else:
-            raise RuntimeError('The estimation is not done, so no estimates were made.')
+            return self.do_ivw_estimation()
 
     def do_smr_estimate(self, exposure_tuple, outcome_tuple):
         """
