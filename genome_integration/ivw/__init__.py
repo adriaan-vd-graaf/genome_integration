@@ -6,4 +6,4 @@ inverse variance estimate on independent effects.
 __author__      = "Adriaan van der Graaf"
 __copyright__   = "Copyright 2017, Adriaan van der Graaf"
 
-from genome_integration.ivw import *
+from genome_integration.ivw.IVWResult import *
