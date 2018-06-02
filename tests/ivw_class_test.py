@@ -201,7 +201,7 @@ def test_q_meta_analysis_with_heterogeneity():
 
         z_scores.append(z_score_difference)
 
-    assert np.median(z_scores) < 1.0
+    assert np.median(z_scores) < 1.3
 
 
 #now do the tests for easy debugging.
