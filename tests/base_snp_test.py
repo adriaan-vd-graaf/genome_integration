@@ -1,4 +1,4 @@
-from genome_integration import variants
+import genome_integration.variants as variants
 
 
 # this function tests the add_snp_data class.
