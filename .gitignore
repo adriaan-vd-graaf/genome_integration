@@ -1,15 +1,9 @@
-*
-!
-!genome_integration/*
-!genome_integration/*/association/
-!genome_integration/*/eqtl_mapping_pipeline/
-!genome_integration/*/file_utils/
-!genome_integration/*/gcta_utils/
-!genome_integration/*/gene_regions/
-!genome_integration/*/ivw/
-!genome_integration/*/plink_utils/
-!genome_integration/*/resources/
-!genome_integration/*/variants/
+genome_integration.egg-info/*
+dist/*
+build/*
+.pytest_cache/*
+.eggs/*
+.cache/*
 
 !setup.py
 !setup.cfg
