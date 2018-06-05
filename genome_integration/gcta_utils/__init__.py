@@ -6,8 +6,8 @@ __author__      = "Adriaan van der Graaf"
 __copyright__   = "Copyright 2017, Adriaan van der Graaf"
 
 
-from . cojo_utils import *
-from . ma_utils import *
-from . smr_utils import *
+from genome_integration.gcta_utils.cojo_utils import *
+from genome_integration.gcta_utils.ma_utils import *
+from genome_integration.gcta_utils.smr_utils import *
 
 

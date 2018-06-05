@@ -8,5 +8,5 @@ __copyright__   = "Copyright 2017, Adriaan van der Graaf"
 
 
 from genome_integration.association.binary_files import *
-from . association_classes import *
+from genome_integration.association.association_classes import *
 

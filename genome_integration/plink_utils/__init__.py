@@ -5,9 +5,9 @@ These functions are used to use plink that should be installed in your system.
 import numpy as np
 import sklearn
 import subprocess
-from .. import gcta_utils
-from .. import file_utils
-from .. import variants
+from genome_integration import gcta_utils
+from genome_integration import file_utils
+from genome_integration import variants
 
 
 def plink_isolate_clump(bed_file, associations, threshold, r_sq=0.5  ,tmploc="", return_snp_file=False):

@@ -2,8 +2,8 @@
 These functions are being used to help me traverse the eqtlgen things.
 """
 
-from .. import file_utils
-from .. import association
+from genome_integration import file_utils
+from genome_integration import association
 
 
 __author__      = "Adriaan van der Graaf"
