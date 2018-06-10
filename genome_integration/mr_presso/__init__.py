@@ -116,7 +116,7 @@ class MRPresso(ivw.IVWResult):
                                                                     weighted_exposure)
 
 
-        expected_results = [make_random_data_and_return_rss(weights) for i in range(n_sims)]
+        expected_results = [make_random_data_and_return_rss(weights) for _ in range(n_sims)]
 
         sim_rss = [x[0] for x in expected_results]
 
@@ -133,6 +133,7 @@ class MRPresso(ivw.IVWResult):
             local_p_val = np.asarray([x * len(difference) if x * len(difference) < 1.0 else 1.0  for x in local_p_val])
 
         #distortion test.
+        ivw_no_outliers = (np.nan, np.nan, np.nan)
         if local_p_val is not None and sum(local_p_val < significance_thresh):
             outliers = np.where(local_p_val < significance_thresh)
             ivw_all = self.get_ivw_estimates()
