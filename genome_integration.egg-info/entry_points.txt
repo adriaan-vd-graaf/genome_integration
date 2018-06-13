@@ -1,3 +1,0 @@
-[console_scripts]
-genome_integration = genome_integration:main
-
