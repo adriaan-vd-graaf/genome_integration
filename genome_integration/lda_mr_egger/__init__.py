@@ -89,5 +89,5 @@ class LDAMREgger(ivw.IVWResult):
                 for i in range(marginal_outcome.shape[0]):
                     f.write("{}\t{}\t".format(conditional_exposure[i], conditional_outcome[i]) + "\t".join([str(x) for x in sigma_g[i,:]]) + "\n" )
 
-        return estimates, np.diag(bread) * significant_estimates, test_stat, p_val
+        return estimates, np.sqrt(np.diag(bread) * significant_estimates), test_stat, p_val
 
