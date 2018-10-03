@@ -52,6 +52,14 @@ class LDAMREgger(ivw.IVWResult):
         marginal_exposure = np.asarray(list_of_exposure_tuples)
         marginal_outcome = np.asarray(list_of_outcome_tuples)
 
+        #flip to make exposure strictly positive.
+        to_flip = marginal_exposure[:, 0] < 0
+
+        marginal_exposure[to_flip, 0] = marginal_exposure[to_flip,0] * -1
+        marginal_outcome[to_flip, 0] = marginal_outcome[to_flip, 0] * -1
+        pearson_ld_matrix[to_flip,:][:,to_flip] = pearson_ld_matrix[to_flip,:][:,to_flip] * -1
+
+
         if marginal_exposure.shape[1] < 1:
             raise ValueError("No standard errors supplied to the marginal exposure")
 

@@ -91,6 +91,9 @@ class StartEndRegion:
             return NotImplemented
 
         if not self.chromosome == other.chromosome:
-            return self.chromosome < other.chromosome
+            try:
+                return int(self.chromosome) < int(other.chromosome)
+            except:
+                return self.chromosome < other.chromosome
 
         return self.start < other.start
