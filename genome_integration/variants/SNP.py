@@ -3,7 +3,7 @@ class SNP:
     """
 
     This is the base SNP class.
-    This class also inherits a lot.
+    This class is also inherited a lot.
     """
 
     def __init__(self,
