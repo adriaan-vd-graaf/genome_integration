@@ -1,10 +1,9 @@
 
-class BaseSNP:
+class SNP:
     """
 
     This is the base SNP class.
-    Inherit from this class. If you want to use this class,
-    please use the class SNP for the same functionality, as it is just a wrapper of BaseSNP that uses less memory.
+    This class also inherits a lot.
     """
 
     def __init__(self,
@@ -37,7 +36,7 @@ class BaseSNP:
 
         Author comment: This is bloody hard to get right.
 
-        :param snp_data, a baseSNP  object or bigger.:
+        :param snp_data, a SNP  object or bigger.:
         :return self:
 
         """
@@ -265,17 +264,3 @@ class BaseSNP:
 
     def set_pos_name(self):
         self.snp_name = "{}:{}".format(self.chromosome, self.position)
-
-
-class SNP(BaseSNP):
-    #I use this, so that I can use the __slots__ function here.
-    __slots__ = ['snp_name', 'chromosome', 'position', 'major_allele', 'minor_allele', 'minor_allele_frequency']
-    def __init__(self,
-                 snp_name,
-                 chromosome=None,
-                 position=None,
-                 major_allele=None,
-                 minor_allele=None,
-                 minor_allele_frequency=None
-                 ):
-        super().__init__(snp_name, chromosome, position, major_allele, minor_allele, minor_allele_frequency)

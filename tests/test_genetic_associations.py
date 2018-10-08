@@ -5,7 +5,7 @@ def test_adding_snp_to_genetic_association():
 
     beta=0.1
     se = 0.05
-    snp_a = variants.BaseSNP("rs123", "1", 123, "A", "C", 0.25)
+    snp_a = variants.SNP("rs123", "1", 123, "A", "C", 0.25)
     assoc_a = association.GeneticAssociation(
         "CeD",
         "rs123",

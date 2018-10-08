@@ -1,6 +1,6 @@
 import scipy.stats
 import numpy as np
-from .. import variants
+from ..variants import *
 
 
 class BaseAssociation:
@@ -56,7 +56,7 @@ class Association(BaseAssociation):
         self.wald_p_val = pval
 
 
-class GeneticAssociation(Association, variants.BaseSNP):
+class GeneticAssociation(Association, SNP):
     """
     This class will represent a genetic association, and will probably be a subclass sometime.
 
@@ -102,7 +102,7 @@ class GeneticAssociation(Association, variants.BaseSNP):
                              r_squared
                              )
 
-        variants.BaseSNP.__init__(self,
+        SNP.__init__(self,
                                   explanatory_name,
                                   chromosome,
                                   position,
@@ -160,11 +160,11 @@ class GeneticAssociation(Association, variants.BaseSNP):
 
         Author comment: This is bloody hard to get right.
 
-        :param snp_data, a baseSNP object or bigger.:
+        :param snp_data, a SNP object or bigger.:
         :return self:
         """
 
-        has_updated_position, has_updated_alleles, alleles_flipped, has_updated_frequency = variants.BaseSNP.add_snp_data(self, snp_data)
+        has_updated_position, has_updated_alleles, alleles_flipped, has_updated_frequency = SNP.add_snp_data(self, snp_data)
 
         if alleles_flipped:
             self.beta *= -1

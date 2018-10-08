@@ -9,18 +9,28 @@ class BimFile:
         self.has_ld_data = False
         with open(file_name, 'r') as f:
             for line in f:
-                tmp = BimLine(line)
+
+                split = [x for x in line[:-1].split() if x != ""]
+                tmp = SNP(snp_name=split[1],
+                            chromosome=split[0],
+                            position=split[3],
+                            major_allele=split[5],
+                            minor_allele=split[4],
+                            minor_allele_frequency=None
+                            )
+
                 posname = str(tmp.chromosome) + ":" + str(tmp.position)
                 self.snp_names.append(tmp.snp_name)
                 self.bim_results[tmp.snp_name] = tmp
                 self.bim_results_by_pos[posname] = tmp
+
 
     def write_bim(self, filename):
         with open(filename, 'w') as f:
             f.write("chr\tsnp_name\tCm\tbp\tAllele_1\tAllele_2\n")
             for i in self.bim_results:
                 tmp = self.bim_results[i]
-                f.write('\t'.join(tmp.split) + "\n")
+                f.write(f"{tmp.chromosome}\t{tmp.snp_name}\t0.0\t{tmp.position}\t{tmp.minor_allele}\t{tmp.major_allele}\n")
 
 
     def add_frq_information(self, file_name):
@@ -32,6 +42,7 @@ class BimFile:
         """
         with open(file_name, 'r') as f:
             split = f.readline()[:-1].split("\t")
+
             # frq file.
             if len(split) == 5:
                 for line in f:
@@ -44,6 +55,7 @@ class BimFile:
                             self.bim_results_by_pos[snp_name].add_minor_allele_frequency(split[3], split[2], float(split[4]))
                         except KeyError:
                             continue
+
             # frqx file
             elif len(split) == 10:
                 for line in f:
@@ -80,17 +92,3 @@ class BimFile:
             for line in f:
                 self.ld_mat[i,:] = [float(x) for x in line[:-1].split("\t")]
                 i += 1
-
-
-class BimLine(BaseSNP):
-    __slots__ = ['snp_name', 'chromosome', 'position', 'major_allele', 'minor_allele', 'minor_allele_frequency']
-
-    def __init__(self, line):
-        split = [x for x in line[:-1].split() if x != ""]
-        super().__init__(snp_name=split[1],
-                 chromosome=split[0],
-                 position=split[3],
-                 major_allele=split[5],
-                 minor_allele=split[4],
-                 minor_allele_frequency=None
-                )

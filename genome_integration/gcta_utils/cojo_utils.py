@@ -1,6 +1,8 @@
 import subprocess
 import numpy as np
-from .. import variants
+
+from ..variants import *
+
 from .. import association
 from .. import file_utils
 from .. import plink_utils
@@ -114,7 +116,7 @@ class CojoLdrFile:
         self.name = name
         with open(file_loc, 'r') as f:
             # first line contains the SNPs
-            self.snps = [variants.BaseSNP(x) for x in f.readline()[:-1].split() if (x != '') and (x != 'SNP')]
+            self.snps = [SNP(x) for x in f.readline()[:-1].split() if (x != '') and (x != 'SNP')]
             self.snp_names = [x.snp_name for x in self.snps]
             self.ld_mat = np.zeros((len(self.snps),len(self.snps)))
             indice = 0
