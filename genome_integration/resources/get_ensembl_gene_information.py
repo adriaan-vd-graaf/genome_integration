@@ -26,11 +26,14 @@ class EnsemblGene(gene_regions.StartEndRegion):
         self.gene_type = gene_type
         self.ensembl_version = ensembl_version
 
+    def __str__(self):
+        return(f"{self.ensg_id}, {self.gene_name}, {self.chromosome}:{self.start}-{self.end},{self.strand}")
 
 
 class EnsemblGenes:
-    def __init__(self):
-        self.list_of_genes =  []
+    def __init__(self, allow_patch_overlapping_gene_names=False):
+
+        self.list_of_genes = []
 
         self.ensg_ids = set()
         self.gene_names = set()
@@ -43,6 +46,8 @@ class EnsemblGenes:
 
         self.genes_warned_about = set()
 
+        self.allow_patch_overlapping_gene_names = allow_patch_overlapping_gene_names
+
     def add_gene(self, ensembl_gene):
 
         self.list_of_genes.append(ensembl_gene)
@@ -54,11 +59,18 @@ class EnsemblGenes:
             # print("WARNING: found duplicate gene name, when adding {}, lookups on gene name may be wrong.".format(ensembl_gene.gene_name))
             self.genes_warned_about.add(ensembl_gene.gene_name)
 
-        self.gene_names.add(ensembl_gene.gene_name)
 
         self.ensg_to_full[ensembl_gene.ensg_id] = ensembl_gene
         self.ensg_to_gene[ensembl_gene.ensg_id] = ensembl_gene.gene_name
 
+        #this ensures that there will never be weird patch genes in the
+        if ensembl_gene.gene_name in self.gene_names and (not self.allow_patch_overlapping_gene_names):
+            try:
+                len(ensembl_gene.chromosome < 3) #only chromosome names smaller than 3.
+            except:
+                return
+
+        self.gene_names.add(ensembl_gene.gene_name)
         self.gene_to_full[ensembl_gene.gene_name] = ensembl_gene
         self.gene_to_ensg[ensembl_gene.gene_name] = ensembl_gene.ensg_id
 
@@ -83,6 +95,53 @@ class EnsemblGenes:
 
     def __str__(self):
         return "EnsemblGenes object containing {} genes".format(len(self.gene_names))
+
+    def list_to_full(self, list, fail_on_bad_id=False):
+
+        if fail_on_bad_id:
+            return [self.str_to_full(x) for x in list]
+        else:
+            return_list = []
+            for gene in list:
+                try:
+                    return_list.append(self.str_to_full(gene))
+                except ValueError:
+                    print(f"Could not find {gene}, but continueing.")
+
+            return return_list
+
+
+    def str_to_full(self, str):
+        if str in self.ensg_to_full.keys():
+            return self.ensg_to_full[str]
+        elif str in self.gene_to_ensg.keys():
+            ensg = self.gene_to_ensg[str]
+            return self.ensg_to_full[ensg]
+        else:
+            raise ValueError(f"{str} was not convertible to a gene that I know.")
+
+    def str_to_gene(self, str):
+        return self.str_to_full(str).gene_name
+
+    def str_to_ensg(self, str):
+        return self.str_to_full(str).ensg_id
+
+
+    def __iter__(self):
+        self.ordered_ensg_ids = list(self.ensg_ids)
+        self.ordered_gene_names = list(self.gene_names)
+        self.iterator_indice = 0
+        return self
+
+    def __next__(self):
+
+        if self.iterator_indice < len(self.ordered_ensg_ids):
+            self.iterator_indice += 1
+            return self.ensg_to_full[self.ordered_ensg_ids[self.iterator_indice - 1]]
+        else:
+            raise StopIteration()
+
+
 
 def read_gene_information():
     """

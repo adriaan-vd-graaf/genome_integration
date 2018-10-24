@@ -94,7 +94,7 @@ class MRPresso(ivw.IVWResult):
         num_estimates = len(self.estimation_data)
 
         if num_estimates < 4:
-            raise ValueError("Only {} estimates supplied, need at least three to find mr presso outliers".format(num_estimates))
+            raise ValueError("Only {} estimates supplied, need at least three to find simulate_mr presso outliers".format(num_estimates))
 
         if len(self.exposure_tuples) != num_estimates:
             raise ValueError("No exposure sumstats present, cannot do mr_presso outlier.")

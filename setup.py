@@ -43,7 +43,7 @@ setup(
     author_email='adriaan.vd.graaf@gmail.com',
 
     # Choose your license
-    license='Copyright 2017 Adriaan van der Graaf',
+    license='Copyright 2018 Adriaan van der Graaf',
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
@@ -73,7 +73,7 @@ setup(
     # simple. Or you can use find_packages().
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
 
-    install_requires=['numpy', 'scipy', 'sklearn', 'statsmodels'],
+    install_requires=['numpy', 'scipy', 'sklearn', 'statsmodels', 'plinkio', 'request'],
 
     extras_require={
         'dev': ['check-manifest'],

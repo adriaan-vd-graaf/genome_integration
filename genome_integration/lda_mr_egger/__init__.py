@@ -12,7 +12,7 @@ class LDAMREgger(ivw.IVWResult):
 
     def do_lda_mr_egger_on_estimates(self, list_of_outcome_tuples, list_of_exposure_tuples, pearson_ld_matrix, write_out=False):
         """
-        This will do LDA mr egger regression as described in Barfield et al. 2018
+        This will do LDA simulate_mr egger regression as described in Barfield et al. 2018, genetic epidemiology
         Implemented based on their paper, and a reference implementation they provided in personal communication
 
         <Begin email.>
@@ -47,7 +47,7 @@ class LDAMREgger(ivw.IVWResult):
 
 
         if len(list_of_outcome_tuples) < 3:
-            raise ValueError("Could not do lda mr egger on estimates, too little estimates supplied")
+            raise ValueError("Could not do lda simulate_mr egger on estimates, too little estimates supplied")
 
         marginal_exposure = np.asarray(list_of_exposure_tuples)
         marginal_outcome = np.asarray(list_of_outcome_tuples)
