@@ -264,7 +264,7 @@ class IVWResult(association.BaseAssociation):
             raise ValueError("Less than three estimates supplied, cannot do cochrans q analysis")
 
         if not self.estimation_done:
-            raise ValueError("No ivw estimation done.")
+            raise ValueError("No causal_inference estimation done.")
 
 
         #base the calculations on indices that are remaining
@@ -301,7 +301,7 @@ class IVWResult(association.BaseAssociation):
 
             save_beta_ivw, save_se_ivw, save_p_ivw = tmp_beta_ivw, tmp_se_ivw, tmp_p_ivw
 
-            #determine the new ivw estimates
+            #determine the new causal_inference estimates
             tmp_beta_ivw, tmp_se_ivw, tmp_p_ivw = \
                 self.do_ivw_estimation_on_estimate_vector([self.estimation_data[i] for i in indices_remaining])
 
@@ -371,3 +371,247 @@ class IVWResult(association.BaseAssociation):
         self.egger_done = True
 
         return self.egger_intercept, self.egger_slope
+
+class MRPresso(IVWResult):
+
+    def __init__(self):
+        super().__init__()
+
+    def do_single_term_mr_estimate(self, exposure_tuple, outcome_tuple):
+        """
+        Determine SMR test effect and standard error.
+
+        :param exposure_data: Exposure estimates which must have the methods get_beta and get_z_score
+        :param outcome_data: Outcome estimates which must have the methods get_beta and get_z_score
+        :return: tuple of smr beta and smr se
+        """
+
+        beta_mr = outcome_tuple[0] / exposure_tuple[0]
+        se_mr = np.sqrt((outcome_tuple[1] ** 2) / (exposure_tuple[0] ** 2))
+
+        z_score = beta_mr / se_mr
+        p_value = scipy.stats.norm.sf(abs(z_score)) * 2
+
+        return [beta_mr, se_mr, p_value]
+
+    def do_and_add_single_term_mr_estimation(self, exposure_tuple, outcome_tuple):
+        estimates = self.do_single_term_mr_estimate(exposure_tuple, outcome_tuple)
+        self.estimation_data.append(estimates)
+
+        self.outcome_tuples.append(outcome_tuple)
+        self.exposure_tuples.append(exposure_tuple)
+
+    def mr_presso(self, n_sims=1000, significance_thresh=0.05):
+
+        def make_random_data():
+            beta_ivw, _, _ = self.get_ivw_estimates()
+            random_exposure = np.random.normal([x[0] for x in self.exposure_tuples],
+                                               [x[1] for x in self.exposure_tuples])
+            random_outcome = np.random.normal([beta_ivw * x[0] for x in self.exposure_tuples],
+                                              [x[1] for x in self.outcome_tuples])
+
+            mr_estimates = np.zeros((len(random_outcome), 3))
+            for i in range(len(random_outcome)):
+                mr_estimates[i, :] = self.do_single_term_mr_estimate(
+                    (random_exposure[i], self.exposure_tuples[i][1]),
+                    (random_outcome[i], self.outcome_tuples[i][1]))
+
+            return random_exposure, random_outcome, mr_estimates
+
+        def leave_one_out_residual_sum_of_squares(estimation_data,
+                                                  weighted_outcome,
+                                                  weighted_exposure):
+
+            estimation_data = np.asarray(estimation_data)
+            leave_one_out_ivw = np.zeros(shape=(len(estimation_data), 3))
+            for i in range(len(estimation_data)):
+                leave_one_out_ivw[i, :] = self.do_ivw_estimation_on_estimate_vector(
+                    np.delete(estimation_data, i, 0)
+                )
+
+            rss = (weighted_outcome - leave_one_out_ivw[:, 0] * weighted_exposure) ** 2
+
+            return rss, leave_one_out_ivw
+
+        def make_random_data_and_return_rss(weights):
+            exposure, outcome, mr_estimates = make_random_data()
+
+            weighted_exposure = exposure * weights
+            weighted_outcome = outcome * weights
+
+            rss, _ = leave_one_out_residual_sum_of_squares(mr_estimates, weighted_outcome, weighted_exposure)
+
+            return np.sum(rss), np.concatenate(
+                (exposure.reshape(len(exposure), 1), outcome.reshape(len(outcome), 1)), axis=1)
+
+        def randomly_sample_distortion(outlier_indices):
+            estimates = np.asarray(self.estimation_data)
+            estimates_no_outliers = np.delete(estimates, outlier_indices, axis=0)
+            estimates_only_outliers = estimates[outlier_indices, :][0]
+
+            indices_sampled_from_no_outliers = np.random.choice(estimates_no_outliers.shape[0],
+                                                                size=estimates_no_outliers.shape[0],
+                                                                replace=True)
+            return self.do_ivw_estimation_on_estimate_vector(
+                np.concatenate(
+                    (estimates_no_outliers[indices_sampled_from_no_outliers, :], estimates_only_outliers))
+            )
+
+        # runtime checks.
+        num_estimates = len(self.estimation_data)
+
+        if num_estimates < 4:
+            raise ValueError(
+                "Only {} estimates supplied, need at least three to find simulate_mr presso outliers".format(
+                    num_estimates))
+
+        if len(self.exposure_tuples) != num_estimates:
+            raise ValueError("No exposure sumstats present, cannot do mr_presso outlier.")
+
+        if len(self.outcome_tuples) != num_estimates:
+            raise ValueError("No outcome sumstats present, cannot do mr_presso outlier.")
+
+        # this is just following MR presso.
+        outcome = np.asarray(self.outcome_tuples)
+        exposure = np.asarray(self.exposure_tuples)
+        weighted_outcome = np.asarray([x[0] / np.sqrt(x[1] ** 2) for x in self.outcome_tuples], dtype=float)
+        weighted_exposure = np.asarray([self.exposure_tuples[i][0] / np.sqrt(self.outcome_tuples[i][1] ** 2)
+                                        for i in range(len(self.exposure_tuples))], dtype=float)
+        weights = np.asarray([1 / np.sqrt(x[1] ** 2) for x in self.outcome_tuples], dtype=float)
+
+        rss, list_of_assocs = leave_one_out_residual_sum_of_squares(self.estimation_data,
+                                                                    weighted_outcome,
+                                                                    weighted_exposure)
+
+        expected_results = [make_random_data_and_return_rss(weights) for _ in range(n_sims)]
+
+        sim_rss = [x[0] for x in expected_results]
+
+        global_p_val = sum(sim_rss > sum(rss)) / n_sims
+        local_p_val = None
+        if global_p_val < significance_thresh:
+            expected_betas = np.zeros((num_estimates, n_sims, 2), dtype=float)
+            for i in range(n_sims):
+                expected_betas[:, i] = expected_results[i][1]
+
+            difference = outcome[:, 0] - exposure[:, 0] * list_of_assocs[:, 0]
+            expected_difference = expected_betas[:, :, 1] - expected_betas[:, :, 0] * np.tile(list_of_assocs[:, 0],
+                                                                                              (n_sims,
+                                                                                               1)).transpose()
+            local_p_val = np.sum(expected_difference ** 2 > (difference ** 2).reshape((len(difference), 1)),
+                                 axis=1) / n_sims
+            local_p_val = np.asarray(
+                [x * len(difference) if x * len(difference) < 1.0 else 1.0 for x in local_p_val])
+
+        # distortion test.
+        ivw_no_outliers = (np.nan, np.nan, np.nan)
+        if local_p_val is not None and sum(local_p_val < significance_thresh):
+            outliers = np.where(local_p_val < significance_thresh)
+            ivw_all = self.get_ivw_estimates()
+            ivw_no_outliers = self.do_ivw_estimation_on_estimate_vector(
+                np.delete(np.asarray(self.estimation_data), outliers, axis=0)
+            )
+            observed_bias = ivw_all[0]
+
+            expected_ivw = np.asarray([randomly_sample_distortion(outliers) for _ in range(n_sims)])
+
+        return ivw_no_outliers
+
+
+class LDAMREgger(IVWResult):
+
+    def do_lda_mr_egger(self, ld_matrix):
+
+        return self.do_lda_mr_egger_on_estimates(self.outcome_tuples, self.exposure_tuples, ld_matrix)
+
+
+
+    def do_lda_mr_egger_on_estimates(self, list_of_outcome_tuples, list_of_exposure_tuples, pearson_ld_matrix, write_out=False):
+        """
+        This will do LDA simulate_mr egger regression as described in Barfield et al. 2018, genetic epidemiology
+        Implemented based on their paper, and a reference implementation they provided in personal communication
+
+        <Begin email.>
+        Hi Adriaan,
+        Below please find the R function to implement the approach. Please let me know if you have any questions.
+
+        -Richard
+
+        X is the vector of  joint eQTL effects
+        Y is the vector of joint GWAS effects
+        W is the inverse of the covariance of the joint GWAS effects (i.e. var(Y))
+
+        weight.func2<-function(X,Y,W){
+          bX<-cbind(1,X)
+          bread<-solve(crossprod(bX,W)%*%bX)
+          theEsts<-bread%*%crossprod(bX,W%*%Y)
+          theresid<-c(Y-theEsts[1]-X*theEsts[2])
+          Sig.Est<-c(crossprod(theresid,W%*%theresid))/(length(X)-2)
+          finresults<- cbind(theEsts,diag(bread)*Sig.Est)
+          TestStat<-theEsts/sqrt(finresults[,2])
+          Pvals<-2*pt(abs(TestStat),df = nrow(bX)-2,lower.tail = F)
+          return(cbind(finresults,TestStat,Pvals))
+        }
+        <End email.>
+
+
+        :param list_of_outcome_tuples:
+        :param list_of_exposure_tuples:
+        :param pearson_ld_matrix:
+        :return:
+        """
+
+
+        if len(list_of_outcome_tuples) < 3:
+            raise ValueError("Could not do lda simulate_mr egger on estimates, too little estimates supplied")
+
+        marginal_exposure = np.asarray(list_of_exposure_tuples)
+        marginal_outcome = np.asarray(list_of_outcome_tuples)
+
+        #flip to make exposure strictly positive.
+        to_flip = marginal_exposure[:, 0] < 0
+
+        marginal_exposure[to_flip, 0] = marginal_exposure[to_flip,0] * -1
+        marginal_outcome[to_flip, 0] = marginal_outcome[to_flip, 0] * -1
+        pearson_ld_matrix[to_flip,:][:,to_flip] = pearson_ld_matrix[to_flip,:][:,to_flip] * -1
+
+
+        if marginal_exposure.shape[1] < 1:
+            raise ValueError("No standard errors supplied to the marginal exposure")
+
+        if marginal_outcome.shape[1] < 1:
+            raise ValueError("No standard errors supplied to the marginal outcome")
+
+        sigma = pearson_ld_matrix
+        inv_sigma = np.linalg.inv(sigma)
+
+        conditional_outcome = inv_sigma @ marginal_outcome[:,0]
+
+        conditional_exposure = inv_sigma @ marginal_exposure[:,0]
+
+        sigma_g = inv_sigma * np.median(marginal_outcome[:,1])
+
+        b_x = np.concatenate((np.ones((conditional_exposure.shape[0],1)) , conditional_exposure.reshape(conditional_exposure.shape[0], 1)), axis=1)
+
+        bread  = np.linalg.inv(b_x.transpose() @ sigma_g @ b_x)
+
+        estimates = bread @ b_x.transpose() @ sigma_g @ conditional_outcome
+
+        residuals = conditional_outcome - estimates[0] - conditional_exposure * estimates[1]
+
+        significant_estimates = (residuals.transpose() @ (sigma_g @ residuals)) / (conditional_exposure.shape[0] - 2)
+
+        test_stat = estimates / np.sqrt(significant_estimates * np.diag(bread))
+
+        p_val = 2 * scipy.stats.t.sf(np.abs(test_stat), df=conditional_exposure.shape[0]-2)
+
+        """
+        This only used to compare to the R implementation.
+        """
+        if write_out:
+            with open("check_r_implementation.txt", "w") as f:
+                for i in range(marginal_outcome.shape[0]):
+                    f.write("{}\t{}\t".format(conditional_exposure[i], conditional_outcome[i]) + "\t".join([str(x) for x in sigma_g[i,:]]) + "\n" )
+
+        return estimates, np.sqrt(np.diag(bread) * significant_estimates), test_stat, p_val
+
