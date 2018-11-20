@@ -1,12 +1,8 @@
-"""
-These functions are used to use plink that should be installed in your system.
-"""
 
 import numpy as np
 import sklearn
 import subprocess
-from genome_integration import gcta_utils
-from genome_integration import file_utils
+from genome_integration import utils
 from genome_integration import variants
 
 
@@ -30,7 +26,7 @@ def plink_isolate_clump(bed_file, associations, threshold, r_sq=0.5  ,tmploc="",
         associations[x].wald_p_val
     )) for x in associations.keys()]
 
-    file_utils.write_list_to_newline_separated_file(association_lines, clump_file)
+    utils.write_list_to_newline_separated_file(association_lines, clump_file)
 
     subprocess.run(["plink --bfile " + bed_file  +
                     " --clump " + clump_file +
@@ -39,12 +35,12 @@ def plink_isolate_clump(bed_file, associations, threshold, r_sq=0.5  ,tmploc="",
                     " --clump-kb 1000 "+
                     " --out " + tmp_plink_out], shell=True, check=True, stdout=subprocess.DEVNULL)
 
-    clumpdat = file_utils.read_newline_separated_file_into_list(tmp_plink_out + ".clumped")
+    clumpdat = utils.read_newline_separated_file_into_list(tmp_plink_out + ".clumped")
 
     snps_to_keep = [x.split()[2] for x in clumpdat[1:] if len(x.split())]
 
     if return_snp_file:
-        file_utils.write_list_to_newline_separated_file(snps_to_keep, snp_out)
+        utils.write_list_to_newline_separated_file(snps_to_keep, snp_out)
 
     subprocess.run(["rm " + tmp_plink_out + ".* " + clump_file ], shell=True, check=True)
 
@@ -60,7 +56,7 @@ def make_ld_mat_from_genetic_associations(genetic_associations, bfile, tmp_dir, 
     bfile_out = tmp_dir + "_bed_file"
     snp_out = tmp_dir + "snps"
 
-    file_utils.write_list_to_newline_separated_file([genetic_associations[x].snp_name for x in genetic_associations.keys()], snp_out)
+    utils.write_list_to_newline_separated_file([genetic_associations[x].snp_name for x in genetic_associations.keys()], snp_out)
 
     tmp = subprocess.run(['plink',
                           '--bfile', bfile,
@@ -91,10 +87,10 @@ def isolate_snps_of_interest_make_bed(ma_file, exposure_name, b_file, snp_file_o
     the name_of the bedfile with only the snps
     """
 
-    ma_data = gcta_utils.MaFile(ma_file, exposure_name)
+    ma_data = utils.MaFile(ma_file, exposure_name)
 
     # write the snps to isolate
-    file_utils.write_list_to_newline_separated_file(ma_data.snp_names(no_palindromic=True), snp_file_out)
+    utils.write_list_to_newline_separated_file(ma_data.snp_names(no_palindromic=True), snp_file_out)
     if calculate_ld:
         # now run plink to isolate the files, and return the snplist, plink filename and eqtl ma file.
         tmp = subprocess.run(['plink',

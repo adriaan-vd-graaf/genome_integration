@@ -1,4 +1,4 @@
-from genome_integration import mr_presso
+from genome_integration import causal_inference
 
 def test_mr_presso_with_reference_implementation():
     """
@@ -16,12 +16,12 @@ def test_mr_presso_with_reference_implementation():
 
 
     #these results are from the MR presso function, which was used in
-    # the results are fluid, as it is a permutation scheme, but
+    # the results are fluid, as it is a permutation scheme, but should be very close to what I find.
     mr_presso_reference_ex1 = (0.5014829, 0.01047948)
     mr_presso_reference_ex2 = (0.8613234, 0.02143151)
 
-    mr_presso_object_ex1 = mr_presso.MRPresso()
-    mr_presso_object_ex2 = mr_presso.MRPresso()
+    mr_presso_object_ex1 = causal_inference.MRPresso()
+    mr_presso_object_ex2 = causal_inference.MRPresso()
 
     resource_path = '/'.join(('test_resources', 'mr_presso_data.txt'))
 

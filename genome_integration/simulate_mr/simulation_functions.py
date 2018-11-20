@@ -664,9 +664,9 @@ def randomly_choose_snps_and_flip_alleles_identify_causal(outcome_geno,
 def do_gcta_cojo_conditional(reference_geno, associations,  indices_of_interest, ref_loci):
     """
     Recreates the conditional analysis of the GCTA cojo paper.
-    Does NOT do the stepwise regression.    cd
+    Does NOT do the stepwise regression.
 
-    See the COJO paper (JIAN YANG 2011, nature genetics) supplemental methods for the derivation.
+    See the COJO paper (JIAN YANG 2011, Nature Genetics) supplemental methods for the derivation.
 
     :param reference_geno:
     :param marginal_estimates:

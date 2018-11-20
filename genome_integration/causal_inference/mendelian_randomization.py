@@ -4,7 +4,7 @@ inverse variance estimate on independent effects.
 """
 
 __author__      = "Adriaan van der Graaf"
-__copyright__   = "Copyright 2017, Adriaan van der Graaf"
+__copyright__   = "Copyright 2018, Adriaan van der Graaf"
 
 import math
 import copy
@@ -14,11 +14,13 @@ from statsmodels.regression.linear_model import WLS
 from statsmodels.tools.tools import add_constant
 
 
-from .. import file_utils
+from .. import utils
 from .. import association
 
 
-class IVWResult(association.BaseAssociation):
+
+
+class MendelianRandomization(association.BaseAssociation):
 
     def __init__(self):
         super().__init__()
@@ -58,8 +60,6 @@ class IVWResult(association.BaseAssociation):
 
 
 
-    # this is perhaps slow as you are appending betas all the time.
-    # but I expect there to be at most 100 betas, so later, if it seems slow, adding the functionality.
     def write_for_smr_style_plot_without_q_data(self, filename):
         """
         will write the cross style plot.
@@ -102,15 +102,12 @@ class IVWResult(association.BaseAssociation):
                                                               ))
 
 
-
     def write_for_smr_style_plot(self, filename):
 
         if self.q_test_done:
             self.write_for_smr_style_plot_with_q_data(filename)
         else:
             self.write_for_smr_style_plot_without_q_data(filename)
-
-
 
 
 
@@ -372,10 +369,6 @@ class IVWResult(association.BaseAssociation):
 
         return self.egger_intercept, self.egger_slope
 
-class MRPresso(IVWResult):
-
-    def __init__(self):
-        super().__init__()
 
     def do_single_term_mr_estimate(self, exposure_tuple, outcome_tuple):
         """
@@ -394,12 +387,16 @@ class MRPresso(IVWResult):
 
         return [beta_mr, se_mr, p_value]
 
+
+
     def do_and_add_single_term_mr_estimation(self, exposure_tuple, outcome_tuple):
         estimates = self.do_single_term_mr_estimate(exposure_tuple, outcome_tuple)
         self.estimation_data.append(estimates)
 
         self.outcome_tuples.append(outcome_tuple)
         self.exposure_tuples.append(exposure_tuple)
+
+
 
     def mr_presso(self, n_sims=1000, significance_thresh=0.05):
 
@@ -518,7 +515,6 @@ class MRPresso(IVWResult):
         return ivw_no_outliers
 
 
-class LDAMREgger(IVWResult):
 
     def do_lda_mr_egger(self, ld_matrix):
 
@@ -615,3 +611,17 @@ class LDAMREgger(IVWResult):
 
         return estimates, np.sqrt(np.diag(bread) * significant_estimates), test_stat, p_val
 
+
+##just synonym classes.
+
+class MRPresso(MendelianRandomization):
+
+    def __init__(self):
+        super().__init__()
+
+
+
+class LDAMREgger(MendelianRandomization):
+
+    def __init__(self):
+        super().__init__()

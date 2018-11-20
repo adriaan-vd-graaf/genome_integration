@@ -1,7 +1,7 @@
 
 import numpy as np
-from genome_integration import ivw
 from math import isclose
+from genome_integration import causal_inference
 
 
 def test_smr_results():
@@ -11,7 +11,7 @@ def test_smr_results():
     :return: Nothing.
     """
 
-    ivw_thing = ivw.IVWResult()
+    ivw_thing = causal_inference.MendelianRandomization()
 
     try: #this is tentative.
         file_thing = open("/home/adriaan/PhD/MR/SMR_explore/smr_comparison/eQTL_gen_full_smr.smr", "r")
@@ -40,7 +40,7 @@ def test_smr_results():
 
 def test_giant_celiac_from_r_implementation():
     """
-    This is used to test another MR and ivw implementation.
+    This is used to test another MR and causal_inference implementation.
 
     :return:
     """
@@ -59,8 +59,8 @@ def test_giant_celiac_from_r_implementation():
     with open("tests/test_resources/celiac_compared_to_giant.txt", "r") as f:
         f.readline()
         i = 0
-        ivw_thing = ivw.IVWResult()
-        ivw_addition = ivw.IVWResult()
+        ivw_thing = causal_inference.MendelianRandomization()
+        ivw_addition = causal_inference.MendelianRandomization()
         for line in f:
             split = line.split()
 
@@ -74,7 +74,7 @@ def test_giant_celiac_from_r_implementation():
             outcome_tuple = (beta_outcome[i], se_outcome[i])
             exposure_tuple = (beta_exposure[i], se_exposure[i])
 
-            smr_tuple = ivw.IVWResult().do_smr_estimate(exposure_tuple=exposure_tuple, outcome_tuple=outcome_tuple)
+            smr_tuple = causal_inference.MendelianRandomization().do_smr_estimate(exposure_tuple=exposure_tuple, outcome_tuple=outcome_tuple)
 
             ivw_addition.do_and_add_smr_estimation(exposure_tuple, outcome_tuple, "lll", 12, 12, "lll")
 
@@ -90,7 +90,7 @@ def test_giant_celiac_from_r_implementation():
 
         addition_ivw = ivw_addition.do_ivw_estimation()
 
-        integrated_ivw = ivw.IVWResult()
+        integrated_ivw = causal_inference.MendelianRandomization()
 
         integrated_result = integrated_ivw.do_ivw_estimation_on_estimate_vector([(beta_smr[j], se_smr[j]) for j in range(i)])
 
@@ -108,8 +108,8 @@ def test_giant_celiac_from_r_implementation():
 def test_ivw_estimates():
 
     """
-    This is a unit test to check if if ivw happens correctly.
-    simulating some true beta, standard errors and finally some ivw.
+    This is a unit test to check if if causal_inference happens correctly.
+    simulating some true beta, standard errors and finally some causal_inference.
 
     Assertion is done ensuring that the Z score is never lower than expected.
     Perhaps slightly cheating with the seed, but random is random sometimes.
@@ -129,7 +129,7 @@ def test_ivw_estimates():
         se_smr = abs(np.random.normal(size=num_samples))
         beta_smr = np.random.normal(loc=true_beta, scale=se_smr, size=num_samples)
 
-        this_result = ivw.IVWResult()
+        this_result = causal_inference.MendelianRandomization()
 
         for i in range(num_samples):
             this_result.add_estimate((beta_smr[i], se_smr[i]), "check", 1337, 1, "other")
@@ -158,7 +158,7 @@ def test_q_meta_analysis_without_heterogeneity():
         se_smr = abs(np.random.normal(size=num_samples))
         beta_smr = np.random.normal(loc=true_beta, scale=se_smr, size=num_samples)
 
-        this_result = ivw.IVWResult()
+        this_result = causal_inference.MendelianRandomization()
 
         for i in range(num_samples):
             this_result.add_estimate((beta_smr[i], se_smr[i]), "check", 1337, 1, "other")
@@ -190,7 +190,7 @@ def test_q_meta_analysis_with_heterogeneity():
         beta_smr  = list(good_beta_smr) + list(bad_beta_smr)
         se_smr = list(good_se_smr) + list(bad_se_smr)
 
-        this_result = ivw.IVWResult()
+        this_result = causal_inference.MendelianRandomization()
 
         for i in range(num_good_samples + num_bad_samples):
             this_result.add_estimate((beta_smr[i], se_smr[i]), "check", 1337, 1, "other")

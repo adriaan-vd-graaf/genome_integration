@@ -82,13 +82,13 @@ def mr_link_ols(outcome_geno,
     return ols_fit.params[0], ols_fit.bse[0], ols_fit.pvalues[0]
 
 
-def select_instruments_do_mr_link_bayesian(outcome_geno,
-                                             r_sq_mat,
-                                             exposure_betas,
-                                             causal_exposure_indices,
-                                             outcome_phenotype,
-                                             upper_r_sq_threshold=0.99,
-                                             ):
+def mr_link_ridge(outcome_geno,
+                 r_sq_mat,
+                 exposure_betas,
+                 causal_exposure_indices,
+                 outcome_phenotype,
+                 upper_r_sq_threshold=0.99,
+                 ):
 
     masked_instruments = mask_instruments_in_ld(r_sq_mat,
                                                 causal_exposure_indices,
