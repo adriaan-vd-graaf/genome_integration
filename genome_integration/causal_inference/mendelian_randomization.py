@@ -313,14 +313,69 @@ class MendelianRandomization(association.BaseAssociation):
 
         return (save_beta_ivw, save_se_ivw, save_p_ivw), old_indices, p_val
 
-
     def do_egger_regression(self):
+        return self.do_egger_regression_single_variance_term()
+
+    def do_egger_regression_single_variance_term(self):
 
         num_estimates = len(self.estimation_data)
 
         # runtime checks.
 
-        if num_estimates < 4:
+        if num_estimates < 3:
+            raise ValueError("Only {} estimates supplied, need at least three to estimate egger".format(num_estimates))
+
+        if len(self.exposure_tuples) != num_estimates:
+            raise ValueError("No exposure data present, cannot do Egger regression.")
+
+        if len(self.outcome_tuples) != num_estimates:
+            raise ValueError("No outcome data present, cannot do Egger regression.")
+
+        """
+        Now turn exposure into positive values.
+        """
+
+        outcome_tuples = copy.deepcopy(self.outcome_tuples)
+        exposure_tuples = copy.deepcopy(self.exposure_tuples)
+
+        for i in range(num_estimates):
+            if exposure_tuples[i][0] < 0:
+                # flip.
+                exposure_tuples[i] = (-1 * exposure_tuples[i][0], exposure_tuples[i][0])
+                outcome_tuples[i] = (-1 * outcome_tuples[i][0], outcome_tuples[i][0])
+
+        x_dat = np.asarray([x[0] for x in exposure_tuples])
+        x_dat = add_constant(x_dat)
+
+        y_dat = np.asarray([x[0] for x in outcome_tuples])
+
+
+        w_dat = np.zeros(len(self.estimation_data))
+        for i in range(len(self.estimation_data)):
+            w_dat[i] = 1 / (outcome_tuples[i][1] ** 2)
+
+        wls_model = WLS(y_dat, x_dat, weights=w_dat)
+        results = wls_model.fit()
+
+        self.egger_intercept = (
+        results.params[0], results.bse[0], scipy.stats.norm.sf(abs(results.params[0] / results.bse[0])))
+        self.egger_slope = (
+        results.params[1], results.bse[1], scipy.stats.norm.sf(abs(results.params[1] / results.bse[1])))
+
+        self.egger_done = True
+
+        return self.egger_intercept, self.egger_slope
+
+
+
+
+    def do_egger_regression_two_variance_term(self):
+
+        num_estimates = len(self.estimation_data)
+
+        # runtime checks.
+
+        if num_estimates < 3:
             raise ValueError("Only {} estimates supplied, need at least three to estimate egger".format(num_estimates))
 
         if len(self.exposure_tuples) != num_estimates:
