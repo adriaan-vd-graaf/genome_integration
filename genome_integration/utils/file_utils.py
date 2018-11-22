@@ -3,7 +3,7 @@ import gzip
 def write_list_to_newline_separated_file(in_list, file_name):
     with open(file_name, 'w') as f:
         f.write('\n'.join(in_list))
-        f.write('\n') #sometimes R complains, so just adding an extra line.
+        f.write('\n') # sometimes R complains, so just adding an extra line, for good measure.
 
 
 def read_newline_separated_file_into_list(file_name):

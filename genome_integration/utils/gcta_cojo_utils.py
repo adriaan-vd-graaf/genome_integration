@@ -5,6 +5,8 @@ from ..variants import *
 
 from .. import association
 from . import *
+from .file_utils import  *
+from .plink_utils import *
 
 
 

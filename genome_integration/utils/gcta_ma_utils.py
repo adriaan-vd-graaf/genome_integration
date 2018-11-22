@@ -1,5 +1,5 @@
 import numpy as np
-from . import *
+from .file_utils import *
 from .. import association
 
 class MaFile:

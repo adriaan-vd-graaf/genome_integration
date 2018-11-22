@@ -2,7 +2,9 @@
 import numpy as np
 import sklearn
 import subprocess
-from . import *
+from .file_utils import *
+from .gcta_ma_utils import *
+
 from .. import variants
 
 
