@@ -42,8 +42,7 @@ class CojoCmaFile:
                               )
             indice += 1
 
-
-        file_utils.write_list_to_newline_separated_file(lines, file_name)
+        write_list_to_newline_separated_file(lines, file_name)
 
 
 class CojoCmaLine(association.GeneticAssociation):
@@ -157,7 +156,7 @@ class CojoLdrFile:
             tmp += '\t'.join([str(x) for x in self.ld_mat[i, ordering]])
             string_list.append(tmp)
 
-        file_utils.write_list_to_newline_separated_file(string_list, filename)
+        write_list_to_newline_separated_file(string_list, filename)
 
 
 # todo make this work into a single function that accepts a dict and a temporary folder.
@@ -246,7 +245,7 @@ def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepen
 
     #clump.
     if clump:
-        clumped_snps = utils.plink_isolate_clump(bed_file=bfile,
+        clumped_snps = plink_isolate_clump(bed_file=bfile,
                                                    associations=genetic_associations,
                                                    threshold=p_val_thresh,
                                                    r_sq=0.5,
@@ -269,10 +268,10 @@ def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepen
         if genetic_associations[x].snp_name in clumped_snps
     ]
 
-    utils.write_list_to_newline_separated_file(ma_lines, ma_name)
+    write_list_to_newline_separated_file(ma_lines, ma_name)
 
     try:
-        utils.isolate_snps_of_interest_make_bed(ma_file=ma_name, exposure_name=gene_name, b_file=bfile,
+        isolate_snps_of_interest_make_bed(ma_file=ma_name, exposure_name=gene_name, b_file=bfile,
                                                       snp_file_out=snp_out, plink_files_out=plink_pruned,
                                                       calculate_ld=calculate_ld)
 
@@ -315,7 +314,7 @@ def do_gcta_cojo_joint_on_genetic_associations(genetic_associations, bfile, tmp_
 
     #clump.
     if clump:
-        clumped_snps = utils.plink_isolate_clump(bed_file=bfile,
+        clumped_snps = plink_isolate_clump(bed_file=bfile,
                                                    associations=genetic_associations,
                                                    threshold=p_val_thresh,
                                                    r_sq=0.5,
@@ -340,10 +339,10 @@ def do_gcta_cojo_joint_on_genetic_associations(genetic_associations, bfile, tmp_
         if genetic_associations[x].snp_name in clumped_snps
     ]
 
-    utils.write_list_to_newline_separated_file(ma_lines, ma_name)
+    write_list_to_newline_separated_file(ma_lines, ma_name)
 
     try:
-        utils.isolate_snps_of_interest_make_bed(ma_file=ma_name, exposure_name=gene_name, b_file=bfile,
+        isolate_snps_of_interest_make_bed(ma_file=ma_name, exposure_name=gene_name, b_file=bfile,
                                                       snp_file_out=snp_out, plink_files_out=plink_pruned,
                                                       calculate_ld=calculate_ld)
 
@@ -385,7 +384,7 @@ def do_cojo_conditioning_on_effects(conditioning_snps, bfile, tmp_prepend, p_val
     cojo_out = tmp_prepend + "_cojo_out"
     tmp_conditioning = tmp_prepend + "_tmp_conditioning"
 
-    utils.write_list_to_newline_separated_file([x for x in conditioning_snps.keys()], snp_file_out)
+    write_list_to_newline_separated_file([x for x in conditioning_snps.keys()], snp_file_out)
 
     try:
         tmp = subprocess.run(['plink',
@@ -411,7 +410,7 @@ def do_cojo_conditioning_on_effects(conditioning_snps, bfile, tmp_prepend, p_val
         for x in conditioning_snps.keys()
     ]
 
-    utils.write_list_to_newline_separated_file(ma_lines, tmp_ma)
+    write_list_to_newline_separated_file(ma_lines, tmp_ma)
 
     ##now for every SNP, do a conditional analysis, conditioning on all but one SNP
 
@@ -420,7 +419,7 @@ def do_cojo_conditioning_on_effects(conditioning_snps, bfile, tmp_prepend, p_val
     for snp in snps:
 
         #write what to condition on.
-        utils.write_list_to_newline_separated_file([x for x in snps if snp != x], tmp_conditioning)
+        write_list_to_newline_separated_file([x for x in snps if snp != x], tmp_conditioning)
         try:
             std_out = open(cojo_out + '.out', 'w')
             subprocess.run(['gcta64',

@@ -36,7 +36,7 @@ class MaFile:
                 lines[indice] = '\t'.join([tmp.snp_name, str(tmp.beta), str(tmp.se), str(tmp.p_value), self.name,
                                           "NA", "NA"])
             indice +=1
-        file_utils.write_list_to_newline_separated_file(lines, file_name)
+        write_list_to_newline_separated_file(lines, file_name)
 
     def add_bim_data(self, bim_data):
         for i in self.ma_results.keys():

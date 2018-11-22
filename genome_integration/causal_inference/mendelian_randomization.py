@@ -512,7 +512,7 @@ class MendelianRandomization(association.BaseAssociation):
         # runtime checks.
         num_estimates = len(self.estimation_data)
 
-        if num_estimates < 4:
+        if num_estimates < 3:
             raise ValueError(
                 "Only {} estimates supplied, need at least three to find simulate_mr presso outliers".format(
                     num_estimates))
@@ -673,7 +673,6 @@ class MRPresso(MendelianRandomization):
 
     def __init__(self):
         super().__init__()
-
 
 
 class LDAMREgger(MendelianRandomization):
