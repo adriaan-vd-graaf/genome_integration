@@ -141,7 +141,7 @@ class MendelianRandomization(association.BaseAssociation):
 
             # make sure the standard error cannot be zero.
             if smr_result[1] == 0:
-                smr_result[1] = np.nextafter(0,1)
+                smr_result[1] = np.nextafter(0, 1)
 
             ivw_intermediate_top.append(smr_result[0] * (smr_result[1] ** -2))
             ivw_intermediate_bottom.append((smr_result[1] ** -2))
@@ -252,7 +252,7 @@ class MendelianRandomization(association.BaseAssociation):
                         )
             )
 
-        file_utils.write_list_to_newline_separated_file(strings, filename)
+        utils.write_list_to_newline_separated_file(strings, filename)
 
 
     def do_chochrans_q_meta_analysis(self, p_value_threshold):
@@ -442,16 +442,12 @@ class MendelianRandomization(association.BaseAssociation):
 
         return [beta_mr, se_mr, p_value]
 
-
-
     def do_and_add_single_term_mr_estimation(self, exposure_tuple, outcome_tuple):
         estimates = self.do_single_term_mr_estimate(exposure_tuple, outcome_tuple)
         self.estimation_data.append(estimates)
 
         self.outcome_tuples.append(outcome_tuple)
         self.exposure_tuples.append(exposure_tuple)
-
-
 
     def mr_presso(self, n_sims=1000, significance_thresh=0.05):
 
@@ -558,16 +554,18 @@ class MendelianRandomization(association.BaseAssociation):
         # distortion test.
         ivw_no_outliers = (np.nan, np.nan, np.nan)
         if local_p_val is not None and sum(local_p_val < significance_thresh):
-            outliers = np.where(local_p_val < significance_thresh)
-            ivw_all = self.get_ivw_estimates()
-            ivw_no_outliers = self.do_ivw_estimation_on_estimate_vector(
-                np.delete(np.asarray(self.estimation_data), outliers, axis=0)
-            )
-            observed_bias = ivw_all[0]
+            outliers = local_p_val < significance_thresh
 
-            expected_ivw = np.asarray([randomly_sample_distortion(outliers) for _ in range(n_sims)])
+            exposure_betas = [self.exposure_tuples[i][0] for i in range(len(self.estimation_data)) if not outliers[i]]
+            outcome_betas = [self.outcome_tuples[i][0] for i in range(len(self.estimation_data)) if not outliers[i]]
+            weights = [1 / self.outcome_tuples[i][1] ** 2 for i in range(len(self.estimation_data)) if not outliers[i]]
 
-        return ivw_no_outliers
+            outlier_corrected_ivw_result = WLS(exog=exposure_betas, endog=outcome_betas, weights=weights).fit()
+
+
+
+
+        return outlier_corrected_ivw_result.params[0], outlier_corrected_ivw_result.bse[0], outlier_corrected_ivw_result.pvalues[0]
 
 
 
@@ -624,8 +622,10 @@ class MendelianRandomization(association.BaseAssociation):
 
         marginal_exposure[to_flip, 0] = marginal_exposure[to_flip,0] * -1
         marginal_outcome[to_flip, 0] = marginal_outcome[to_flip, 0] * -1
-        pearson_ld_matrix[to_flip,:][:,to_flip] = pearson_ld_matrix[to_flip,:][:,to_flip] * -1
-
+        for i in to_flip:
+            if i:
+                pearson_ld_matrix[i, :] = pearson_ld_matrix[i, :] * -1
+                pearson_ld_matrix[:, i] = pearson_ld_matrix[:, i] * -1
 
         if marginal_exposure.shape[1] < 1:
             raise ValueError("No standard errors supplied to the marginal exposure")
@@ -634,17 +634,18 @@ class MendelianRandomization(association.BaseAssociation):
             raise ValueError("No standard errors supplied to the marginal outcome")
 
         sigma = pearson_ld_matrix
+
         inv_sigma = np.linalg.inv(sigma)
 
         conditional_outcome = inv_sigma @ marginal_outcome[:,0]
 
         conditional_exposure = inv_sigma @ marginal_exposure[:,0]
 
-        sigma_g = inv_sigma * np.median(marginal_outcome[:,1])
+        sigma_g = inv_sigma
 
         b_x = np.concatenate((np.ones((conditional_exposure.shape[0],1)) , conditional_exposure.reshape(conditional_exposure.shape[0], 1)), axis=1)
 
-        bread  = np.linalg.inv(b_x.transpose() @ sigma_g @ b_x)
+        bread = np.linalg.inv(b_x.transpose() @ sigma_g @ b_x)
 
         estimates = bread @ b_x.transpose() @ sigma_g @ conditional_outcome
 
