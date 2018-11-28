@@ -88,6 +88,7 @@ def mr_link_ridge(outcome_geno,
                  causal_exposure_indices,
                  outcome_phenotype,
                  upper_r_sq_threshold=0.99,
+                 use_hat_matrix_for_p_determination=False
                  ):
 
     masked_instruments = mask_instruments_in_ld(r_sq_mat,
@@ -104,6 +105,17 @@ def mr_link_ridge(outcome_geno,
     design_mat[:,np.arange(1, design_mat.shape[1])] = geno_masked / np.sqrt(geno_masked.shape[1])
 
     ridge_fit.fit(design_mat, outcome_phenotype)
-    p_val = 2 * scipy.stats.norm.sf(np.abs(ridge_fit.coef_[0] / np.sqrt(ridge_fit.sigma_[0, 0])))
+
+    t_stat = np.abs(ridge_fit.coef_[0] / np.sqrt(ridge_fit.sigma_[0, 0]))
+
+    if not use_hat_matrix_for_p_determination:
+        p_val = 2 * scipy.stats.norm.sf(t_stat)
+    else:
+        # this produces a very big speed decrease, but should be done when the design matrix
+        # contains more columns than there are individuals in the cohort.
+        hat_mat = design_mat @ np.linalg.inv(ridge_fit.sigma_) @ design_mat.T
+        deg_freedom = design_mat.shape[0] - np.trace(2*hat_mat - hat_mat @ hat_mat.T)
+        print(deg_freedom)
+        p_val = 2* scipy.stats.t.sf(t_stat, deg_freedom)
 
     return ridge_fit.coef_[0], np.sqrt(ridge_fit.sigma_[0,0]), p_val
