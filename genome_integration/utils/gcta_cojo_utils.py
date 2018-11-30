@@ -295,7 +295,7 @@ def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepen
     if create_tmp_subset_of_bed:
         subprocess.run(["rm -f {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)
     else:
-        subprocess.run(["rm -f {} {} {}* {}*".format(ma_name, snp_out, cojo_out)], shell=True, check=True)
+        subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, cojo_out)], shell=True, check=True)
     return cojo_eqtl
 
 
