@@ -161,7 +161,7 @@ class CojoLdrFile:
         write_list_to_newline_separated_file(string_list, filename)
 
 
-# todo make this work into a single function that accepts a dict and a temporary folder.
+
 def do_gcta_cojo_slct(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.01'):
 
     base_file = None
@@ -227,7 +227,8 @@ def do_gcta_cojo_joint(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0
 
 
 def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepend,
-                                         p_val_thresh=0.05, maf=0.01, calculate_ld = False, clump=False):
+                                         p_val_thresh=0.05, maf=0.01, calculate_ld = False,
+                                         clump=False, create_tmp_subset_of_bed=True):
     """
     :param genetic_associations: a dict of genetic associations,  keys should be explantory name
     :param bfile: plink bed file
@@ -271,16 +272,18 @@ def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepen
     ]
 
     write_list_to_newline_separated_file(ma_lines, ma_name)
+    if create_tmp_subset_of_bed:
+        try:
+            isolate_snps_of_interest_make_bed(ma_file=ma_name, exposure_name=gene_name, b_file=bfile,
+                                                          snp_file_out=snp_out, plink_files_out=plink_pruned,
+                                                          calculate_ld=calculate_ld)
 
-    try:
-        isolate_snps_of_interest_make_bed(ma_file=ma_name, exposure_name=gene_name, b_file=bfile,
-                                                      snp_file_out=snp_out, plink_files_out=plink_pruned,
-                                                      calculate_ld=calculate_ld)
-
-    except Exception as x:
-        print("isolating snps raised an exception while processing " + gene_name )
-        # subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
-        raise x
+        except Exception as x:
+            print("isolating snps raised an exception while processing " + gene_name )
+            # subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
+            raise x
+    else:
+        plink_pruned = bfile
 
 
     try:
