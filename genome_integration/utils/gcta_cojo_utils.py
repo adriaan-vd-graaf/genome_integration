@@ -292,9 +292,10 @@ def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepen
         print("GCTA cojo raised an exceptqion while processing" + gene_name)
         # subprocess.run(["rm {} {} {}* {}*".format(ma_name, snp_out, plink_pruned, cojo_out)], shell=True, check=True)
         raise x
-
-    subprocess.run(["rm -f {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)
-
+    if create_tmp_subset_of_bed:
+        subprocess.run(["rm -f {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)
+    else:
+        subprocess.run(["rm -f {} {} {}* {}*".format(ma_name, snp_out, cojo_out)], shell=True, check=True)
     return cojo_eqtl
 
 
