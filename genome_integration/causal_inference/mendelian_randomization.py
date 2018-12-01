@@ -552,7 +552,7 @@ class MendelianRandomization(association.BaseAssociation):
                 [x * len(difference) if x * len(difference) < 1.0 else 1.0 for x in local_p_val])
 
         # distortion test.
-        ivw_no_outliers = (np.nan, np.nan, np.nan)
+        outlier_corrected_ivw_result = (np.nan, np.nan, np.nan)
         if local_p_val is not None and sum(local_p_val < significance_thresh):
             outliers = local_p_val < significance_thresh
 
