@@ -562,11 +562,9 @@ class MendelianRandomization(association.BaseAssociation):
 
             outlier_corrected_ivw_result = WLS(exog=exposure_betas, endog=outcome_betas, weights=weights).fit()
 
-
-
-
-        return outlier_corrected_ivw_result.params[0], outlier_corrected_ivw_result.bse[0], outlier_corrected_ivw_result.pvalues[0]
-
+            return outlier_corrected_ivw_result.params[0], outlier_corrected_ivw_result.bse[0], outlier_corrected_ivw_result.pvalues[0]
+        else:
+            return outlier_corrected_ivw_result
 
 
     def do_lda_mr_egger(self, ld_matrix):
