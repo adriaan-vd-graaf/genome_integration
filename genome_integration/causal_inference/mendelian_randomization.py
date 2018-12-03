@@ -612,11 +612,11 @@ class MendelianRandomization(association.BaseAssociation):
         if len(list_of_outcome_tuples) < 3:
             raise ValueError("Could not do lda simulate_mr egger on estimates, too little estimates supplied")
 
-        marginal_exposure = np.asarray(list_of_exposure_tuples)
-        marginal_outcome = np.asarray(list_of_outcome_tuples)
+        marginal_exposure = np.asarray(list_of_exposure_tuples, dtype=float)
+        marginal_outcome = np.asarray(list_of_outcome_tuples, dtype=float)
 
         #flip to make exposure strictly positive.
-        to_flip = marginal_exposure[:, 0] < 0
+        to_flip = marginal_exposure[:, 0] < 0.0
 
         marginal_exposure[to_flip, 0] = marginal_exposure[to_flip,0] * -1
         marginal_outcome[to_flip, 0] = marginal_outcome[to_flip, 0] * -1
