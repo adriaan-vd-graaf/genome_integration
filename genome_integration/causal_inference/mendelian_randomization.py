@@ -341,18 +341,18 @@ class MendelianRandomization(association.BaseAssociation):
         for i in range(num_estimates):
             if exposure_tuples[i][0] < 0:
                 # flip.
-                exposure_tuples[i] = (-1 * exposure_tuples[i][0], exposure_tuples[i][0])
-                outcome_tuples[i] = (-1 * outcome_tuples[i][0], outcome_tuples[i][0])
+                exposure_tuples[i] = (-1.0 * exposure_tuples[i][0], exposure_tuples[i][0])
+                outcome_tuples[i] = (-1.0 * outcome_tuples[i][0], outcome_tuples[i][0])
 
-        x_dat = np.asarray([x[0] for x in exposure_tuples])
+        x_dat = np.asarray([x[0] for x in exposure_tuples], dtype=float)
         x_dat = add_constant(x_dat)
 
-        y_dat = np.asarray([x[0] for x in outcome_tuples])
+        y_dat = np.asarray([x[0] for x in outcome_tuples], dtype=float)
 
+        w_dat = np.zeros(len(self.estimation_data), dtype=float)
 
-        w_dat = np.zeros(len(self.estimation_data))
         for i in range(len(self.estimation_data)):
-            w_dat[i] = 1 / (outcome_tuples[i][1] ** 2)
+            w_dat[i] = 1 / (float(outcome_tuples[i][1]) ** 2)
 
         wls_model = WLS(y_dat, x_dat, weights=w_dat)
         results = wls_model.fit()
