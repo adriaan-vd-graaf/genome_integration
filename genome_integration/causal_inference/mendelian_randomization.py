@@ -458,7 +458,7 @@ class MendelianRandomization(association.BaseAssociation):
             random_outcome = np.random.normal([beta_ivw * x[0] for x in self.exposure_tuples],
                                               [x[1] for x in self.outcome_tuples])
 
-            mr_estimates = np.zeros((len(random_outcome), 3))
+            mr_estimates = np.zeros((len(random_outcome), 3), dtype=float)
             for i in range(len(random_outcome)):
                 mr_estimates[i, :] = self.do_single_term_mr_estimate(
                     (random_exposure[i], self.exposure_tuples[i][1]),
@@ -471,7 +471,7 @@ class MendelianRandomization(association.BaseAssociation):
                                                   weighted_exposure):
 
             estimation_data = np.asarray(estimation_data)
-            leave_one_out_ivw = np.zeros(shape=(len(estimation_data), 3))
+            leave_one_out_ivw = np.zeros(shape=(len(estimation_data), 3), dtype=float)
             for i in range(len(estimation_data)):
                 leave_one_out_ivw[i, :] = self.do_ivw_estimation_on_estimate_vector(
                     np.delete(estimation_data, i, 0)
@@ -520,8 +520,8 @@ class MendelianRandomization(association.BaseAssociation):
             raise ValueError("No outcome sumstats present, cannot do mr_presso outlier.")
 
         # this is just following MR presso.
-        outcome = np.asarray(self.outcome_tuples)
-        exposure = np.asarray(self.exposure_tuples)
+        outcome = np.asarray(self.outcome_tuples, dtype=float)
+        exposure = np.asarray(self.exposure_tuples, dtype=float)
         weighted_outcome = np.asarray([x[0] / np.sqrt(x[1] ** 2) for x in self.outcome_tuples], dtype=float)
         weighted_exposure = np.asarray([self.exposure_tuples[i][0] / np.sqrt(self.outcome_tuples[i][1] ** 2)
                                         for i in range(len(self.exposure_tuples))], dtype=float)
