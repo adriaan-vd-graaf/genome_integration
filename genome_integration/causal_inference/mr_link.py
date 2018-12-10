@@ -45,6 +45,10 @@ def mask_instruments_in_ld(r_sq_mat, instruments, upper_r_sq_thresh=0.99, lower_
 
 
     masked_instruments = np.zeros((r_sq_mat.shape[0]), dtype=bool)
+
+    #if there are any NA's in the r_sq matrix
+    masked_instruments[np.any(np.isnan(r_sq_mat), axis=0)] = True
+
     for instrument in instruments:
         tmp_mask = r_sq_mat[instrument,:] < upper_r_sq_thresh
         tmp_mask = np.logical_and(tmp_mask, r_sq_mat[instrument,:] > lower_r_sq_thresh)
