@@ -20,6 +20,7 @@ def remove_highly_correlated_snps(r_sq_mat, r_sq_threshold=0.95):
 
     tril = np.tril(r_sq_mat, -1)
     mask = np.ones((r_sq_mat.shape[0]), dtype=bool)
+    # I believe this is allowed because we are also using permutations sometimes.
     i = 0
     while i < r_sq_mat.shape[0]:
         if mask[i]:
@@ -123,3 +124,62 @@ def mr_link_ridge(outcome_geno,
         p_val = 2* scipy.stats.t.sf(t_stat, deg_freedom)
 
     return ridge_fit.coef_[0], np.sqrt(ridge_fit.sigma_[0,0]), p_val
+
+
+def mr_link_bootstrapped(outcome_geno,
+                         r_sq_mat,
+                         exposure_betas,
+                         causal_exposure_indices,
+                         outcome_phenotype,
+                         upper_r_sq_threshold=0.99,
+                         bootstraps = 50
+                         ):
+
+
+    masked_instruments = mask_instruments_in_ld(r_sq_mat,
+                                                causal_exposure_indices,
+                                                upper_r_sq_threshold)
+
+
+    geno_masked = outcome_geno[masked_instruments,:].transpose()
+
+    ridge_fit = BayesianRidge(fit_intercept=False)
+
+    design_mat = np.zeros( (geno_masked.shape[0], geno_masked.shape[1]+1), dtype=float)
+    design_mat[:,0] = (outcome_geno[causal_exposure_indices,:].transpose() @ exposure_betas) / exposure_betas.shape[0]
+    design_mat[:,np.arange(1, design_mat.shape[1])] = geno_masked / np.sqrt(geno_masked.shape[1])
+
+    ridge_fit.fit(design_mat, outcome_phenotype)
+
+    t_stat = np.abs(ridge_fit.coef_[0] / np.sqrt(ridge_fit.sigma_[0, 0]))
+
+    p_val = 2 * scipy.stats.norm.sf(t_stat)
+
+    if type(bootstraps) is int:
+        max_iter = bootstraps
+        checkpoints = {bootstraps}
+    else:
+        max_iter = max(bootstraps)
+        checkpoints = set(bootstraps)
+
+    bootstrapping_results = []
+    returns = {}
+    for i in range(max_iter):
+        selected_individuals = np.random.choice(outcome_phenotype.shape[0],
+                                                int(np.floor(outcome_phenotype.shape[0])),
+                                                replace=True
+                                                )
+        bootstrapped_fit = ridge_fit.fit(design_mat[selected_individuals,:], outcome_phenotype[selected_individuals])
+        t_stat = np.abs(bootstrapped_fit.coef_[0] / np.sqrt(bootstrapped_fit.sigma_[0, 0]))
+        bootstrapping_results += [t_stat]
+
+        if i+1 in checkpoints:
+            obs_se = np.std(bootstrapping_results)
+            p_val = 2 * scipy.stats.norm.sf(np.abs(bootstrapped_fit.coef_[0]) / obs_se)
+
+            returns[i+1] = (bootstrapped_fit.coef_[0], obs_se, p_val)
+
+    if type(bootstraps) is int:
+        return returns[bootstraps]
+    else:
+        return returns
