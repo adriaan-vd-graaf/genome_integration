@@ -166,12 +166,11 @@ def mr_link_bootstrapped(outcome_geno,
     returns = {}
     for i in range(max_iter):
         selected_individuals = np.random.choice(outcome_phenotype.shape[0],
-                                                int(np.floor(outcome_phenotype.shape[0])),
+                                                int(outcome_phenotype.shape[0]),
                                                 replace=True
                                                 )
         bootstrapped_fit = ridge_fit.fit(design_mat[selected_individuals,:], outcome_phenotype[selected_individuals])
-        t_stat = np.abs(bootstrapped_fit.coef_[0] / np.sqrt(bootstrapped_fit.sigma_[0, 0]))
-        bootstrapping_results += [t_stat]
+        bootstrapping_results += [bootstrapped_fit.coef_[0]]
 
         if i+1 in checkpoints:
             obs_se = np.std(bootstrapping_results)
