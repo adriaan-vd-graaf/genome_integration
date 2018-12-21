@@ -167,7 +167,7 @@ def mr_link_ridge_cv(outcome_geno,
 
     mean_t = full_fit.coef_[0] / np.sqrt(full_fit.sigma_[0,0])
     se_t = np.std(save_array[:,0], ddof=1)
-    if mean_t > 0.0:
+    if np.mean(save_array[:, 0]) > 0.0:
 
         quantile_p_val_t = (np.sum(save_array[:,0] < 0) / n_splits) * 2
     else:
@@ -175,7 +175,7 @@ def mr_link_ridge_cv(outcome_geno,
 
     mean_b = full_fit.coef_[0]
     se_b = np.std(save_array[:, 1], ddof=1)
-    if mean_b > 0:
+    if np.mean(save_array[:, 1]) > 0:
         quantile_p_val_b = (np.sum(save_array[:, 1] < 0) / n_splits) * 2
     else:
         quantile_p_val_b = (np.sum(save_array[:, 1] > 0) / n_splits) * 2
