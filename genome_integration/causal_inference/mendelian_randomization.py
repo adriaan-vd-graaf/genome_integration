@@ -321,7 +321,6 @@ class MendelianRandomization(association.BaseAssociation):
         num_estimates = len(self.estimation_data)
 
         # runtime checks.
-
         if num_estimates < 3:
             raise ValueError("Only {} estimates supplied, need at least three to estimate egger".format(num_estimates))
 
@@ -334,7 +333,6 @@ class MendelianRandomization(association.BaseAssociation):
         """
         Now turn exposure into positive values.
         """
-
         outcome_tuples = copy.deepcopy(self.outcome_tuples)
         exposure_tuples = copy.deepcopy(self.exposure_tuples)
 
@@ -357,10 +355,9 @@ class MendelianRandomization(association.BaseAssociation):
         wls_model = WLS(y_dat, x_dat, weights=w_dat)
         results = wls_model.fit()
 
-        self.egger_intercept = (
-        results.params[0], results.bse[0], scipy.stats.norm.sf(abs(results.params[0] / results.bse[0])))
-        self.egger_slope = (
-        results.params[1], results.bse[1], scipy.stats.norm.sf(abs(results.params[1] / results.bse[1])))
+
+        self.egger_intercept = (results.params[0], results.bse[0], results.pvalues[0])
+        self.egger_slope = (results.params[1], results.bse[1], results.pvalues[1])
 
         self.egger_done = True
 
@@ -409,16 +406,16 @@ class MendelianRandomization(association.BaseAssociation):
         w_dat = np.zeros(len(self.estimation_data))
         for i in range(len(self.estimation_data)):
             w_dat[i] = outcome_tuples[i][0] ** -2  / \
-                       ( (outcome_tuples[i][0]**-2 * outcome_tuples[i][1] **2) +
-                         (exposure_tuples[i][0]**-2 * exposure_tuples[i][1] **2)
+                       ( (outcome_tuples[i][0]**-2 * outcome_tuples[i][1] ** 2) +
+                         (exposure_tuples[i][0]**-2 * exposure_tuples[i][1] ** 2)
                     )
 
 
         wls_model = WLS(y_dat, x_dat, weights=w_dat)
         results = wls_model.fit()
 
-        self.egger_intercept = (results.params[0], results.bse[0], scipy.stats.norm.sf(abs(results.params[0]/results.bse[0])))
-        self.egger_slope = (results.params[1], results.bse[1], scipy.stats.norm.sf(abs(results.params[1]/results.bse[1])))
+        self.egger_intercept = (results.params[0], results.bse[0], results.pvalues[0])
+        self.egger_slope = (results.params[1], results.bse[1], results.pvalues[1])
 
         self.egger_done = True
 
