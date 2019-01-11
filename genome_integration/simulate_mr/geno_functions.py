@@ -2,12 +2,29 @@ import numpy as np
 from plinkio import plinkfile
 import statsmodels.api as sm
 
-def geno_frq(geno_vec):
-    return 1 - np.sum(geno_vec) / (2 * geno_vec.shape[0])
+def geno_frq(geno_vec, remove_three_encoding = True):
 
-def scale_geno_vec(geno_vec):
-    freq = np.sum(geno_vec) / (2 * geno_vec.shape[0])
-    return geno_vec - 2 * freq
+    if remove_three_encoding:
+        # plinkio encodes missing values as 3
+        filter = geno_vec != 3.0
+    else:
+        filter = np.ones(geno_vec.shape, dtype=bool)
+    filtered_vec = geno_vec[filter]
+    return 1 - np.sum(filtered_vec) / (2 * filtered_vec.shape[0])
+
+def scale_geno_vec(geno_vec, remove_three_encoding = True):
+
+    if remove_three_encoding:
+        # plinkio encodes missing values as 3
+        filter = geno_vec != 3.0
+    else:
+        filter = np.ones(geno_vec.shape, dtype=bool)
+
+    filtered_vec = geno_vec[filter]
+    freq = np.sum(filtered_vec) / (2 * filtered_vec.shape[0])
+    scaled_geno_vec = geno_vec - 2 * freq
+    scaled_geno_vec[~filter] = 0.0
+    return scaled_geno_vec
 
 def do_gwas_on_scaled_variants(geno_vec, dependent):
     # geno_vec = sm.add_constant(geno_vec) # this is not what you want.
