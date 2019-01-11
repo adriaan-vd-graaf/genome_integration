@@ -93,6 +93,23 @@ class EnsemblGenes:
 
         return to_return
 
+
+    def return_overlapping_regions_based_on_coordinates(self, chromosome, position):
+        """
+        This may be a bit slow, as it will iterate over all gene regions here.
+
+        :param gene_region_to_check:
+        :return:
+        """
+        sorted_genes = self.get_sorted_genes()
+        to_return = EnsemblGenes()
+        for gene in sorted_genes:
+            if gene.snp_in_region(chromosome, position):
+                to_return.add_gene(gene)
+
+        return to_return
+
+
     def __str__(self):
         return "EnsemblGenes object containing {} genes".format(len(self.gene_names))
 
