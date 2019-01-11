@@ -36,8 +36,5 @@ def test_scaling():
 
 
 
-
-
-
 test_allele_frequency()
 test_scaling()
