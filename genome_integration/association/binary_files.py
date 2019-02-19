@@ -55,3 +55,41 @@ def read_bin_file(file_name, bim_data):
     associations, p_values_vec = add_p_values_to_associations_dict(associations)
 
     return associations, p_values_vec
+
+
+def read_bin_file_region(file_name, bim_data, gene_region):
+    # read the gene name:
+    with gzip.open(file_name, "rb") as f:
+        full_array = f.read()  # should not be so big, maybe a hundred Mb
+
+    gene_name, sep, eqtl_data = full_array.partition(b'\0')  # sep is the separator.
+
+    gene_num = 0
+
+    eqtl_size = 24
+
+    associations = {}
+
+    for i in range(int(len(eqtl_data) / eqtl_size)):
+        data = turn_bin_into_plink_assoc(eqtl_data[i * eqtl_size:(i * eqtl_size) + eqtl_size])
+
+        if not gene_region.snp_in_region(data[0], data[1]):
+            continue
+
+        pos_name = str(data[0]) + ":" + str(data[1])
+        association = GeneticAssociation(gene_name, pos_name, data[2], data[3], data[4], data[5], chromosome=data[0], position=data[1])
+
+        try:
+            association.add_snp_data(bim_data.bim_results_by_pos[pos_name])
+            association.snp_name = bim_data.bim_results_by_pos[pos_name].snp_name
+            associations[pos_name] = association
+        except KeyError:  # No SNP data present for the variant, do nothing.
+            continue
+        except RuntimeError: # No correct data present for the variant, do nothing.
+            continue
+
+        gene_num += 1
+
+    associations, p_values_vec = add_p_values_to_associations_dict(associations)
+
+    return associations, p_values_vec
