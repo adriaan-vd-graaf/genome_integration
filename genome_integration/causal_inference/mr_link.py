@@ -33,7 +33,12 @@ def remove_highly_correlated_snps(r_sq_mat, r_sq_threshold=0.95):
     return mask
 
 
-def mask_instruments_in_ld(r_sq_mat, instruments, upper_r_sq_thresh=0.99, lower_r_sq_thresh=0.1, prune_r_sq_thresh=0.95):
+def mask_instruments_in_ld(r_sq_mat,
+                           instruments,
+                           upper_r_sq_thresh=0.99,
+                           lower_r_sq_thresh=0.1,
+                           prune_r_sq_thresh=0.95,
+                           shuffle_positions=False):
     """
 
 
@@ -57,8 +62,16 @@ def mask_instruments_in_ld(r_sq_mat, instruments, upper_r_sq_thresh=0.99, lower_
 
         masked_instruments[tmp_mask] = True
 
-    highly_correlated = remove_highly_correlated_snps(r_sq_mat[masked_instruments,:][:,masked_instruments],
-                                                      prune_r_sq_thresh)
+
+    if shuffle_positions:
+        int_indices = np.where(masked_instruments)[0]
+        np.random.shuffle(int_indices)
+        highly_correlated = remove_highly_correlated_snps(r_sq_mat[int_indices, :][:, int_indices],
+                                                          prune_r_sq_thresh)
+
+    else:
+        highly_correlated = remove_highly_correlated_snps(r_sq_mat[masked_instruments,:][:,masked_instruments],
+                                                          prune_r_sq_thresh)
 
     masked_instruments[masked_instruments] = highly_correlated
 
@@ -128,6 +141,73 @@ def mr_link_ridge(outcome_geno,
 
     return ridge_fit.coef_[0], np.sqrt(ridge_fit.sigma_[0,0]), p_val
 
+
+
+
+def mr_link_ridge_resample_tags(outcome_geno,
+                                r_sq_mat,
+                                exposure_betas,
+                                causal_exposure_indices,
+                                outcome_phenotype,
+                                upper_r_sq_threshold=0.99,
+                                n_resamples = 100
+                                ):
+
+    masked_instruments = mask_instruments_in_ld(r_sq_mat,
+                                                causal_exposure_indices,
+                                                upper_r_sq_threshold)
+
+
+    ridge_fit = BayesianRidge(fit_intercept=False)
+    geno_masked = outcome_geno[masked_instruments,:].transpose()
+
+
+    design_mat = np.zeros( (geno_masked.shape[0], geno_masked.shape[1]+1), dtype=float)
+    design_mat[:,0] = (outcome_geno[causal_exposure_indices,:].transpose() @ exposure_betas) / exposure_betas.shape[0]
+    design_mat[:,np.arange(1, design_mat.shape[1])] = geno_masked / np.sqrt(geno_masked.shape[1])
+
+    ridge_fit.fit(design_mat, outcome_phenotype)
+
+    original_z_stat = ridge_fit.coef_[0] / np.sqrt(ridge_fit.sigma_[0, 0])
+    p_val = 2 * scipy.stats.norm.sf(np.abs(original_z_stat))
+
+    original_regression = ridge_fit.coef_[0], np.sqrt(ridge_fit.sigma_[0,0]), p_val
+
+    all_zs = np.zeros(n_resamples, dtype=float)
+    i = 0
+    faults = 0
+    while i < n_resamples:
+        try:
+            sampled_tags = mask_instruments_in_ld(r_sq_mat,
+                                                  causal_exposure_indices,
+                                                  upper_r_sq_threshold,
+                                                  shuffle_positions=True)
+
+            geno_masked = outcome_geno[sampled_tags, :].transpose()
+            design_mat = np.zeros((geno_masked.shape[0], geno_masked.shape[1] + 1), dtype=float)
+            design_mat[:, 0] = (outcome_geno[causal_exposure_indices, :].transpose() @ exposure_betas) / \
+                               exposure_betas.shape[0]
+            design_mat[:, np.arange(1, design_mat.shape[1])] = geno_masked / np.sqrt(geno_masked.shape[1])
+
+            fit = ridge_fit.fit(design_mat, outcome_phenotype)
+            sampled_z_stat = ridge_fit.coef_[0] / np.sqrt(ridge_fit.sigma_[0, 0])
+            all_zs[i] = sampled_z_stat
+            i += 1
+
+        except np.linalg.LinAlgError:
+            faults += 1
+            if faults >= (0.1*n_resamples):
+                raise ValueError(f"Did ridge tag SNP resampling, but SVD did not "
+                                 f"converge in more than {faults} out of {i} estimations")
+
+
+    new_se = np.std(all_zs)
+    new_mean = np.mean(all_zs)
+    direction_concordance = np.sum(np.sign(all_zs) != np.sign(original_z_stat)) / n_resamples
+
+    new_p = 2 * scipy.stats.t.sf(np.abs(new_mean), n_resamples-1)
+    return ((new_mean, new_se, new_p),
+            (original_regression[0], original_regression[1], direction_concordance))
 
 
 
