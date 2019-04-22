@@ -171,75 +171,13 @@ class GeneticAssociation(Association, SNP):
     Attributes:
     -----------
 
-    Attributes inherited from Association class.
-
-    dependent_name: str
-        Name of the dependent variable, i.e. the `y` in the solved equation `y=xb+e`
-
-        this name is not used anywhere. so can be anything
-
-    explanatory_name: str
-        Name of the SNP that is used as the explanatory variable, i.e. the `x` in the solved equation `y=xb+e`
-        This will also be the SNP
-
-    beta: float or castable to float
-        value of the slope variable, i.e. the `b` in the solved equation `y=xb+e`
-
-    se: float or castable to float
-        value of the standard error of the slope variable, i.e. the `se(b)` in the solved equation `y=xb+e`
-
-    n_observations: int or castable to int
-        The number of observations upon which the equation `y=xb+e` is solved.
-
-    r_squared:  float or castable to float
-        The coefficient of determination or how much variance the model explains out of total variance.
-
-    wald_p_val: float
-        Deprecated.
-        p value of the association
-
-    p_val: float
-        p value of the association
-
-
-    Attributes inherited from SNP class.
-
-    snp_name: str
-        Name of the SNP is used for cross comparison if the variant is merged with other snp_info.
-
-    chromosome: int, castable to int or str
-        Name of the chromosome, can be a str or an int.
-
-    position: int
-        Base pair position on the genome. Internally build b37 is used a lot. So if you're unsure, try and use this.
-
-
-    major_allele: str
-        Used as the more common allele between in the variant (biallelic SNPs only)
-
-    minor_allele: str
-        Used as the less common allele between in the variant.
-
-    minor_allle_frequency: float
-        float between 0 and 1, inclusive. gives the minor allele frequency.
-        By definition, the minor allele should be less often present so should more often than not be <=0.5,
-        but alleles can be flipped which would also flip the frequency.
-
-    has_position_data: bool
-        if position data is available.
-
-    has_allele_data: bool
-        if all alleles are available
-
-    has_frequency_data:
-        if frequency data is available.
-
-
     Attributes specific to the GeneticAssociation class.
 
     effect_allele: str
         Which allele is used as the effect allele, meaning the allele which increases the variable `x`
         Important to know, as then it's possible to identify the risk allele.
+
+    Other attributes are inherited from their respective classes, so they are subject to change.
 
 
     Methods
@@ -253,36 +191,7 @@ class GeneticAssociation(Association, SNP):
         Otherwise will do the same.
 
 
-
-
-
-
-
-    Inherited from the SNP class:
-
-
-    add_frequency_data(self, snp_data, flipped, overwrite)
-        Adds the frequency data from another SNP object and requires you to say if the alleles are flipped or not.
-
-    add_pos_chr(self, pos, chr):
-        adds position information
-
-    update_alleles(self, snp_data, overwrite)
-        updates alleles, and updates the self.has_allele_data boolean
-
-    def add_minor_allele_frequency(self,  major, minor, freq):
-        Adds a minor allele frequency
-
-
-    _update_alleles(self, snp_data, overwrite)
-        updates alleles, but does not update the self.has_allele_data boolean,
-        the function update_alleles() will do both.
-
-    def _flip_alleles(self):
-        Flips alleles -- major becomes minor; minor becomes major. Does not update frequency.
-
-    set_pos_name(self):
-        Sets the snp_name attribute to the pos_name which is `{chr}:{position}`
+    Other methods are inherited from the other classes. See their documentation, as it is subject to change.
 
     """
 
