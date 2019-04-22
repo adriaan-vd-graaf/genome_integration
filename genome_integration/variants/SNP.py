@@ -1,9 +1,77 @@
+import warnings
 
 class SNP:
     """
-
     This is the base SNP class.
-    This class is also inherited a lot.
+
+    only biallelic variants possible.
+
+    Most of the data  can be missing, as it often is in many datasets that you are trying to parse.
+
+
+    Attributes
+    ----------
+
+    snp_name: str
+        Name of the SNP is used for cross comparison if the variant is merged with other snp_info.
+
+    chromosome: int, castable to int or str
+        Name of the chromosome, can be a str or an int.
+
+    position: int
+        Base pair position on the genome. Internally build b37 is used a lot. So if you're unsure, try and use this.
+
+
+    major_allele: str
+        Used as the more common allele between in the variant (biallelic SNPs only)
+
+    minor_allele: str
+        Used as the less common allele between in the variant.
+
+    minor_allle_frequency: float
+        float between 0 and 1, inclusive. gives the minor allele frequency.
+        By definition, the minor allele should be less often present so should more often than not be <=0.5,
+        but alleles can be flipped which would also flip the frequency.
+
+    has_position_data: bool
+        if position data is available.
+
+    has_allele_data: bool
+        if all alleles are available
+
+    has_frequency_data:
+        if frequency data is available.
+
+
+    Methods
+    -------
+    add_snp_data(self, snp_data, overwrite=False)
+        Adds data from another SNP class-like object.
+
+    add_frequency_data(self, snp_data, flipped, overwrite)
+        Adds the frequency data from another SNP object and requires you to say if the alleles are flipped or not.
+
+    add_pos_chr(self, pos, chr):
+        adds position information
+
+    update_alleles(self, snp_data, overwrite)
+        updates alleles, and updates the self.has_allele_data boolean
+
+    def add_minor_allele_frequency(self,  major, minor, freq):
+        Adds a minor allele frequency
+
+
+    _update_alleles(self, snp_data, overwrite)
+        updates alleles, but does not update the self.has_allele_data boolean,
+        the function update_alleles() will do both.
+
+    def _flip_alleles(self):
+        Flips alleles -- major becomes minor; minor becomes major. Does not update frequency.
+
+    set_pos_name(self):
+        Sets the snp_name attribute to the pos_name which is `{chr}:{position}`
+
+
     """
 
     def __init__(self,
@@ -98,7 +166,7 @@ class SNP:
                     """
                     This is when the flipped allele frequency is not really right.
                     """
-                    raise RuntimeWarning("Updated allele frequency difference between snp and reference is really high")
+                    warnings.warn("Updated allele frequency difference between snp and reference is really high", RuntimeWarning)
 
             return False
 
@@ -230,12 +298,24 @@ class SNP:
 
 
     def _flip_alleles(self):
+        """
+        Flips alleles -- major becomes minor, minor becomes major. Does not update frequency.
+        :return:
+        """
         tmp = self.major_allele
         self.major_allele = self.minor_allele
         self.minor_allele = tmp
 
 
     def add_minor_allele_frequency(self,  major, minor, freq):
+        """
+        Adds a minor allele frequency
+        :param major:
+        :param minor:
+        :param freq:
+        :return:
+        """
+
         #if there are no alleles, then just use this.
         if not self.has_allele_data:
             self.minor_allele = minor
@@ -263,4 +343,8 @@ class SNP:
         return
 
     def set_pos_name(self):
+        """
+        Sets the snp_name attribute to the pos_name which is `{chr}:{position}`
+        :return:
+        """
         self.snp_name = "{}:{}".format(self.chromosome, self.position)

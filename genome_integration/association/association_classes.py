@@ -1,3 +1,4 @@
+import warnings
 import scipy.stats
 import numpy as np
 from ..variants import *
@@ -5,9 +6,38 @@ from ..variants import *
 
 class BaseAssociation:
     """
-    This class is the base class for any association.
-    Currently will only contain the data for a linear association.
-    No
+    This class will be the summary statistics of a univariate linear association
+    without intercept. No data on the association is necessary,
+    as this is a parent class of which data should be in a marginal association
+
+    Attributes:
+    -----------
+
+    dependent_name: str
+        Name of the dependent variable, i.e. the `y` in the solved equation `y=xb+e`
+
+        this name is not used anywhere.
+
+    explanatory_name: str
+        Name of the explanatory variable, i.e. the `x` in the solved equation `y=xb+e`
+
+    beta: float or castable to float
+        value of the slope variable, i.e. the `b` in the solved equation `y=xb+e`
+
+    se: float or castable to float
+        value of the standard error of the slope variable, i.e. the `se(b)` in the solved equation `y=xb+e`
+
+    n_observations: int or castable to int
+        The number of observations upon which the equation `y=xb+e` is solved.
+
+    r_squared:  float or castable to float
+        The coefficient of determination or how much variance the model explains out of total variance.
+
+    Methods
+    -------
+
+    None
+
     """
     def __init__(self, dependent_name=None,
                  explanatory_name=None,
@@ -25,14 +55,59 @@ class BaseAssociation:
 
 
 class Association(BaseAssociation):
+
     """
-    This class will be any normal linear association.
+    This class will be the summary statistics of a univariate linear association
+    without intercept. Data on the association is necessary, in contrast to the parent class BaseAssociation
+
+    Attributes:
+    -----------
+
+    dependent_name: str
+        Name of the dependent variable, i.e. the `y` in the solved equation `y=xb+e`
+
+        this name is not used anywhere.
+
+    explanatory_name: str
+        Name of the explanatory variable, i.e. the `x` in the solved equation `y=xb+e`
+
+    beta: float or castable to float
+        value of the slope variable, i.e. the `b` in the solved equation `y=xb+e`
+
+    se: float or castable to float
+        value of the standard error of the slope variable, i.e. the `se(b)` in the solved equation `y=xb+e`
+
+    n_observations: int or castable to int
+        The number of observations upon which the equation `y=xb+e` is solved.
+
+    r_squared:  float or castable to float
+        The coefficient of determination or how much variance the model explains out of total variance.
+
+    Methods
+    -------
+
+    set_wald_p_val():
+        Sets the wald test p value of the estimate.
+        Warning:
+        This identifying this p value is only sufficient if you have sufficient observations.
+        otherwise a t statistic is more meaningful.
+
+
+
+
     """
-    __slots__ = ['dependent_name', 'explanatory_name', 'beta', 'se', 'n_observations', 'r_squared', 'z_score',
-                 'wald_p_val', 'snp']
 
     def __init__(self, dependent_name, explanatory_name, n_observations, beta, se, r_squared=None):
+        """
+        Inits the Association class.
 
+        :param dependent_name:
+        :param explanatory_name:
+        :param n_observations:
+        :param beta:
+        :param se:
+        :param r_squared:
+        """
         super().__init__(
             dependent_name = dependent_name,
             explanatory_name= explanatory_name,
@@ -44,38 +119,172 @@ class Association(BaseAssociation):
 
         if self.se == 0:
             self.se = np.nextafter(0.0, 1)
-            self.z_score = np.sign(beta) * 1337 #big enough. this will introduce some bug in super low p values. but whatever.
+            self.z_score = np.sign(beta) * np.inf
+            print(f"se was zero, z score will be infinite.")
         else:
             self.z_score = self.beta / self.se
 
         self.wald_p_val = None  # not calculating it here, is better if calculation is done later.
+        self.p_val = None
 
         self.snp = None
 
-    def set_wald_p_value(self, pval):
+    def set_p_val(self, pval):
+        """
+        This class will set a p value you calculated yourself.
+
+        :param pval:
+        :return: self
+        """
+        
         self.wald_p_val = pval
+        self.p_val = pval
+
+    def set_wald_p_val(self, pval):
+        """
+        This class will set a p value you calculated yourself.
+
+        :param pval:
+        :return: self
+        """
+
+        warnings.warn("this method has been renamed `set_p_val`, please use this, as it is not strictly a wald p value",
+                      DeprecationWarning)
+
+        if not np.isfinite(self.z_score):
+            self.wald_p_val = 0.0
+        else:
+            self.wald_p_val = pval
 
 
 class GeneticAssociation(Association, SNP):
     """
-    This class will represent a genetic association, and will probably be a subclass sometime.
+    This class will represent a genetic association. Depends on the SNP and association parent classes.
 
     By definition of this class:
 
-    !!!
-    THE MINOR ALLELE IS THE EFFECT ALLELE
-    !!!
+    definition: THE MINOR ALLELE IS THE EFFECT ALLELE
+    This decicion is not great, but it's grandfathered in.
+    but for now it's good enough
 
-    A decision Which will probably bite me in the behind when trying to integrate multiallelic snps, but, you know...
 
-    It will contain snp and association date.
+    Attributes:
+    -----------
+
+    Attributes inherited from Association class.
+
+    dependent_name: str
+        Name of the dependent variable, i.e. the `y` in the solved equation `y=xb+e`
+
+        this name is not used anywhere. so can be anything
+
+    explanatory_name: str
+        Name of the SNP that is used as the explanatory variable, i.e. the `x` in the solved equation `y=xb+e`
+        This will also be the SNP
+
+    beta: float or castable to float
+        value of the slope variable, i.e. the `b` in the solved equation `y=xb+e`
+
+    se: float or castable to float
+        value of the standard error of the slope variable, i.e. the `se(b)` in the solved equation `y=xb+e`
+
+    n_observations: int or castable to int
+        The number of observations upon which the equation `y=xb+e` is solved.
+
+    r_squared:  float or castable to float
+        The coefficient of determination or how much variance the model explains out of total variance.
+
+    wald_p_val: float
+        Deprecated.
+        p value of the association
+
+    p_val: float
+        p value of the association
+
+
+    Attributes inherited from SNP class.
+
+    snp_name: str
+        Name of the SNP is used for cross comparison if the variant is merged with other snp_info.
+
+    chromosome: int, castable to int or str
+        Name of the chromosome, can be a str or an int.
+
+    position: int
+        Base pair position on the genome. Internally build b37 is used a lot. So if you're unsure, try and use this.
+
+
+    major_allele: str
+        Used as the more common allele between in the variant (biallelic SNPs only)
+
+    minor_allele: str
+        Used as the less common allele between in the variant.
+
+    minor_allle_frequency: float
+        float between 0 and 1, inclusive. gives the minor allele frequency.
+        By definition, the minor allele should be less often present so should more often than not be <=0.5,
+        but alleles can be flipped which would also flip the frequency.
+
+    has_position_data: bool
+        if position data is available.
+
+    has_allele_data: bool
+        if all alleles are available
+
+    has_frequency_data:
+        if frequency data is available.
+
+
+    Attributes specific to the GeneticAssociation class.
+
+    effect_allele: str
+        Which allele is used as the effect allele, meaning the allele which increases the variable `x`
+        Important to know, as then it's possible to identify the risk allele.
+
+
+    Methods
+    -------
+
+    Specific to the GeneticAssociation class:
+
+    add_snp_data(self, snp_data, overwrite=False)
+        Adds data from another SNP class-like object.
+        Masked from the SNP class, as it will also the '-1*b' if alleles are flipped.
+        Otherwise will do the same.
+
+
+
+
+
+
+
+    Inherited from the SNP class:
+
+
+    add_frequency_data(self, snp_data, flipped, overwrite)
+        Adds the frequency data from another SNP object and requires you to say if the alleles are flipped or not.
+
+    add_pos_chr(self, pos, chr):
+        adds position information
+
+    update_alleles(self, snp_data, overwrite)
+        updates alleles, and updates the self.has_allele_data boolean
+
+    def add_minor_allele_frequency(self,  major, minor, freq):
+        Adds a minor allele frequency
+
+
+    _update_alleles(self, snp_data, overwrite)
+        updates alleles, but does not update the self.has_allele_data boolean,
+        the function update_alleles() will do both.
+
+    def _flip_alleles(self):
+        Flips alleles -- major becomes minor; minor becomes major. Does not update frequency.
+
+    set_pos_name(self):
+        Sets the snp_name attribute to the pos_name which is `{chr}:{position}`
 
     """
-
-    __slots__ = ['snp_name', 'chromosome', 'position', 'major_allele', 'minor_allele', 'minor_allele_frequency',
-                 'has_position_data', 'has_allele_data', 'has_frequency_data', 'dependent_name', 'explanatory_name',
-                 'beta', 'se', 'n_observations', 'r_squared', 'z_score', 'wald_p_val', 'snp', 'reference_allele',
-                 'effect_allele', 'alleles']
 
     def __init__(self,
                  dependent_name,
@@ -103,26 +312,23 @@ class GeneticAssociation(Association, SNP):
                              )
 
         SNP.__init__(self,
-                                  explanatory_name,
-                                  chromosome,
-                                  position,
-                                  major_allele,
-                                  minor_allele,
-                                  minor_allele_frequency
-                                  )
+                      explanatory_name,
+                      chromosome,
+                      position,
+                      major_allele,
+                      minor_allele,
+                      minor_allele_frequency
+                      )
 
         self.alleles = [self.major_allele, self.minor_allele]
 
         # ensure the reference alleles are initiated.
         # as well as ensuring that the reference alleles match the major and minor alleles.
-
         if reference_allele is None:
             self.reference_allele = self.major_allele
 
         if effect_allele is None:
             self.effect_allele = self.minor_allele
-
-
 
         if (not (reference_allele is None))  and (reference_allele not in self.alleles):
             raise ValueError("Reference allele does not match major or minor allele")
@@ -131,7 +337,8 @@ class GeneticAssociation(Association, SNP):
             raise ValueError("Effect allele does not match major or minor allele")
 
     def __str__(self):
-        try:
+
+        if type(self.wald_p_val) is float:
             return "{}-{}, {}/{}, {}, {}, {}".format(self.explanatory_name,
                                                      self.dependent_name,
                                                      self.major_allele,
@@ -139,7 +346,7 @@ class GeneticAssociation(Association, SNP):
                                                      self.beta,
                                                      self.se,
                                                      self.wald_p_val)
-        except:
+        else:
             return "{}-{}, {}/{}, {}, {}".format(self.explanatory_name,
                                                      self.dependent_name,
                                                      self.major_allele,
@@ -153,53 +360,21 @@ class GeneticAssociation(Association, SNP):
 
     def add_snp_data(self, snp_data, overwrite=False):
         """
-        UNTESTED
 
         This class will return itself with updated snp data.
         It will only change data from a class if the snp_name is the same, or if the position
 
-        Author comment: This is bloody hard to get right.
 
-        :param snp_data, a SNP object or bigger.:
-        :return self:
+        :param snp_data, a SNP object or something that was extended from it:
+        :return self: but with updated allele, name information.
         """
 
-        has_updated_position, has_updated_alleles, alleles_flipped, has_updated_frequency = SNP.add_snp_data(self, snp_data)
+        has_updated_position, has_updated_alleles, alleles_flipped, has_updated_frequency \
+            = SNP.add_snp_data(self,
+                               snp_data,
+                               overwrite=overwrite)
 
         if alleles_flipped:
             self.beta *= -1
             self.z_score *= -1
 
-
-    def make_gcta_ma_header(self):
-        """
-        WILL NOT TEST
-
-        Will create an ma header.
-
-        :return: String with an ma file header.
-        """
-        return "SNP\tA1\tA2\tfreq\tb\tse\tp\tN"
-
-
-    def make_gcta_ma_line(self):
-        """
-        WILL NOT TEST
-
-        Makes a GCTA line of the genetic variant.
-
-        Will only return a string, will not write to a file, the user is expected to do this himself.
-
-        :return tab separated string that can be part of ma file:
-        """
-
-        # make sure the data that we need is available.
-        if not self.has_position_data or not self.has_allele_data or not self.has_frequency_data:
-            raise RuntimeError("Cannot write an Ma line. Does not contain the necessary data")
-
-        if self.wald_p_val == None:
-            raise RuntimeError("No p value present")
-
-        return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(self.snp_name, self.minor_allele, self.major_allele,
-                                                         self.minor_allele_frequency, self.beta, self.se, self.wald_p_val,
-                                                         self.n_observations)

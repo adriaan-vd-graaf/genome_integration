@@ -4,7 +4,6 @@ import sklearn
 import subprocess
 from .file_utils import *
 from .gcta_ma_utils import *
-
 from .. import variants
 
 

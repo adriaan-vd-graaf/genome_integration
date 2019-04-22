@@ -264,10 +264,10 @@ def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepen
         gene_name = genetic_associations[snps[0]].dependent_name
 
 
-    ma_lines = [genetic_associations[snps[0]].make_gcta_ma_header()]
+    ma_lines = [make_gcta_ma_header()]
 
     [
-        ma_lines.append(genetic_associations[x].make_gcta_ma_line()) for x in genetic_associations
+        ma_lines.append(make_gcta_ma_line(genetic_associations[x])) for x in genetic_associations
         if genetic_associations[x].snp_name in clumped_snps
     ]
 
@@ -337,10 +337,10 @@ def do_gcta_cojo_joint_on_genetic_associations(genetic_associations, bfile, tmp_
         gene_name = genetic_associations[snps[0]].dependent_name
 
 
-    ma_lines = [genetic_associations[snps[0]].make_gcta_ma_header()]
+    ma_lines = [make_gcta_ma_header()]
 
     [
-        ma_lines.append(genetic_associations[x].make_gcta_ma_line())
+        ma_lines.append(make_gcta_ma_line(genetic_associations[x]))
         for x in genetic_associations
         if genetic_associations[x].snp_name in clumped_snps
     ]
@@ -409,10 +409,10 @@ def do_cojo_conditioning_on_effects(conditioning_snps, bfile, tmp_prepend, p_val
 
     #write the ma file for all SNPs
     snps = list(conditioning_snps.keys())
-    ma_lines = [conditioning_snps[snps[0]].make_gcta_ma_header()]
+    ma_lines = [make_gcta_ma_header()]
 
     [
-        ma_lines.append(conditioning_snps[x].make_gcta_ma_line())
+        ma_lines.append(make_gcta_ma_line(conditioning_snps[x]))
         for x in conditioning_snps.keys()
     ]
 
@@ -504,3 +504,41 @@ def do_conditional_joint_on_exposure_and_correct_outcome(exposure_associations, 
     outcome_conditional = do_cojo_conditioning_on_effects(associations_for_conditioning, bfile, tmp_prepend + "_conditional", p_val_thresh, maf)
 
     return exposure_cojo, outcome_conditional
+
+
+def make_gcta_ma_header():
+    """
+    Will create an ma header. for GCTA-COJO
+
+    :return: String with an ma file header.
+    """
+    return "SNP\tA1\tA2\tfreq\tb\tse\tp\tN"
+
+
+def make_gcta_ma_line(genetic_association):
+    """
+
+    Makes a GCTA line of the genetic variant.
+
+    Will only return a string not newline ended,
+    will not write to a file, the user is expected to do this himself.
+
+    :param genetic association class object.
+    :return tab separated string that can be part of ma file:
+    """
+
+    # make sure the data that we need is available.
+    if not genetic_association.has_position_data or not genetic_association.has_allele_data or not genetic_association.has_frequency_data:
+        raise RuntimeError("Cannot write an Ma line. Does not contain the necessary data")
+
+    if genetic_association.wald_p_val == None:
+        raise RuntimeError("No p value present")
+
+    return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(genetic_association.snp_name,
+                                                   genetic_association.minor_allele,
+                                                   genetic_association.major_allele,
+                                                   genetic_association.minor_allele_frequency,
+                                                   genetic_association.beta,
+                                                   genetic_association.se,
+                                                   genetic_association.wald_p_val,
+                                                   genetic_association.n_observations)

@@ -1,9 +1,7 @@
-
 import scipy.stats
 import numpy as np
 import statsmodels.api  as sm
-from sklearn.linear_model import BayesianRidge, LassoCV, RidgeCV, Ridge
-from sklearn.model_selection import cross_validate, KFold
+from sklearn.linear_model import BayesianRidge, LassoCV
 
 
 def remove_highly_correlated_snps(r_sq_mat, r_sq_threshold=0.95):
@@ -142,8 +140,6 @@ def mr_link_ridge(outcome_geno,
     return ridge_fit.coef_[0], np.sqrt(ridge_fit.sigma_[0,0]), p_val
 
 
-
-
 def mr_link_ridge_resample_tags(outcome_geno,
                                 r_sq_mat,
                                 exposure_betas,
@@ -210,7 +206,6 @@ def mr_link_ridge_resample_tags(outcome_geno,
             (original_regression[0], original_regression[1], direction_concordance))
 
 
-
 def mr_link_ridge_cv(outcome_geno,
                      r_sq_mat,
                      exposure_betas,
@@ -261,6 +256,7 @@ def mr_link_ridge_cv(outcome_geno,
         quantile_p_val_b = (np.sum(save_array[:, 1] > 0) / n_splits) * 2
 
     return [[mean_t, se_t, quantile_p_val_t], [mean_b, se_b,quantile_p_val_b]]
+
 
 def mr_link_bootstrapped(outcome_geno,
                          r_sq_mat,
@@ -324,7 +320,6 @@ def mr_link_bootstrapped(outcome_geno,
         return returns
 
 
-
 def mr_link_lasso(outcome_geno,
                   r_sq_mat,
                   exposure_betas,
@@ -332,7 +327,6 @@ def mr_link_lasso(outcome_geno,
                   outcome_phenotype,
                   upper_r_sq_threshold = 0.95,
                   ):
-
 
     masked_instruments = mask_instruments_in_ld(r_sq_mat,
                                                 causal_exposure_indices,
