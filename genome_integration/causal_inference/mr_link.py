@@ -9,8 +9,10 @@ def remove_highly_correlated_snps(r_sq_mat, r_sq_threshold=0.95):
 
     This iteratively selects variants that are less correlated to each other than r_sq_threshold
     removes SNPs that are more correlated that `r_sq_threshold`.
-    First SNP in r_sq_mat is always retained.
 
+    First SNP in r_sq_mat is always retained, later ones are pruned.
+    Of note, in simulations and in real data, when permuting the ordering of r_sq_mat, we found no meaningful
+    differences in MR-link results. So
 
     :param r_sq_mat: squared pearson correlation matrix of variants, shape (m x m)
     :param r_sq_threshold: threshold for `r_sq_mat`, float in [0,1]
@@ -19,7 +21,7 @@ def remove_highly_correlated_snps(r_sq_mat, r_sq_threshold=0.95):
 
     tril = np.tril(r_sq_mat, -1)
     mask = np.ones((r_sq_mat.shape[0]), dtype=bool)
-    # I believe this is allowed because we are also using permutations sometimes.
+
     i = 0
     while i < r_sq_mat.shape[0]:
         if mask[i]:
@@ -38,42 +40,44 @@ def mask_instruments_in_ld(r_sq_mat,
                            prune_r_sq_thresh=0.95,
                            shuffle_positions=False):
     """
-
+    Masks instruments that are in LD [upper_r_sq_threshold, lower_r_sq_threshold] with instrumental variables of the
+    exposure. As well as being in high LD (> prune_r_sq_threshold) with itself.
 
     :param r_sq_mat: squared pearson correlation matrix of variants, shape (m x m)
-    :param instruments: instruments (variants) used in MR
+    :param instruments: indices () of the instruments (variants) used for the exposure.
     :param upper_r_sq_thresh: maximum correlation from instrument threshold for `r_sq_mat`, float in [0,1]
     :param lower_r_sq_thresh: minimum from instrument threshold for `r_sq_mat`, float in [0,1]
-    :param prune_r_sq_thresh: threshold from which to remove highly correlated SNPs.
-    :return:
+    :param prune_r_sq_thresh: threshold from which to remove highly correlated SNPs. float in [0,1]
+
+    :return: Returns a logical vector of length m representing variants that are in high to low LD with the
+    instrumental variables and in high LD with other variants.
     """
 
-
-    masked_instruments = np.zeros((r_sq_mat.shape[0]), dtype=bool)
+    masked_variants = np.zeros((r_sq_mat.shape[0]), dtype=bool)
 
     #if there are any NA's in the r_sq matrix
-    masked_instruments[np.any(np.isnan(r_sq_mat), axis=0)] = True
+    masked_variants[np.any(np.isnan(r_sq_mat), axis=0)] = True
 
     for instrument in instruments:
         tmp_mask = r_sq_mat[instrument,:] < upper_r_sq_thresh
         tmp_mask = np.logical_and(tmp_mask, r_sq_mat[instrument,:] > lower_r_sq_thresh)
 
-        masked_instruments[tmp_mask] = True
+        masked_variants[tmp_mask] = True
 
-
+    #this shuffles the LD matrix, just to be sure. Analyis of this effect did not seem to change the results much
     if shuffle_positions:
-        int_indices = np.where(masked_instruments)[0]
+        int_indices = np.where(masked_variants)[0]
         np.random.shuffle(int_indices)
         highly_correlated = remove_highly_correlated_snps(r_sq_mat[int_indices, :][:, int_indices],
                                                           prune_r_sq_thresh)
 
     else:
-        highly_correlated = remove_highly_correlated_snps(r_sq_mat[masked_instruments,:][:,masked_instruments],
+        highly_correlated = remove_highly_correlated_snps(r_sq_mat[masked_variants,:][:,masked_variants],
                                                           prune_r_sq_thresh)
 
-    masked_instruments[masked_instruments] = highly_correlated
+    masked_variants[masked_variants] = highly_correlated
 
-    return masked_instruments
+    return masked_variants
 
 
 def mr_link_ols(outcome_geno,
@@ -83,7 +87,17 @@ def mr_link_ols(outcome_geno,
                 outcome_phenotype,
                 upper_r_sq_threshold=0.99
                 ):
+    """
+    Does MR-link solved by ordinary least squares.
 
+    :param outcome_geno: outcome genotypes
+    :param r_sq_mat: R^2 matrix in order of genotypes of outcome geno
+    :param exposure_betas: beta estimates of the exposure instrumental variables.
+    :param causal_exposure_indices:  indices of the exposure instrumental variables.
+    :param outcome_phenotype: outcome phenotype vector
+    :param upper_r_sq_threshold: the upper r_sq threshold for which the variants around the IVs are pruned.
+    :return: beta, se and p value estimate of the MR-link estimate
+    """
     masked_instruments = mask_instruments_in_ld(r_sq_mat,
                                                 causal_exposure_indices,
                                                 upper_r_sq_threshold)
@@ -107,6 +121,21 @@ def mr_link_ridge(outcome_geno,
                  upper_r_sq_threshold=0.99,
                  use_hat_matrix_for_p_determination=False
                  ):
+    """
+
+    Does MR-link solved by ridge regression.
+    Please note that the p value and se is uncorrected. so these is usually _very_ conservative.
+    See the MR-link manuscript for details.
+
+    :param outcome_geno: outcome genotypes
+    :param r_sq_mat: R^2 matrix in order of genotypes of outcome geno
+    :param exposure_betas: beta estimates of the exposure instrumental variables.
+    :param causal_exposure_indices:  indices of the exposure instrumental variables.
+    :param outcome_phenotype: outcome phenotype vector
+    :param upper_r_sq_threshold: the upper r_sq threshold for which the variants around the IVs are pruned.
+    :return: beta, se and p value estimate of the MR-link estimate
+    """
+
 
     masked_instruments = mask_instruments_in_ld(r_sq_mat,
                                                 causal_exposure_indices,
@@ -140,7 +169,7 @@ def mr_link_ridge(outcome_geno,
     return ridge_fit.coef_[0], np.sqrt(ridge_fit.sigma_[0,0]), p_val
 
 
-def mr_link_ridge_resample_tags(outcome_geno,
+def _mr_link_ridge_resample_tags(outcome_geno,
                                 r_sq_mat,
                                 exposure_betas,
                                 causal_exposure_indices,
@@ -148,6 +177,25 @@ def mr_link_ridge_resample_tags(outcome_geno,
                                 upper_r_sq_threshold=0.99,
                                 n_resamples = 100
                                 ):
+    """
+
+    Does MR-link solved by ridge regression.
+
+    This function was created to ensure that tag selection did not bias the results.
+    But I did not find any big deviations in our estimates.
+
+    Please note that the p value and se is uncorrected. so these is usually _very_ conservative.
+    See the MR-link manuscript for details.
+
+    :param outcome_geno: outcome genotypes
+    :param r_sq_mat: R^2 matrix in order of genotypes of outcome geno
+    :param exposure_betas: beta estimates of the exposure instrumental variables.
+    :param causal_exposure_indices:  indices of the exposure instrumental variables.
+    :param outcome_phenotype: outcome phenotype vector
+    :param upper_r_sq_threshold: the upper r_sq threshold for which the variants around the IVs are pruned.
+    :return: beta, se and p value estimate of the MR-link estimate
+    """
+
 
     masked_instruments = mask_instruments_in_ld(r_sq_mat,
                                                 causal_exposure_indices,
@@ -206,13 +254,30 @@ def mr_link_ridge_resample_tags(outcome_geno,
             (original_regression[0], original_regression[1], direction_concordance))
 
 
-def mr_link_ridge_cv(outcome_geno,
+def _mr_link_ridge_cv(outcome_geno,
                      r_sq_mat,
                      exposure_betas,
                      causal_exposure_indices,
                      outcome_phenotype,
                      upper_r_sq_threshold=0.99
                      ):
+    """
+
+    Does MR-link solved by ridge regression.
+
+    This function was created for internal analysis and tried to do cross validation of the outcome phenotype to
+    identify p values, but analysis was not fruitful
+
+    :param outcome_geno: outcome genotypes
+    :param r_sq_mat: R^2 matrix in order of genotypes of outcome geno
+    :param exposure_betas: beta estimates of the exposure instrumental variables.
+    :param causal_exposure_indices:  indices of the exposure instrumental variables.
+    :param outcome_phenotype: outcome phenotype vector
+    :param upper_r_sq_threshold: the upper r_sq threshold for which the variants around the IVs are pruned.
+    :return: Two lists.
+    1. (mean t statistic, se of t statistic, quantile p value) of the estimate.
+    2. (mean beta, mean se and quantile p value) estimate of the cross validation.
+    """
 
     masked_instruments = mask_instruments_in_ld(r_sq_mat,
                                                 causal_exposure_indices,
@@ -258,7 +323,7 @@ def mr_link_ridge_cv(outcome_geno,
     return [[mean_t, se_t, quantile_p_val_t], [mean_b, se_b,quantile_p_val_b]]
 
 
-def mr_link_bootstrapped(outcome_geno,
+def _mr_link_bootstrapped(outcome_geno,
                          r_sq_mat,
                          exposure_betas,
                          causal_exposure_indices,
@@ -266,7 +331,23 @@ def mr_link_bootstrapped(outcome_geno,
                          upper_r_sq_threshold=0.99,
                          bootstraps = 50
                          ):
+    """
 
+   Does MR-link solved by ridge regression.
+
+   This function was created for internal analysis and tried to do bootstrapping the outcome phenotype to
+   identify p values, but results were not fruitful.
+
+
+   :param outcome_geno: outcome genotypes
+   :param r_sq_mat: R^2 matrix in order of genotypes of outcome geno
+   :param exposure_betas: beta estimates of the exposure instrumental variables.
+   :param causal_exposure_indices:  indices of the exposure instrumental variables.
+   :param outcome_phenotype: outcome phenotype vector
+   :param upper_r_sq_threshold: the upper r_sq threshold for which the variants around the IVs are pruned.
+   :param bootstraps: an int or an iterable containing the number of bootstraps being done
+   :return: a dict of length bootstraps with the bootstap estimates (beta[0], bootstrap se, p value)
+   """
 
     masked_instruments = mask_instruments_in_ld(r_sq_mat,
                                                 causal_exposure_indices,
@@ -320,13 +401,31 @@ def mr_link_bootstrapped(outcome_geno,
         return returns
 
 
-def mr_link_lasso(outcome_geno,
+def _mr_link_lasso(outcome_geno,
                   r_sq_mat,
                   exposure_betas,
                   causal_exposure_indices,
                   outcome_phenotype,
                   upper_r_sq_threshold = 0.95,
                   ):
+    """
+    Does MR-link in a two step fashion:
+    first lasso regression to identify important features in the genotype matrix
+    then ols on the IV*beta and important features
+
+    This function was created for internal analysis and tried to identify well calibrated p values,
+    but results were not fruitful.
+
+    :param outcome_geno:
+    :param r_sq_mat:
+    :param exposure_betas:
+    :param causal_exposure_indices:
+    :param outcome_phenotype:
+    :param upper_r_sq_threshold:
+    :return: ols beta, p
+    """
+
+
 
     masked_instruments = mask_instruments_in_ld(r_sq_mat,
                                                 causal_exposure_indices,
@@ -343,7 +442,7 @@ def mr_link_lasso(outcome_geno,
     print("check3")
     new_mat = np.zeros((masked_geno.shape[1], np.sum(to_keep)+1), dtype=float)
     new_mat[:,0] = ((outcome_geno[causal_exposure_indices, :].transpose() @ exposure_betas) / exposure_betas.shape[0])
-    new_mat[:,np.arange(1, np.sum(to_keep)+1)] = masked_geno[to_keep,:].transpose()
+    new_mat[:,np.arange(1, int(np.sum(to_keep))+1)] = masked_geno[to_keep,:].transpose()
 
     print(sum(to_keep))
 

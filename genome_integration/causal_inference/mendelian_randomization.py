@@ -18,17 +18,14 @@ from .. import utils
 from .. import association
 
 
-class MendelianRandomization(association.BaseAssociation):
+class MendelianRandomization:
     """
     This class is a base class of most summary statistic based MR analyses.
-
-    In essence it's a univariate association, so inherits from the BaseAssociation class.
 
 
     Attributes
     ----------
 
-    Specific to the MendelianRandomization class
 
     estimation_done: bool
         boolean indicating if an estimation was done.
@@ -87,13 +84,46 @@ class MendelianRandomization(association.BaseAssociation):
         exposure_tuple is a beta se tuple of the exposure summary statistics
         outcome_tuple is a beta se tuple of the outcome summary statistics
 
+    do_and_add_smr_estimation(self, exposure_tuple, outcome_tuple, variant_name, pos, chr)
+        Adds an SMR estimate from the exposure and outcome tuples (beta, se).
+
+    do_chochrans_q_meta_analysis(self, p_value_threshold):
+        Does a chochrans q meta analysis of the results at a certain p value threhold.
+
+    do_egger_regression(self):
+        Does the original Egger regression with a single variance term. (weighted by the outcome se)
+
+    do_egger_regression_single_variance_term(self):
+        Does egger regression with a single variance term. (weighted only by the outcome se)
+
+    do_egger_regression_two_variance_term(self)
+        Does egger regression with a double variance term. (weighted by both the outcome and exposure se)
+
+    do_single_term_mr_estimate(self, exposure_tuple, outcome_tuple)
+        single term MR estimate. In contrast to SMR estimate, uses a single variance term.
+
+    do_single_term_mr_estimate(self, exposure_tuple, outcome_tuple)
+        single term MR estimate. In contrast to SMR estimate, uses a single variance term.
+        adds it to the list of estimates.
+
+    mr_presso(self, n_sims=1000, significance_thresh=0.05):
+        Does MR-PRESSO, number of sims is the number of permutations done, and the significance term is the term
+        at which estimates are rejected.
+
+    do_lda_mr_egger(self, ld_matrix)
+        Does LDA-MR-Egger.
+        requires an LD matrix (peason correlation), which is ordered (rows and columns) by the estimates that were made.
+
+    do_lda_mr_egger_on_estimates(self, list_of_outcome_tuples, list_of_exposure_tuples, pearson_ld_matrix,
+                                write_out=False):
+        Does LDA MR Egger
+        Requires the list of (beta, se) tuples from the outcome and exposure and the pearson_ld_matrix.
+        write_out is for debug purposes.
+
 
     """
 
-
-
     def __init__(self):
-        super().__init__()
 
         self.estimation_done = False  # when the estimation is called, this will return true
         self.estimation_data = []     # will be filled with tuples containing betas and standard error
@@ -117,12 +147,26 @@ class MendelianRandomization(association.BaseAssociation):
 
 
     def add_estimate(self, beta_se_tuple, variant_name, pos, chr):
+        """
+        Adds an estimate to the class.
+
+        :param beta_se_tuple: Estimation data.
+        :param variant_name: name of variant for external reference
+        :param pos: position of the variant for external reference
+        :param chr: chromosome of the variant for external reference
+        :return:
+        """
         self.estimation_done = False
 
         self.estimation_data.append(beta_se_tuple)
         self.estimation_snps.append((variant_name, pos, chr))
 
     def do_ivw_estimation(self):
+        """
+        Does IVW estimation on all the methods
+
+        :return: tuple of floats: beta, se, wald_p_val of the estimate.
+        """
 
         beta, se, wald_p_val = self.do_ivw_estimation_on_estimate_vector(
             self.estimation_data, save_intermediate=True)
@@ -131,7 +175,13 @@ class MendelianRandomization(association.BaseAssociation):
         return beta, se, wald_p_val
 
     def do_ivw_estimation_on_estimate_vector(self, estimation_vec, save_intermediate=False):
+        """
+        Estimates IVW on a specified estimate vector
 
+        :param estimation_vec: list of (beta,se) tuples
+        :param save_intermediate: save intermediate results to the class.
+        :return: tuple of floats: beta, se, wald_p_val of the estimate.
+        """
         if len(estimation_vec) == 0:
             raise RuntimeError('No estimates supplied to do estimation')
 
@@ -173,16 +223,22 @@ class MendelianRandomization(association.BaseAssociation):
         return beta_ivw, se_ivw, p_value
 
     def get_ivw_estimates(self):
+        """
+        Mirrors do_ivw_estimation
+
+        :return: tuple of floats: beta, se, wald_p_val of the estimate.
+        """
         warnings.warn("This method is deprecated, please use the do_ivw_estimation() method.", DeprecationWarning)
         return self.do_ivw_estimation()
 
     def do_smr_estimate(self, exposure_tuple, outcome_tuple):
         """
         Determine SMR test effect and standard error.
+        Identifies standard error of the estimate, based on on two variance terms
 
         :param exposure_data: Exposure estimates which must have the methods get_beta and get_z_score
         :param outcome_data: Outcome estimates which must have the methods get_beta and get_z_score
-        :return: tuple of smr beta and smr se
+        :return: tuple of smr beta and smr se of the estimate.
         """
 
         z_score_exposure = exposure_tuple[0] / exposure_tuple[1]
@@ -206,6 +262,19 @@ class MendelianRandomization(association.BaseAssociation):
         return [beta_smr, se_smr, p_value]
 
     def do_and_add_smr_estimation(self, exposure_tuple, outcome_tuple, variant_name, pos, chr):
+        """
+        Does an SMR estimation (two variance terms included) and adds it to the class.
+
+
+        :param exposure_tuple: beta,se tuple of the exposure summary statistics
+        :param outcome_tuple: beta, se tuple of the outcome summary statistics
+        :param variant_name: name of the variant for external reference
+        :param pos: position of the variant for external reference
+        :param chr: chromosome of the variant for external reference
+        :return:
+        """
+
+
         estimates = self.do_smr_estimate(exposure_tuple, outcome_tuple)
         self.estimation_data.append(estimates)
         self.estimation_snps.append((variant_name, pos, chr))
@@ -214,13 +283,16 @@ class MendelianRandomization(association.BaseAssociation):
         self.exposure_tuples.append(exposure_tuple)
 
 
-    def write_ivw_header(self):
-        return "exposure\toutcome\tchromosome\tn_snps\tbeta_ivw\tse_ivw\tp_ivw\testimation_snp_names\testimation_snp_names\testimation_snp_betas\testimation_snp_se"
-
-
 
     def do_chochrans_q_meta_analysis(self, p_value_threshold):
+        """
+        Does a chochrans Q meta analysis on the interally present estimates, and estimates a combined causal effect.
 
+        :param p_value_threshold: p value threshold when to reject the null hypothesis that the estimate is drawn from
+        the same distribution.
+
+        :return: tuple of floats: beta, se, wald_p_val of the estimate after chochran's Q meta analysis.
+        """
         if len(self.estimation_data) < 3:
             raise ValueError("Less than three estimates supplied, cannot do cochrans q analysis")
 
@@ -275,9 +347,21 @@ class MendelianRandomization(association.BaseAssociation):
         return (save_beta_ivw, save_se_ivw, save_p_ivw), old_indices, p_val
 
     def do_egger_regression(self):
+        """
+        Does egger regression based on single variance term estimates.
+
+        :return: list of length two each with a tuple of floats: beta, se, wald_p_val of the estimate for intercept
+        and slope
+        """
         return self.do_egger_regression_single_variance_term()
 
     def do_egger_regression_single_variance_term(self):
+        """
+        Does egger regression based on single variance term estimates.
+
+        :return: list of length two each with a tuple of floats: beta, se, wald_p_val of the estimate for intercept
+        and slope respectively.
+        """
 
         num_estimates = len(self.estimation_data)
 
@@ -325,9 +409,15 @@ class MendelianRandomization(association.BaseAssociation):
         return self.egger_intercept, self.egger_slope
 
 
-
-
     def do_egger_regression_two_variance_term(self):
+
+        """
+        Does egger regression based on two variance term estimates.
+
+        :return: list of length two each with a tuple of floats: beta, se, wald_p_val of the estimate for intercept
+        and slope respectively.
+        """
+
 
         num_estimates = len(self.estimation_data)
 
@@ -385,22 +475,29 @@ class MendelianRandomization(association.BaseAssociation):
 
     def do_single_term_mr_estimate(self, exposure_tuple, outcome_tuple):
         """
-        Determine SMR test effect and standard error.
+        Does a single variance term MR estimate on a variant.
 
-        :param exposure_data: Exposure estimates which must have the methods get_beta and get_z_score
-        :param outcome_data: Outcome estimates which must have the methods get_beta and get_z_score
-        :return: tuple of smr beta and smr se
+        :param exposure_tuple: beta, se tuple of the exposure
+        :param outcome_tuple: beta, se tuple of the outcome
+        :return: beta, se and p value of the single estimate.
         """
-
         beta_mr = outcome_tuple[0] / exposure_tuple[0]
         se_mr = np.sqrt((outcome_tuple[1] ** 2) / (exposure_tuple[0] ** 2))
 
         z_score = beta_mr / se_mr
         p_value = scipy.stats.norm.sf(abs(z_score)) * 2
 
-        return [beta_mr, se_mr, p_value]
+        return beta_mr, se_mr, p_value
 
     def do_and_add_single_term_mr_estimation(self, exposure_tuple, outcome_tuple):
+        """
+        Does a single term variance estimate of a variant, and adds it to the class for further analysis.
+
+        :param exposure_tuple: beta, se tuple of the exposure
+        :param outcome_tuple: beta, se tuple of the outcome
+        :return: None
+        """
+
         estimates = self.do_single_term_mr_estimate(exposure_tuple, outcome_tuple)
         self.estimation_data.append(estimates)
 
@@ -408,6 +505,14 @@ class MendelianRandomization(association.BaseAssociation):
         self.exposure_tuples.append(exposure_tuple)
 
     def mr_presso(self, n_sims=1000, significance_thresh=0.05):
+        """
+        Python reimplementation of MR-PRESSO.
+
+        :param n_sims: number of permutation simulations.
+        :param significance_thresh: significance thresshold.
+        :return: beta, se and p value of the estimate after the bad snps were removed. If no estimate can be made,
+        returns a tuple of 3* (np.nan).
+        """
 
         def make_random_data():
             beta_ivw, _, _ = self.do_ivw_estimation()
@@ -526,7 +631,12 @@ class MendelianRandomization(association.BaseAssociation):
 
 
     def do_lda_mr_egger(self, ld_matrix):
-
+        """
+        Perform LDA MR egger on internal estimates.
+        :param ld_matrix: pearson LD matrix. ordered by the estimates.
+        :return: list of length two each with a tuple of floats: beta, se, wald_p_val of the estimate for intercept
+        and slope respectively.
+        """
         return self.do_lda_mr_egger_on_estimates(self.outcome_tuples, self.exposure_tuples, ld_matrix)
 
 
@@ -560,10 +670,11 @@ class MendelianRandomization(association.BaseAssociation):
         <End email.>
 
 
-        :param list_of_outcome_tuples:
-        :param list_of_exposure_tuples:
-        :param pearson_ld_matrix:
-        :return:
+        :param list_of_outcome_tuples: list of beta,se tuples from the outcome
+        :param list_of_exposure_tuples: list of beta,se tuples from the exposure
+        :param pearson_ld_matrix: peason LD matrix in the order of the estimates.
+        :return: :return: list of length two each with a tuple of floats: beta, se, wald_p_val of the estimate for intercept
+        and slope respectively.
         """
 
 
@@ -622,19 +733,3 @@ class MendelianRandomization(association.BaseAssociation):
                     f.write("{}\t{}\t".format(conditional_exposure[i], conditional_outcome[i]) + "\t".join([str(x) for x in sigma_g[i,:]]) + "\n" )
 
         return estimates, np.sqrt(np.diag(bread) * significant_estimates), test_stat, p_val
-
-
-## Synonym classes.
-
-class MRPresso(MendelianRandomization):
-
-    def __init__(self):
-        warnings.warn("MRPresso is deprecated, please use the MendelianRandomization class", DeprecationWarning)
-        super().__init__()
-
-
-class LDAMREgger(MendelianRandomization):
-
-    def __init__(self):
-        warnings.warn("LDAMREgger is deprecated, please use the MendelianRandomization class", DeprecationWarning)
-        super().__init__()
