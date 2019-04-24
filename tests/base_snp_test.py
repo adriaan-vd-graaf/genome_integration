@@ -1,5 +1,5 @@
 import genome_integration.variants as variants
-
+import warnings
 
 # this function tests the add_snp_data class.
 def test_add_snp_snp_acceptance():
@@ -186,11 +186,18 @@ def test_adding_minor_allele_frequency():
     """
     warning_given = False
     snp_to_add_maf = variants.SNP("rs123", "1", 123, "C", "A", 1-maf)
-    try:
+
+    with warnings.catch_warnings(record=True) as w:
+
+        warnings.simplefilter("always")
         snp_to_add_maf.add_snp_data(snp_a)
-    except RuntimeWarning:
-        warning_given = True
+
+        if len(w) == 1:
+            warning_given = True
+
     assert warning_given
+
+
 
 
 

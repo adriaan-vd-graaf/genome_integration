@@ -4,10 +4,10 @@ inverse variance estimate on independent effects.
 """
 
 __author__      = "Adriaan van der Graaf"
-__copyright__   = "Copyright 2018, Adriaan van der Graaf"
 
 import math
 import copy
+import warnings
 import numpy as np
 import scipy.stats
 from statsmodels.regression.linear_model import WLS
@@ -18,9 +18,79 @@ from .. import utils
 from .. import association
 
 
-
-
 class MendelianRandomization(association.BaseAssociation):
+    """
+    This class is a base class of most summary statistic based MR analyses.
+
+    In essence it's a univariate association, so inherits from the BaseAssociation class.
+
+
+    Attributes
+    ----------
+
+    Specific to the MendelianRandomization class
+
+    estimation_done: bool
+        boolean indicating if an estimation was done.
+
+    estimation_data: empty list
+        initialized as an empty list,
+        but as estimates are added, will contain tuples of length 2 with a beta and a standard error.
+
+    estimation_snps = : empty list
+        initialized as an empty list, but will be filled with snp information as estimates are added. can be left empty.
+
+    outcome_tuples: empty list
+        initialized as an empty list, can be filled with the summary statistics of the outcome
+        in the same way as estimation data
+
+    exposure_tuples: empty list
+        initialized as an empty list, can be filled with the summary statistics of the exposure
+        in the same way as estimation data
+
+    q_test_indices_remaining: list of ints
+        initialized as empty, but as the q test removes estimates, it shows which estimates are removed.
+
+    _ivw_intermediate_top: list of floats
+        this is an internal variable that should not be used.
+
+    _ivw_intermediate_bottom list of floats
+        this is an internal variable that should not be used.
+
+
+    Methods
+    -------
+    add_estimate(self, beta_se_tuple, variant_name, pos, chr)
+        adds a single estimate for MR estimation.
+        beta_se_tuple is a tuple of length 2, containing the beta estimate and se(beta).
+        The variant name, pos and chr are information that denote where the variant comes from.
+
+    do_ivw_estimation(self)
+        Does the IVW estimation based on the single estimates in estimation data.
+
+    do_ivw_estimation_on_estimate_vector(self, estimation_vec)
+        Does an IVW estimate on an estimate vector, without storing any information in the class.
+        estimation_vec is a list of tuples with beta and se per variant that's being used.
+
+    get_ivw_estimates(self)
+        Deprecated, mirrors the do_ivw_estimation() method.
+
+    do_smr_estimate(self, exposure_tuple, outcome_tuple)
+        Does an SMR estimate of causality. SMR uses the variance of the outcome summary statistic and the variance of
+        the exposure summary statistic to estimate significance.
+        exposure_tuple is a beta se tuple of the exposure summary statistics
+        outcome_tuple is a beta se tuple of the outcome summary statistics
+
+    do_smr_estimate(self, exposure_tuple, outcome_tuple)
+        Does an SMR estimate of causality. SMR uses the variance of the outcome summary statistic and the variance of
+        the exposure summary statistic to estimate significance.
+        exposure_tuple is a beta se tuple of the exposure summary statistics
+        outcome_tuple is a beta se tuple of the outcome summary statistics
+
+
+    """
+
+
 
     def __init__(self):
         super().__init__()
@@ -34,96 +104,33 @@ class MendelianRandomization(association.BaseAssociation):
         self.outcome_tuples = []
         self.exposure_tuples = []
 
-        # this will be used to do meta analysis techniques.
-        # meaning there will be some
-        self.ivw_intermediate_top = []
-        self.ivw_intermediate_bottom = []
-
-        self.beta = np.nan
-        self.se = np.nan
-        self.wald_p_val = np.nan
-
-        #cochrans q done.
-        self.q_test_done = False
-        self.q_test_p_value = None
+        #cochrans q test
         self.q_test_indices_remaining = None
 
-        self.q_test_beta = None
-        self.q_test_se = None
-        self.q_test_p_value = None
 
-        #egger regression
-        self.egger_done = False
-
-        self.egger_intercept = None
-        self.egger_slope = None
+        # this will be used to do meta analysis techniques.
+        # meaning there will be some
+        self._ivw_intermediate_top = []
+        self._ivw_intermediate_bottom = []
 
 
 
-    def write_for_smr_style_plot_without_q_data(self, filename):
-        """
-        will write the cross style plot.
 
-
-        :param filename:
-        :return:
-        """
-        with open(filename, "w") as f:
-            f.write("snp_name\tbeta_exposure\tse_exposure\tbeta_outcome\tse_outcome\tbeta_smr\tse_ivw\n")
-            for i in range(len(self.estimation_data)):
-                f.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(self.estimation_snps[i][0],
-                                                              self.exposure_tuples[i][0],
-                                                              self.exposure_tuples[i][1],
-                                                              self.outcome_tuples[i][0],
-                                                              self.outcome_tuples[i][1],
-                                                              self.estimation_data[i][0],
-                                                              self.estimation_data[i][1]))
-
-
-
-    def write_for_smr_style_plot_with_q_data(self, filename):
-        """
-        Contains an extra column.
-
-        :param filename:
-        :return:
-        """
-        with open(filename, "w") as f:
-            f.write("snp_name\tbeta_exposure\tse_exposure\tbeta_outcome\tse_outcome\tbeta_smr\tse_ivw\tq_pruned\n")
-            for i in range(len(self.estimation_data)):
-                f.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(self.estimation_snps[i][0],
-                                                              self.exposure_tuples[i][0],
-                                                              self.exposure_tuples[i][1],
-                                                              self.outcome_tuples[i][0],
-                                                              self.outcome_tuples[i][1],
-                                                              self.estimation_data[i][0],
-                                                              self.estimation_data[i][1],
-                                                              0.6 + 0.4 * float(i in self.q_test_indices_remaining),
-                                                              ))
-
-
-    def write_for_smr_style_plot(self, filename):
-
-        if self.q_test_done:
-            self.write_for_smr_style_plot_with_q_data(filename)
-        else:
-            self.write_for_smr_style_plot_without_q_data(filename)
-
-
-
-    def add_estimate(self, beta_se_tuple, snp_name_1, pos, chr, snp_name_2):
+    def add_estimate(self, beta_se_tuple, variant_name, pos, chr):
         self.estimation_done = False
+
         self.estimation_data.append(beta_se_tuple)
-        self.estimation_snps.append((snp_name_1, pos, chr, snp_name_2))
+        self.estimation_snps.append((variant_name, pos, chr))
 
     def do_ivw_estimation(self):
 
-        self.beta, self.se, self.wald_p_val = self.do_ivw_estimation_on_estimate_vector(
-            self.estimation_data, self.ivw_intermediate_top, self.ivw_intermediate_bottom)
+        beta, se, wald_p_val = self.do_ivw_estimation_on_estimate_vector(
+            self.estimation_data, save_intermediate=True)
         self.estimation_done = True
-        return self.beta, self.se, self.wald_p_val
 
-    def do_ivw_estimation_on_estimate_vector(self, estimation_vec, ivw_intermediate_top=None, ivw_intermediate_bottom=None):
+        return beta, se, wald_p_val
+
+    def do_ivw_estimation_on_estimate_vector(self, estimation_vec, save_intermediate=False):
 
         if len(estimation_vec) == 0:
             raise RuntimeError('No estimates supplied to do estimation')
@@ -131,9 +138,10 @@ class MendelianRandomization(association.BaseAssociation):
         beta_top = 0.0
         beta_bottom = 0.0
 
-        if ivw_intermediate_top is None or ivw_intermediate_bottom is None:
-            ivw_intermediate_top = []
-            ivw_intermediate_bottom = []
+
+        ivw_intermediate_top = []
+        ivw_intermediate_bottom = []
+
 
         i = 0
 
@@ -143,12 +151,19 @@ class MendelianRandomization(association.BaseAssociation):
             if smr_result[1] == 0:
                 smr_result[1] = np.nextafter(0, 1)
 
+
             ivw_intermediate_top.append(smr_result[0] * (smr_result[1] ** -2))
             ivw_intermediate_bottom.append((smr_result[1] ** -2))
+
+
 
             beta_top += ivw_intermediate_top[i]
             beta_bottom += ivw_intermediate_bottom[i]
             i += 1
+
+        if save_intermediate:
+            self._ivw_intermediate_top = ivw_intermediate_top
+            self._ivw_intermediate_bottom = ivw_intermediate_bottom
 
         beta_ivw = beta_top / beta_bottom
         se_ivw = math.sqrt(1 / beta_bottom)
@@ -158,10 +173,8 @@ class MendelianRandomization(association.BaseAssociation):
         return beta_ivw, se_ivw, p_value
 
     def get_ivw_estimates(self):
-        if self.estimation_done:
-            return self.beta, self.se, self.wald_p_val
-        else:
-            return self.do_ivw_estimation()
+        warnings.warn("This method is deprecated, please use the do_ivw_estimation() method.", DeprecationWarning)
+        return self.do_ivw_estimation()
 
     def do_smr_estimate(self, exposure_tuple, outcome_tuple):
         """
@@ -192,10 +205,10 @@ class MendelianRandomization(association.BaseAssociation):
 
         return [beta_smr, se_smr, p_value]
 
-    def do_and_add_smr_estimation(self, exposure_tuple, outcome_tuple, snp_name_1, pos, chr, snp_name_2):
+    def do_and_add_smr_estimation(self, exposure_tuple, outcome_tuple, variant_name, pos, chr):
         estimates = self.do_smr_estimate(exposure_tuple, outcome_tuple)
         self.estimation_data.append(estimates)
-        self.estimation_snps.append((snp_name_1, pos, chr, snp_name_2))
+        self.estimation_snps.append((variant_name, pos, chr))
 
         self.outcome_tuples.append(outcome_tuple)
         self.exposure_tuples.append(exposure_tuple)
@@ -204,55 +217,6 @@ class MendelianRandomization(association.BaseAssociation):
     def write_ivw_header(self):
         return "exposure\toutcome\tchromosome\tn_snps\tbeta_ivw\tse_ivw\tp_ivw\testimation_snp_names\testimation_snp_names\testimation_snp_betas\testimation_snp_se"
 
-    def write_ivw_line(self, exposure, outcome, chromosome):
-        if not self.estimation_done:
-            return None
-
-        return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
-            exposure,
-            outcome,
-            chromosome, #this requires that the estimation snps are well defined.
-            len(self.estimation_data),
-            self.beta,
-            self.se,
-            self.wald_p_val,
-            ','.join([x[0] for x in self.estimation_snps]),
-            ','.join([str(x[0]) for x in self.estimation_data]),
-            ','.join([str(x[1]) for x in self.estimation_data])
-        )
-
-    def write_ivw_estimates(self, filename):
-        strings = ["beta_ivw\tse_ivw\tp_val_ivw\testimate_type\tsnp_1\tbp\tchr\tsnp_2",
-                   "\t".join(
-                            [
-                            str(self.beta),
-                            str(self.se),
-                            str(self.wald_p_val),
-                            "ivw_estimate",
-                            "NA",
-                            "NA",
-                            "NA",
-                            "NA"
-                            ]
-                            )
-                   ]
-
-        for i in range(len(self.estimation_data)):
-            strings.append(
-                "\t".join(
-                        [str(self.estimation_data[i][0]),
-                         str(self.estimation_data[i][1]),
-                         str(self.estimation_data[i][2]),
-                         "smr_estimate",
-                         str(self.estimation_snps[i][0]),
-                         str(self.estimation_snps[i][1]),
-                         str(self.estimation_snps[i][2]),
-                         str(self.estimation_snps[i][3])
-                        ]
-                        )
-            )
-
-        utils.write_list_to_newline_separated_file(strings, filename)
 
 
     def do_chochrans_q_meta_analysis(self, p_value_threshold):
@@ -269,9 +233,11 @@ class MendelianRandomization(association.BaseAssociation):
         old_indices = indices_remaining
 
         #these will change while the algorithm is running.
-        tmp_beta_ivw = self.beta
-        tmp_se_ivw = self.se
-        tmp_p_ivw = self.wald_p_val
+        beta, se, wald_p_val = self.do_ivw_estimation()
+
+        tmp_beta_ivw = beta
+        tmp_se_ivw = se
+        tmp_p_ivw = wald_p_val
         save_beta_ivw, save_se_ivw, save_p_ivw = tmp_beta_ivw, tmp_se_ivw, tmp_p_ivw
 
         p_val = 0.0
@@ -281,7 +247,7 @@ class MendelianRandomization(association.BaseAssociation):
 
             #determine the Q statistic, per estimate.
             q_terms = [
-                self.ivw_intermediate_bottom[i] * (self.estimation_data[i][0] - tmp_beta_ivw) ** 2
+                self._ivw_intermediate_bottom[i] * (self.estimation_data[i][0] - tmp_beta_ivw) ** 2
                 for i in indices_remaining
             ]
 
@@ -303,13 +269,8 @@ class MendelianRandomization(association.BaseAssociation):
                 self.do_ivw_estimation_on_estimate_vector([self.estimation_data[i] for i in indices_remaining])
 
         #save it now.
-        self.q_test_done = True
-        self.q_test_p_value = p_value_threshold
         self.q_test_indices_remaining = old_indices
 
-        self.q_test_beta = save_beta_ivw
-        self.q_test_se = save_se_ivw
-        self.q_test_p_value = save_p_ivw
 
         return (save_beta_ivw, save_se_ivw, save_p_ivw), old_indices, p_val
 
@@ -449,7 +410,7 @@ class MendelianRandomization(association.BaseAssociation):
     def mr_presso(self, n_sims=1000, significance_thresh=0.05):
 
         def make_random_data():
-            beta_ivw, _, _ = self.get_ivw_estimates()
+            beta_ivw, _, _ = self.do_ivw_estimation()
             random_exposure = np.random.normal([x[0] for x in self.exposure_tuples],
                                                [x[1] for x in self.exposure_tuples])
             random_outcome = np.random.normal([beta_ivw * x[0] for x in self.exposure_tuples],
@@ -663,15 +624,17 @@ class MendelianRandomization(association.BaseAssociation):
         return estimates, np.sqrt(np.diag(bread) * significant_estimates), test_stat, p_val
 
 
-##just synonym classes.
+## Synonym classes.
 
 class MRPresso(MendelianRandomization):
 
     def __init__(self):
+        warnings.warn("MRPresso is deprecated, please use the MendelianRandomization class", DeprecationWarning)
         super().__init__()
 
 
 class LDAMREgger(MendelianRandomization):
 
     def __init__(self):
+        warnings.warn("LDAMREgger is deprecated, please use the MendelianRandomization class", DeprecationWarning)
         super().__init__()

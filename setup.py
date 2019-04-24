@@ -29,10 +29,9 @@ setup(
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
     version='0.1.0.dev0',
-    python_requires='!=3.0.*, !=3.1.*, !=3.2.*,!=3.3.*, !=3.4.*, >=3.6.*, <4',
+    python_requires='!=3.0.*, !=3.1.*, !=3.2.*,!=3.3.*, !=3.4.*, !=3.5.*, >=3.6.*, <4',
 
-
-    description='A sample Python project',
+    description='Genome integration, a personal library',
     long_description=long_description,
 
     # The project's main homepage.
@@ -58,11 +57,11 @@ setup(
         'Topic :: Genome analysis :: multiomics integration',
 
         # Pick your license as you wish (should match "license" above)
-        'License :: Copyright 2017 Adriaan van der Graaf',
+        'License :: Copyright 2019 Adriaan van der Graaf',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: >=3.6',
         'Programming Language :: Python :: 3.6'
     ],
 

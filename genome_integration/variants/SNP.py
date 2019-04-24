@@ -57,7 +57,7 @@ class SNP:
     update_alleles(self, snp_data, overwrite)
         updates alleles, and updates the self.has_allele_data boolean
 
-    def add_minor_allele_frequency(self,  major, minor, freq):
+    add_minor_allele_frequency(self,  major, minor, freq):
         Adds a minor allele frequency
 
 
@@ -65,7 +65,7 @@ class SNP:
         updates alleles, but does not update the self.has_allele_data boolean,
         the function update_alleles() will do both.
 
-    def _flip_alleles(self):
+    _flip_alleles(self):
         Flips alleles -- major becomes minor; minor becomes major. Does not update frequency.
 
     set_pos_name(self):
@@ -93,6 +93,10 @@ class SNP:
         self.has_position_data = self.position != None and self.chromosome != None
         self.has_allele_data = self.major_allele != None and self.minor_allele != None
         self.has_frequency_data = self.minor_allele_frequency != None
+
+    def __str__(self):
+        return f"{self.snp_name}, {self.chromosome}:{self.position}, major: {self.major_allele}, " \
+            f"minor: {self.minor_allele}, MAF: {self.minor_allele_frequency}"
 
 
     def add_snp_data(self, snp_data, overwrite=False):
@@ -161,12 +165,14 @@ class SNP:
             if flipped:
                 self.minor_allele_frequency = 1 - self.minor_allele_frequency
 
-                if (not snp_data.minor_allele_frequency is None) and \
+                if (snp_data.minor_allele_frequency is not None) and \
                         (abs(self.minor_allele_frequency - snp_data.minor_allele_frequency) > 0.5):
                     """
                     This is when the flipped allele frequency is not really right.
                     """
-                    warnings.warn("Updated allele frequency difference between snp and reference is really high", RuntimeWarning)
+                    warnings.warn(f"High difference in updated allele frequency, "
+                                  f"old: {self}, new: {snp_data}",
+                                  RuntimeWarning)
 
             return False
 

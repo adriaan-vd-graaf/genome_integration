@@ -20,8 +20,8 @@ def test_mr_presso_with_reference_implementation():
     mr_presso_reference_ex1 = (0.5014829, 0.01047948)
     mr_presso_reference_ex2 = (0.8613234, 0.02143151)
 
-    mr_presso_object_ex1 = causal_inference.MRPresso()
-    mr_presso_object_ex2 = causal_inference.MRPresso()
+    mr_presso_object_ex1 = causal_inference.MendelianRandomization()
+    mr_presso_object_ex2 = causal_inference.MendelianRandomization()
 
     resource_path = '/'.join(('test_resources', 'mr_presso_data.txt'))
 
@@ -40,6 +40,11 @@ def test_mr_presso_with_reference_implementation():
 
     mr_presso_result_ex1 = mr_presso_object_ex1.mr_presso(n_sims=1000, significance_thresh=0.2)
     mr_presso_result_ex2 = mr_presso_object_ex2.mr_presso(n_sims=1000, significance_thresh=0.2)
+
+
+    # The precision of these results is dependent on the n_sims
+    # if you want you can reduce the precision (0.02 below) and subsequently increase the n_sims parameter,
+    # but this takes a fair bit of time.
 
     assert(mr_presso_result_ex1[0] - mr_presso_reference_ex1[0] < 0.02)
     assert (mr_presso_result_ex1[1] - mr_presso_reference_ex1[1] < 0.02)

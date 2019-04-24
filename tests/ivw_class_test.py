@@ -76,13 +76,13 @@ def test_giant_celiac_from_r_implementation():
 
             smr_tuple = causal_inference.MendelianRandomization().do_smr_estimate(exposure_tuple=exposure_tuple, outcome_tuple=outcome_tuple)
 
-            ivw_addition.do_and_add_smr_estimation(exposure_tuple, outcome_tuple, "lll", 12, 12, "lll")
+            ivw_addition.do_and_add_smr_estimation(exposure_tuple, outcome_tuple, "lll", 12, 12)
 
 
             assert isclose(smr_tuple[0], beta_smr[i], rel_tol=5e-10)
             assert isclose(smr_tuple[1], se_smr[i], rel_tol=5e-10)
 
-            ivw_thing.add_estimate(smr_tuple, "lala", 12, 12, "lala")
+            ivw_thing.add_estimate(smr_tuple, "lala", 12, 12)
 
             i+=1
 
@@ -132,7 +132,7 @@ def test_ivw_estimates():
         this_result = causal_inference.MendelianRandomization()
 
         for i in range(num_samples):
-            this_result.add_estimate((beta_smr[i], se_smr[i]), "check", 1337, 1, "other")
+            this_result.add_estimate((beta_smr[i], se_smr[i]), "check", 1337, 1)
 
         my_results = this_result.do_ivw_estimation()
 
@@ -161,7 +161,7 @@ def test_q_meta_analysis_without_heterogeneity():
         this_result = causal_inference.MendelianRandomization()
 
         for i in range(num_samples):
-            this_result.add_estimate((beta_smr[i], se_smr[i]), "check", 1337, 1, "other")
+            this_result.add_estimate((beta_smr[i], se_smr[i]), "check", 1337, 1)
 
         my_results = this_result.do_ivw_estimation()
 
@@ -193,7 +193,7 @@ def test_q_meta_analysis_with_heterogeneity():
         this_result = causal_inference.MendelianRandomization()
 
         for i in range(num_good_samples + num_bad_samples):
-            this_result.add_estimate((beta_smr[i], se_smr[i]), "check", 1337, 1, "other")
+            this_result.add_estimate((beta_smr[i], se_smr[i]), "check", 1337, 1)
 
         this_result.do_ivw_estimation()
         #
@@ -205,8 +205,8 @@ def test_q_meta_analysis_with_heterogeneity():
 
 
 #now do the tests for easy debugging.
-test_ivw_estimates()
-test_giant_celiac_from_r_implementation()
-test_smr_results()
+# test_ivw_estimates()
+# test_giant_celiac_from_r_implementation()
+# test_smr_results()
 test_q_meta_analysis_without_heterogeneity()
-test_q_meta_analysis_with_heterogeneity()
+# test_q_meta_analysis_with_heterogeneity()

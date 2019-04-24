@@ -26,8 +26,11 @@ class EnsemblGene(gene_regions.StartEndRegion):
         self.gene_type = gene_type
         self.ensembl_version = ensembl_version
 
+    def __repr__(self):
+        return f"EnsemblGene object: {self.ensg_id}, {self.gene_name}, {self.chromosome}:{self.start}-{self.end},{self.strand}"
+
     def __str__(self):
-        return(f"{self.ensg_id}, {self.gene_name}, {self.chromosome}:{self.start}-{self.end},{self.strand}")
+        return f"{self.ensg_id}, {self.gene_name}, {self.chromosome}:{self.start}-{self.end},{self.strand}"
 
 
 class EnsemblGenes:

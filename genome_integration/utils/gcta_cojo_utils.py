@@ -69,10 +69,6 @@ class CojoCmaLine(association.GeneticAssociation):
 
     """
 
-    __slots__ = ['snp_name', 'chromosome', 'position', 'major_allele', 'minor_allele', 'minor_allele_frequency',
-                 'has_position_data', 'has_allele_data', 'has_frequency_data', 'dependent_name', 'explanatory_name',
-                 'beta', 'se', 'n_observations', 'r_squared', 'z_score', 'wald_p_val', 'snp', 'beta_initial',
-                 'se_initial', 'p_initial', 'freq_geno', 'n_estimated']
 
     def __init__(self, line, name):
         split = [x for x in line.split() if x != ""]
