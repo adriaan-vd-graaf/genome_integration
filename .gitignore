@@ -19,3 +19,8 @@ build/*
 # Python egg metadata, regenerated from source files by setuptools.
 /*.egg-info
 
+#pycharm idea
+.idea*
+
+#virtual environments
+venv*
