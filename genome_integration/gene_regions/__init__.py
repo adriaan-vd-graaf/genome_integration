@@ -1,53 +1,45 @@
 """
 These functions are being used to prioritize genes in certain already associated regions.
-
-TODO: add a gene region with splicing in it.
 """
 
 __author__      = "Adriaan van der Graaf"
-__copyright__   = "Copyright 2017, Adriaan van der Graaf"
-
-
-class StartEndRegions:
-    def __init__(self, list_of_regions):
-        self.gene_regions = [StartEndRegion] * len(list_of_regions)
-        i = 0
-        for region in list_of_regions:
-            tmp = StartEndRegion(region)
-            self.gene_regions[i] = tmp
-            i+=1
-
-    def in_gene_regions(self, chr, position):
-        for i in self.gene_regions:
-            if i.snp_in_region(chr, position):
-                return True
-        return False
-
-    def make_non_overlapping_regions(self):
-
-        already_combined = set()
-
-        new_list = []
-
-        for i in range(len(self.gene_regions)):
-            if i in already_combined:
-                continue
-
-            region = self.gene_regions[i]
-            overlapping = [j for j in range(len(self.gene_regions)) if self.gene_regions[j].region_overlaps(region)]
-
-            chromosome = region.chromosome
-            start = min([self.gene_regions[j].start for j in overlapping])
-            end = max([self.gene_regions[j].end for j in overlapping])
-            # add it to a list.
-            new_list.append([chromosome, start, end])
-            # finally remove the regions that do not have overlap.
-            [already_combined.add(j) for j in overlapping]
-
-        return StartEndRegions(new_list)
 
 
 class StartEndRegion:
+    """
+    Class that implements a genomic region, which is really a stretch of base pairs.
+
+    Attributes
+    ----------
+
+    chromosome: str
+        string representing the chromosome
+
+    start: int
+        start base pair position of the genomic region.
+
+    end: int
+        end position of the genomic region.
+
+    Methods
+    -------
+
+    position_in_region(self, chr, position):
+        returns a bool on if the single position is within the region.
+
+    snp_in_region(chr, position)
+        returns a bool on if the single position is within the region.
+        synonym method of position in region.
+
+    snp_object_in_region(snp_object)
+        returns a bool on if the object of class SNP is within the region.
+
+    region_overlaps(other_region)
+        returns a bool if another of region of the same class overlaps.
+
+
+
+    """
     def __init__(self, list):
         self.chromosome = str(list[0])
         self.start = int(list[1])
@@ -60,12 +52,32 @@ class StartEndRegion:
         if self.start < 0 or self.end < 0:
             raise RuntimeError("Region cannot have negative positions.")
 
-    def snp_in_region(self, chr, position):
+    def position_in_region(self, chr, position):
+        """
+        return if the position is in the region.
+
+        :param chr: chromosome str or castable to str
+        :param position: position int or castable to int
+        :return: bool
+        """
         return (self.chromosome == str(chr)) and (self.start <= int(position) <= self.end)
+
+    def snp_in_region(self, chr, position):
+        """
+        return if the position is in the region.
+        synonym method of position_in_region method.
+
+        :param chr: chromosome str or castable to str
+        :param position: position int or castable to int
+        :return: bool
+        """
+        return self.position_in_region(chr, position)
+
 
     def snp_object_in_region(self, snp_object):
         """
-        :param snp_object:
+
+        :param snp_object: object of type SNP (this package)
         :return: True or false if snp in region
         """
         return self.snp_in_region(snp_object.chromosome, snp_object.position)
@@ -97,3 +109,73 @@ class StartEndRegion:
                 return self.chromosome < other.chromosome
 
         return self.start < other.start
+
+
+
+class StartEndRegions:
+    """
+    This class contains multiple start end regions
+
+    Attributes
+    ----------
+
+    gene_regions: list of StartEndRegion objects
+
+    Methods
+    -------
+
+    in_gene_regions(self, chr, position)
+        identifies if a position is in any of the regions.
+
+    make_non_overlapping_regions(self)
+        combines the regions into contiguous non-overlapping regions.
+
+    """
+    def __init__(self, list_of_regions):
+        self.gene_regions = [StartEndRegion] * len(list_of_regions)
+        i = 0
+        for region in list_of_regions:
+            tmp = StartEndRegion(region)
+            self.gene_regions[i] = tmp
+            i+=1
+
+    def in_gene_regions(self, chr, position):
+        """
+        Identify if a snp is in any of the gene regions.
+
+        :param chr: chromosome castable to str
+        :param position: position castable to int
+        :return: boolean
+        """
+        for i in self.gene_regions:
+            if i.snp_in_region(chr, position):
+                return True
+        return False
+
+    def make_non_overlapping_regions(self):
+        """
+        Combines all overlapping regions, and turns them into one big region.
+
+        :return: new instance of StartEndRegions containing contiguous, non overlapping regions
+        """
+        already_combined = set()
+
+        new_list = []
+
+        for i in range(len(self.gene_regions)):
+            if i in already_combined:
+                continue
+
+            region = self.gene_regions[i]
+            overlapping = [j for j in range(len(self.gene_regions)) if self.gene_regions[j].region_overlaps(region)]
+
+            chromosome = region.chromosome
+            start = min([self.gene_regions[j].start for j in overlapping])
+            end = max([self.gene_regions[j].end for j in overlapping])
+            # add it to a list.
+            new_list.append([chromosome, start, end])
+            # finally remove the regions that do not have overlap.
+            [already_combined.add(j) for j in overlapping]
+
+        return StartEndRegions(new_list)
+
