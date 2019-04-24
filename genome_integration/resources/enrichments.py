@@ -41,12 +41,7 @@ class Enrich:
         enriches the gene list.
 
     write_fdr_one_in_twenty_go_enrichments(self, file_name)
-        writes the fdr < 0.05 results to a table.
-
-
-
-
-
+        writes the fdr < 0.05 results to a stdout (if file_name == None) or a file
 
     """
     def __init__(self, gene_list):
@@ -62,8 +57,8 @@ class Enrich:
         Enriches the gene list.
 
         :param enrichment_name:
-        :param output:
-        :return:
+        :param output: if it should output the file.
+        :return: None
         """
         if self.enrichment_json is None:
             self.convert_gene_list()
@@ -73,6 +68,12 @@ class Enrich:
             self.write_fdr_one_in_twenty_go_enrichments()
 
     def reset(self):
+
+        """
+        Resets to a zero gene state.
+
+        :return: None
+        """
         self.gene_info = None
         self.gene_name_list = None
 
@@ -80,6 +81,10 @@ class Enrich:
         self.background = ['GO_Biological_Process_2017', 'Reactome_2016']
 
     def convert_gene_list(self):
+        """
+        internal function to return the gene list.
+        :return:None
+        """
 
         if self.gene_info is None:
             self.gene_info = read_gene_information()
@@ -95,6 +100,13 @@ class Enrich:
 
 
     def do_enrichr_analysis(self, target_name):
+        """
+        Does the request to enrichr for the enrichment analysis.
+
+        :param target_name:
+        :return:
+        """
+
         ENRICHR_URL = 'http://amp.pharm.mssm.edu/Enrichr/addList'
 
         genes_str = '\n'.join(self.gene_name_list)
@@ -139,7 +151,13 @@ class Enrich:
 
 
     def write_fdr_one_in_twenty_go_enrichments(self, filename = None):
-        #bit of hack to get it to work.
+
+        """
+        Writes the enrichr results with an FDR > 0.05 to a file or standard out.
+        :param filename: if None, will write to stdout, otherwise will write to a file.
+        :return: None.
+        """
+
         if filename is not None:
             file_handle = open(filename, "w")
         else:
