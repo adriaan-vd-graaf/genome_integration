@@ -4,6 +4,51 @@ import sys
 from genome_integration.resources.get_ensembl_gene_information import *
 
 class Enrich:
+    """
+    Enrich is a class that uses the enrichr API to make enrichments of gene sets.
+
+    Makes requests to an outside server. So don't use it if you don't want that.
+
+    Attributes
+    ----------
+    list_to_enrich: list of str
+        List of strings with genes to enrich.
+
+    gene_info: EnsemblGenes
+        will be filled with gene information for reference
+
+    gene_name_list: list of str
+        List of gene names after conversion.
+
+    enrichment_json: str in json format
+        json that contains the names of the enrichments.
+
+    background: list of str
+        backgrounds behind which to enrich.
+
+    Methods
+    -------
+    enrich(self, enrichment_name = "None", output=True)
+        Does an enrichment on  the initialized gene list
+
+    reset(self)
+        removes all the data from the class.
+
+    convert_gene_list
+        converts a gene list to names that enrichr accepts.
+
+    do_enrichr_analysis(self, target_name)
+        enriches the gene list.
+
+    write_fdr_one_in_twenty_go_enrichments(self, file_name)
+        writes the fdr < 0.05 results to a table.
+
+
+
+
+
+
+    """
     def __init__(self, gene_list):
         self.list_to_enrich = list(gene_list)
         self.gene_info = None
@@ -13,7 +58,13 @@ class Enrich:
         self.background = ['GO_Biological_Process_2017', 'Reactome_2016']
 
     def enrich(self, enrichment_name = "None", output=True):
+        """
+        Enriches the gene list.
 
+        :param enrichment_name:
+        :param output:
+        :return:
+        """
         if self.enrichment_json is None:
             self.convert_gene_list()
             self.do_enrichr_analysis(enrichment_name)
