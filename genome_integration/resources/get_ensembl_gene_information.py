@@ -1,12 +1,45 @@
 from genome_integration import gene_regions
 import gzip
 
+"""
+These classes are intended to easily access and query ensembl genes information, 
+But they have other uses as well, so it is possible that these will be joined with the ensembl
+
+
+"""
+
 
 class EnsemblGene(gene_regions.StartEndRegion):
     """
-    This data class (can be made into one in python 3.7, could be cool)
-    contains all the standard fields for gene information from ensembl.
+    Contains all the standard fields for gene information from ensembl.
+
+    Attributes
+    ----------
+    ensg_id: str
+        ensembl id
+
+    gene_name: str
+        gene name
+
+    strand: str
+        strand of the gene either `+` or `-`
+
+    gc_percent: str
+        percentage of GC bases.
+
+    gene_type: str
+        gene type
+
+    ensembl_version:
+        ensembl version of the gene.
+
+    Methods
+    -------
+
+    None
+
     """
+
     def __init__(self,
                  ensg_id,
                  gene_name,
@@ -34,6 +67,68 @@ class EnsemblGene(gene_regions.StartEndRegion):
 
 
 class EnsemblGenes:
+    """
+    EnsemblGene information
+
+    This class contains many genes likely with ensembl data.
+
+    Attributes
+    ----------
+
+    list_of_genes: list
+        list of EnsemblGenes objects
+
+    self.ensg_ids: set of strings
+        Ensembl gene ids in the set.
+
+    self.gene_names: list
+        names of the genes
+
+    self.ensg_to_full: dict
+        dict of ensembl ids as keys and associated EnsemblGene information as values
+
+    self.ensg_to_gene: dict
+        dict of ensembl ids as keys and
+
+    self.gene_to_full: dict
+        gene to full
+
+
+    self.genes_warned_about : set
+        genes that are duplicate.
+
+    self.allow_patch_overlapping_gene_names: bool
+        allows for overlapping gene names to be available.
+
+    Methods
+    -------
+    add_gene(ensembl_gene):
+        add an ensembl_gene object to self.
+
+    get_sorted_genes(self)
+        return sorted genes.
+
+    return_overlapping_regions(self, gene_region_to_check):
+        return the overlapping regions of a StartEndRegion object.
+
+    list_to_full(self, list, fail_on_bad_id=True)
+        returns an ensemblGenes object with only the genes in the files.
+
+    str_to_full(self, str)
+        return the Ensembl genes object associated with a certain string.
+
+    str_to_gene(self, str):
+        return the gene name associated with a certain string.
+
+    str_to_ensg(self, str):
+        return the ensembl id associated with a certain string.
+
+
+
+
+
+    """
+
     def __init__(self, allow_patch_overlapping_gene_names=False):
 
         self.list_of_genes = []
@@ -42,17 +137,20 @@ class EnsemblGenes:
         self.gene_names = set()
 
         self.ensg_to_full = {}
-        self.ensg_to_gene = {}
 
         self.gene_to_full = {}
-        self.gene_to_ensg = {}
 
         self.genes_warned_about = set()
 
         self.allow_patch_overlapping_gene_names = allow_patch_overlapping_gene_names
 
     def add_gene(self, ensembl_gene):
+        """
+        Add an EnsemblGene object to self.
 
+        :param ensembl_gene:
+        :return: None
+        """
         self.list_of_genes.append(ensembl_gene)
         if ensembl_gene.ensg_id in self.ensg_ids:
             raise ValueError("ERROR: found duplicate ENSG ID, when adding {}, this should not happen.".format(ensembl_gene.ensg_id))
@@ -64,7 +162,6 @@ class EnsemblGenes:
 
 
         self.ensg_to_full[ensembl_gene.ensg_id] = ensembl_gene
-        self.ensg_to_gene[ensembl_gene.ensg_id] = ensembl_gene.gene_name
 
         #this ensures that there will never be weird patch genes in the
         if ensembl_gene.gene_name in self.gene_names and (not self.allow_patch_overlapping_gene_names):
@@ -75,7 +172,7 @@ class EnsemblGenes:
 
         self.gene_names.add(ensembl_gene.gene_name)
         self.gene_to_full[ensembl_gene.gene_name] = ensembl_gene
-        self.gene_to_ensg[ensembl_gene.gene_name] = ensembl_gene.ensg_id
+
 
 
     def get_sorted_genes(self):
@@ -99,10 +196,14 @@ class EnsemblGenes:
 
     def return_overlapping_regions_based_on_coordinates(self, chromosome, position):
         """
+
         This may be a bit slow, as it will iterate over all gene regions here.
+        Cool thing though, this is sorted.
+
 
         :param gene_region_to_check:
-        :return:
+        :return: EnsemblGenes object with overlapping genes.
+
         """
         sorted_genes = self.get_sorted_genes()
         to_return = EnsemblGenes()
@@ -116,8 +217,15 @@ class EnsemblGenes:
     def __str__(self):
         return "EnsemblGenes object containing {} genes".format(len(self.gene_names))
 
-    def list_to_full(self, list, fail_on_bad_id=False):
+    def list_to_full(self, list, fail_on_bad_id=True):
+        """
+        turn a list of gene identifiers into a list of ensembl gene information
 
+        :param list: list of IDs you want to know all the ensembl information of.
+        :param fail_on_bad_id: bool,
+            if bad IDs should fail. Default is True.
+        :return: list of ensembl genes informaiton.
+        """
         if fail_on_bad_id:
             return [self.str_to_full(x) for x in list]
         else:
@@ -130,13 +238,11 @@ class EnsemblGenes:
 
             return return_list
 
-
     def str_to_full(self, str):
         if str in self.ensg_to_full.keys():
             return self.ensg_to_full[str]
-        elif str in self.gene_to_ensg.keys():
-            ensg = self.gene_to_ensg[str]
-            return self.ensg_to_full[ensg]
+        elif str in self.gene_to_full.keys():
+            return self.gene_to_full[str].gene_name
         else:
             raise ValueError(f"{str} was not convertible to a gene that I know.")
 
@@ -146,10 +252,10 @@ class EnsemblGenes:
     def str_to_ensg(self, str):
         return self.str_to_full(str).ensg_id
 
-
     def __iter__(self):
-        self.ordered_ensg_ids = list(self.ensg_ids)
-        self.ordered_gene_names = list(self.gene_names)
+        self.ordered_ensembl_info = sorted(self.list_of_genes)
+        self.ordered_ensg_ids = [x.ensg_id for x in self.ordered_ensembl_info]
+        self.ordered_gene_names = [x.gene_name for x in self.ordered_ensembl_info]
         self.iterator_indice = 0
         return self
 
@@ -166,11 +272,13 @@ class EnsemblGenes:
 def read_gene_information():
     """
     This loads in the ENSG gene information from the package and returns it.
-    very handy to have if you want to do a quick check of a certain ENSG number.
+    very handy to have if you want to do a quick check of a certain ENSG ID, or just want gene names of everything.
+
+    TODO: Properly handle the Ensembl and human genome versions.
 
     :return:
     EnsemblGene object with all the genes that are in the file '2018_05_18_ensembl_gene_information.txt.gz' in the
-    resource/ensembldata folder.
+    resource/ensembldata folder of this package.
     """
 
     resource_path = '/'.join(('ensembl_data', '2018_05_18_ensembl_gene_information.txt.gz'))
