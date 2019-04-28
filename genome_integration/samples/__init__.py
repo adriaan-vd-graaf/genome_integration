@@ -19,3 +19,6 @@ class Sample:
         self.name = name
         self.phenotype = phenotype
 
+
+    def _str__(self):
+        return self.name
