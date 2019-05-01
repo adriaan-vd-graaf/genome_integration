@@ -171,7 +171,6 @@ def test_q_meta_analysis_without_heterogeneity():
 def test_q_meta_analysis_with_heterogeneity():
     np.random.seed(1337)
 
-
     num_bad_samples = 5
     num_good_samples = 10
     num_replicates = 100
@@ -202,11 +201,10 @@ def test_q_meta_analysis_with_heterogeneity():
         z_scores.append(z_score_difference)
 
     assert np.median(z_scores) < 1.3
+    np.random.seed()
 
-
-#now do the tests for easy debugging.
-# test_ivw_estimates()
-# test_giant_celiac_from_r_implementation()
-# test_smr_results()
+test_ivw_estimates()
+test_giant_celiac_from_r_implementation()
+test_smr_results()
 test_q_meta_analysis_without_heterogeneity()
-# test_q_meta_analysis_with_heterogeneity()
+test_q_meta_analysis_with_heterogeneity()

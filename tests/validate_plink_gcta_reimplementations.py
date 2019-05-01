@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.stats
 import subprocess
+import os
 import warnings
 from genome_integration import simulate_mr
 from genome_integration import utils
@@ -215,6 +216,11 @@ def test_compare_plink_assoc():
                     ])
 
 
+rel_path = '/'.join(('temp_data', ''))
+test_data_dir = "{}/{}".format("/".join(__file__.split("/")[:-1]), rel_path)
+
+if not os.path.isdir(test_data_dir):
+    os.mkdir(test_data_dir)
 
 test_compare_plink_assoc()
 test_compare_gcta_cojo_with_reference_no_missing()
