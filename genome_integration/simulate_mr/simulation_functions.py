@@ -297,13 +297,13 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
     The genotype matrix for the exposure
 
     :param exposure_ld:
-    The ld R^2 matrix for the exposure genotypes
+    The ld R matrix for the exposure genotypes
 
     :param outcome_geno:
     The genotype matrix for the outcome
 
     :param outcome_ld:
-    The ld R^2 matrix for the outcome genotypes. currently not used.
+    The ld R matrix for the outcome genotypes. currently not used.
 
     :param overlapping_causal_snps:
     An integer number representing the number of causal SNPs for exposure 2 that overlap exposure 1.
@@ -562,162 +562,4 @@ def simulate_phenotypes_extended(geno,
 
 
 
-def select_random_snps_around_causal(ld_mat, causal_indices, num_extra=0, upper_threshold=0.5):
-    """
-    This function selects SNPs randomly around already identified SNPs, based on some LD threshold (upper_threshold).
-    All returned indices are in LD lower than upper_threshold with one another.
 
-    :param ld_mat:
-    A J by J numpy matrix, representing some correlation metric between variants, where J is the number of variants,
-    :param causal_indices:
-    A N by 1 numpy matrix, where N is the number of variants selected to find the high ld snps around
-    :param num_extra:
-    Number of extra variants to look for
-    :return:
-    returns a N + num_extra by 1 numpy matrix, or less (depending on the ld matrix)
-
-    """
-
-    """
-    Stage 1, Find SNPs in LD around the already identified causal indices. 
-    """
-
-    random_indices = []
-    for causal_snp in causal_indices:
-
-        causal_and_random = np.asarray(np.concatenate(([causal_snp],random_indices)), dtype=int)
-
-        below_thresh = np.all(ld_mat[causal_and_random,:] <= upper_threshold, axis=0)
-
-        if np.sum(below_thresh) == 0:
-            raise RuntimeWarning("Could not find any SNPs in LD below threshold.")
-
-        max_ld_of_candidates = np.max(ld_mat[causal_snp,below_thresh])
-
-        max_ld_indice = np.where(ld_mat[causal_snp,:] == max_ld_of_candidates)
-
-        random_indices.append(max_ld_indice[0][0])
-
-    """
-    Stage 2, find some extra SNPs around randomly chosen causal indices.
-    """
-
-    for extra_snp in range(num_extra):
-
-        causal_for_reference = int(np.random.choice(causal_indices, 1, replace=True))
-        causal_and_random = np.asarray(np.concatenate(([causal_for_reference], random_indices)), dtype=int)
-
-        below_thresh = np.all(ld_mat[causal_and_random, :] <= upper_threshold, axis=0)
-        if np.sum(below_thresh) == 0:
-            raise RuntimeWarning("Could not find any SNPs in LD below threshold. Returning the SNPs that have been chosen")
-
-
-        max_ld_of_candidates = np.max(ld_mat[causal_for_reference, below_thresh])
-
-        max_ld_indice = np.where(ld_mat[causal_for_reference, :] == max_ld_of_candidates)
-
-        random_indices.append(max_ld_indice[0][0])
-
-    return random_indices
-
-
-def randomly_choose_snps_and_flip_alleles_identify_causal(outcome_geno,
-                                                          r_sq_mat,
-                                                          exposure_betas,
-                                                          causal_exposure_indices,
-                                                          outcome_phenotype,
-                                                          r_sq_threshold=0.3,
-                                                          extra_random_snps=0,
-                                                          n_iterations=50
-                                                          ):
-
-    causal_estimates = np.zeros((n_iterations, 4), dtype=float)
-    geno = copy.deepcopy(outcome_geno.transpose()) #probably slow
-    betas = copy.deepcopy(exposure_betas) #probably slow
-
-    for i in range(n_iterations):
-
-        random_indices = select_random_snps_around_causal(r_sq_mat, causal_exposure_indices,
-                                                          upper_threshold=r_sq_threshold,
-                                                          num_extra=extra_random_snps)
-
-        design_mat = np.zeros( (geno.shape[0], len(random_indices) + 1 ), dtype=float)
-        design_mat[:,0] = geno[:,causal_exposure_indices] @ betas
-        design_mat[:,1:(len(random_indices)+1)] = geno[:,random_indices]
-
-        try:
-
-            model = sm.OLS(endog=outcome_phenotype, exog=design_mat)
-
-            ols_fit = model.fit()
-
-            causal_estimates[i, :] = ols_fit.params[0], ols_fit.bse[0], ols_fit.pvalues[0], ols_fit.bic
-
-        except Exception as x:
-            print("Did not find estimate for {}, with this exception: {}".format(i, x))
-
-
-    return causal_estimates
-
-
-
-def do_gcta_cojo_conditional(reference_geno, associations,  indices_of_interest, ref_loci):
-    """
-    Recreates the conditional analysis of the GCTA cojo paper.
-    Does NOT do the stepwise regression.
-
-    See the COJO paper (JIAN YANG 2011, Nature Genetics) supplemental methods for the derivation.
-
-    :param reference_geno:
-    :param marginal_estimates:
-    :param marginal_maf:
-    :return:
-    """
-    sample_size = associations[ref_loci[0].name].n_observations
-
-    beta_se_maf = np.asarray(
-                        [[associations[x.name].beta,
-                             associations[x.name].se,
-                             associations[x.name].minor_allele_frequency
-                             ]
-                         for x in ref_loci]
-                        , dtype=float)
-
-    full_d = 2*beta_se_maf[:,2] * (1 - beta_se_maf[:,2]) * sample_size
-    s_squared = beta_se_maf[:,1] ** 2
-
-    y_t_y = full_d * s_squared * (sample_size - 1) + full_d * beta_se_maf[:,0] **2
-    median_y_t_y = np.median(y_t_y)
-
-    adjusted_sample_size = (median_y_t_y / (full_d  * s_squared)) - (beta_se_maf[:,0] **2 / s_squared) + 1
-
-    new_b = np.zeros( (len(indices_of_interest), len(indices_of_interest)), dtype=float)
-    new_d = np.zeros((len(indices_of_interest), len(indices_of_interest)), dtype=float)
-
-    w_sums = np.sum(reference_geno ** 2, axis=0)
-
-    # now fill in the b and d vectors.
-    for j in range(len(indices_of_interest)):
-        new_d[j,j] = 2 * beta_se_maf[indices_of_interest[j],2] * \
-                    (1 - beta_se_maf[indices_of_interest[j],2]) * \
-                    adjusted_sample_size[indices_of_interest[j]]
-
-        n_vec = np.asarray([x
-                            if adjusted_sample_size[indices_of_interest[j]] > x
-                            else adjusted_sample_size[indices_of_interest[j]]
-                            for x in adjusted_sample_size[indices_of_interest]], dtype=float)
-
-        p_vec =  2 * beta_se_maf[indices_of_interest[j],2] * \
-                    (1 - beta_se_maf[indices_of_interest[j],2]) * \
-                    2*beta_se_maf[indices_of_interest,2] * \
-                    (1 - beta_se_maf[indices_of_interest,2])
-        w_vec = np.sum(reference_geno[:,j] ** 2) * w_sums
-        covariances = reference_geno.transpose() @ reference_geno[:, j]
-
-        new_b[j,:] = n_vec * np.sqrt(  p_vec / w_vec  ) * covariances
-
-    new_b_inv = np.linalg.inv(new_b)
-    beta = new_b_inv @ new_d @ beta_se_maf[indices_of_interest,0]
-
-
-    return np.asarray([beta, np.sqrt(np.diag(new_b_inv))], dtype=float).transpose()

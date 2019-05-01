@@ -198,10 +198,6 @@ def test_adding_minor_allele_frequency():
     assert warning_given
 
 
-
-
-
-
 def test_overwrite_snp_data():
     """
     Testing if the overwrite works.
@@ -230,6 +226,12 @@ def test_overwrite_snp_data():
     assert snp_to_overwrite.has_allele_data == snp_a.has_allele_data
     assert snp_to_overwrite.has_frequency_data == snp_a.has_frequency_data
 
+def test_reading_bim_from_snp_pack():
+    rel_path = '/'.join(('test_resources', 'subset_of_exposure_cohort.bim'))
+
+    plink_loc = "{}/{}".format("/".join(__file__.split("/")[:-1]), rel_path)
+    variants.BimFile(plink_loc)
+
 
 
 test_add_snp_snp_acceptance()
@@ -237,3 +239,5 @@ test_update_position()
 test_update_alleles()
 test_adding_minor_allele_frequency()
 test_overwrite_snp_data()
+
+test_reading_bim_from_snp_pack()

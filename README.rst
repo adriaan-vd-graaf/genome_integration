@@ -5,9 +5,8 @@ There WILL be A LOT of bugs.
 
 Requirements:
 
-python >= 3.5
+python >= 3.6
 with
-numpy, scipy, sci kit learn installed.
 
 gcta64 and plink should be in your PATH as the subprocess module will directly refer to them.
 

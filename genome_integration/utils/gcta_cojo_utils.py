@@ -1,16 +1,26 @@
 import subprocess
-import numpy as np
-
-from ..variants import *
-
-from .. import association
 from . import *
-from .file_utils import  *
+
 from .plink_utils import *
 
 
 
 class CojoCmaFile:
+    """
+    Contains the GCTA COJO CMA file results.
+    The conditional joint associations are located in the ma results part of the file.
+
+    Attributes
+    ----------
+
+    name: str
+        name of the association
+
+    ma_results: dict
+        dict with snp_names as keys, and the CojoCmaLine as values.
+
+    """
+
     def __init__(self, file_loc, name):
         self.name = name
         self.ma_results = {}
@@ -24,32 +34,13 @@ class CojoCmaFile:
                     # print("Could not find a valid line in the following line: {}".format(line))
                     continue
 
-    def snps_with_data(self):
-        return set(self.ma_results.keys())
-
-    def write_cojo_result(self, file_name):
-        lines = [''] * (len(self.ma_results.keys())+1)
-        lines[0] = "snp_name\tchr\tbp\tbeta\tse\tp_val\tassoc_name"
-        indice = 1
-        for i in list(self.ma_results.keys()):
-            tmp = self.ma_results[i]
-            lines[indice] = '\t'.join([tmp.snp_name,
-                               str(tmp.chromosome),
-                               str(tmp.position),
-                               str(tmp.beta),
-                               str(tmp.se),
-                               str(tmp.wald_p_val),
-                               str(self.name)
-                               ]
-                              )
-            indice += 1
-
-        write_list_to_newline_separated_file(lines, file_name)
-
 
 class CojoCmaLine(association.GeneticAssociation):
     """
-    From the GCTA website:
+    This is a helper class arounc the GeneticAssociation class.
+    but adds the information that GCTA also keeps.
+
+    From the PCTG, GCTA documentation:
     Columns are:
 
     chromosome;
@@ -66,6 +57,20 @@ class CojoCmaLine(association.GeneticAssociation):
     standard error and
     p-value from a joint analysis of all the selected SNPs;
     LD correlation between the SNP i and SNP i + 1 for the SNPs on the list.
+
+    Attributes specific to this class, rest is inherited from GeneticAssociation:
+
+    beta_initial: float
+        initial beta from input
+    se_intitial: float
+        initial se from input
+    p_intitial: float
+        initial p value from input
+    freq_geno: float
+        frequency of the reference populaiton
+    n_estimated:
+        number of estimated individuals in the population
+
 
     """
 
@@ -107,59 +112,20 @@ class CojoCmaLine(association.GeneticAssociation):
         self.wald_p_val = float(split[12])
 
 
-class CojoLdrFile:
 
-    def __init__(self, file_loc, name):
-        self.name = name
-        with open(file_loc, 'r') as f:
-            # first line contains the SNPs
-            self.snps = [SNP(x) for x in f.readline()[:-1].split() if (x != '') and (x != 'SNP')]
-            self.snp_names = [x.snp_name for x in self.snps]
-            self.ld_mat = np.zeros((len(self.snps),len(self.snps)))
-            indice = 0
-            for line in f:
-                self.ld_mat[:,indice] = [float(x) for x in line.split()[1:] if x != '']
-                indice += 1
-
-    def get_ld_mat(self):
-        return self.ld_mat, self.snp_names
-
-    # this may need to be rewritten, to ensure the snps go from lowest bp position to highest.
-    # Not checked right now
-
-    #right now assuming there are no trans effects
+def do_gcta_cojo_slct(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.01', gc=1.0):
+    """
+    Doeas GCTA COJO stepwise selection (no joint effects)
 
 
-    def write_ld_mat_gg(self, filename, bim_data):
-        snpnames = [x.snp_name for x in self.snps]
-
-        position = []
-
-        for i in snpnames:
-            try:
-                position.append(bim_data.bim_results[i].position)
-            except:
-                position.append(np.NaN)
-
-        ordering = np.argsort(np.array(position))
-        string_list = ['chr\tbp\tsnp_name\t' + '\t'.join(np.array(snpnames)[ordering])]
-        for i in ordering:
-            try:
-                tmp = bim_data.bim_results[snpnames[i]].chromosome + '\t' \
-                      + bim_data.bim_results[snpnames[i]].position + '\t' \
-                      + snpnames[i] + '\t'
-            except:
-                tmp = 'NA\tNA\t' + snpnames[i] + '\t'
-
-            tmp += '\t'.join([str(x) for x in self.ld_mat[i, ordering]])
-            string_list.append(tmp)
-
-        write_list_to_newline_separated_file(string_list, filename)
-
-
-
-def do_gcta_cojo_slct(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.01'):
-
+    :param bfile_prepend: bedfile location
+    :param ma_file: ma file location
+    :param out_prepend: where to output
+    :param p_val: p value threshold for stepwise selection
+    :param maf: minor allele frequency threshold for stepwise selection
+    :param gc: genomic correction factor, default is 1.0. Make sure to check this in your associations
+    :return: CojoCmaFile object with the results.
+    """
     base_file = None
     for chr in range(1, 23):
         std_out = open(out_prepend + '.out', 'w')
@@ -169,6 +135,7 @@ def do_gcta_cojo_slct(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.
                         '--bfile', bfile_prepend,
                         '--cojo-file', ma_file,
                         '--cojo-slct',
+                        '--cojo-gc', str(gc),
                         '--out', out_prepend,
                         '--cojo-p', p_val,
                         '--maf', maf,
@@ -199,7 +166,18 @@ def do_gcta_cojo_slct(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.
 
 
 def do_gcta_cojo_joint(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.01', gc=1.0):
+    """
+    Does GCTA COJO stepwise selection and joint effects
 
+
+    :param bfile_prepend: bedfile location
+    :param ma_file: ma file location
+    :param out_prepend: where to output
+    :param p_val: p value threshold for stepwise selection
+    :param maf: minor allele frequency threshold for stepwise selection
+    :param gc: genomic correction factor, default is 1.0. Make sure to check this in your associations
+    :return: CojoCmaFile object with the results.
+    """
 
     std_out = open(out_prepend + '.out', 'w')
     subprocess.run(['gcta64',
@@ -296,14 +274,18 @@ def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepen
 
 
 def do_gcta_cojo_joint_on_genetic_associations(genetic_associations, bfile, tmp_prepend,
-                                         p_val_thresh=0.05, maf=0.01, calculate_ld = False, clump=False):
+                                         p_val_thresh=0.05,
+                                         maf=0.01,
+                                         calculate_ld = False,
+                                         clump=False,
+                                         _keep_ma_files=False):
     """
     :param genetic_associations: a dict of genetic associations,  keys should be explantory name
     :param bfile: plink bed file
     :param tmp_prepend: temporary name of files where to store.
     :param p_val_thresh: p value threshold as a float
     :param maf: minor allele frequency as a float
-
+    :param _keep_ma_files: This is used for testing. MA files are used to know the exact floating point input.
     :return: Cojo results a Cojo CMA file object, which is an extension of the geneticassociation file.
     """
 
@@ -361,145 +343,12 @@ def do_gcta_cojo_joint_on_genetic_associations(genetic_associations, bfile, tmp_
         subprocess.run(["rm {} {} {}* {}*".format(ma_name, snp_out, plink_pruned, cojo_out)], shell=True, check=True)
         raise x
 
-    subprocess.run(["rm -f {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)
+    if _keep_ma_files:
+        subprocess.run(["rm -f {} {}* {}*".format(snp_out,plink_pruned,cojo_out)], shell=True, check = True)
+    else:
+        subprocess.run(["rm -f {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)
 
     return cojo_eqtl
-
-
-def do_cojo_conditioning_on_effects(conditioning_snps, bfile, tmp_prepend, p_val_thresh=0.05, maf=0.01):
-
-    """
-    Untested! will conditionally do all the effects, will often produce errrors or just provide unreasonable input.
-
-    :param conditioning_snps:
-    :param bfile:
-    :param tmp_prepend:
-    :param p_val_thresh:
-    :param maf:
-    :return:
-    """
-
-
-    plink_pruned = tmp_prepend + "_plink_pruned"
-    snp_file_out = tmp_prepend + "_extract.txt"
-    tmp_ma = tmp_prepend + "_tmp_ma"
-    cojo_out = tmp_prepend + "_cojo_out"
-    tmp_conditioning = tmp_prepend + "_tmp_conditioning"
-
-    write_list_to_newline_separated_file([x for x in conditioning_snps.keys()], snp_file_out)
-
-    try:
-        tmp = subprocess.run(['plink',
-                              '--bfile', bfile,
-                              '--extract', snp_file_out,
-                              '--make-bed',
-                              '--out', plink_pruned
-                              ],
-                             check=True,
-                             stdout=subprocess.DEVNULL  # to DEVNULL, because plink saves a log of everything
-                             )
-
-    except Exception as x:
-        subprocess.run(['rm', "-f", plink_pruned + "*", snp_file_out, tmp_ma, cojo_out + "*", tmp_conditioning], shell=True, stdout=subprocess.DEVNULL)
-        raise x
-
-    #write the ma file for all SNPs
-    snps = list(conditioning_snps.keys())
-    ma_lines = [make_gcta_ma_header()]
-
-    [
-        ma_lines.append(make_gcta_ma_line(conditioning_snps[x]))
-        for x in conditioning_snps.keys()
-    ]
-
-    write_list_to_newline_separated_file(ma_lines, tmp_ma)
-
-    ##now for every SNP, do a conditional analysis, conditioning on all but one SNP
-
-    effects_conditioned = {}
-
-    for snp in snps:
-
-        #write what to condition on.
-        write_list_to_newline_separated_file([x for x in snps if snp != x], tmp_conditioning)
-        try:
-            std_out = open(cojo_out + '.out', 'w')
-            subprocess.run(['gcta64',
-                            '--bfile', bfile,
-                            '--cojo-file', tmp_ma,
-                            '--cojo-cond', tmp_conditioning,
-                            '--out', cojo_out,
-                            '--cojo-gc', str(1.0),
-                            '--cojo-p', str(p_val_thresh),
-                            '--maf', str(maf),
-                            '--thread-num', '1'
-                            ],
-                           stdout=std_out,
-                           check=True
-                           )
-            std_out.close()
-            #read the cojo file back in.
-            tmp_cojo = CojoCmaFile(cojo_out + ".cma.cojo", cojo_out)
-
-            #only save the effect of interest.
-            effects_conditioned[snp] = tmp_cojo.ma_results[snp]
-
-        except KeyError:
-            ##cojo does not find a solution, so we continue without these effects.
-            continue
-
-        except Exception as x:
-            subprocess.run(['rm', "-f", plink_pruned + "*", snp_file_out, tmp_ma, cojo_out + "*", tmp_conditioning],
-                           shell=True, stdout=subprocess.DEVNULL)
-            raise x
-
-    #clean up.
-    subprocess.run(['rm', "-f", plink_pruned + "*", snp_file_out, tmp_ma, cojo_out + "*", tmp_conditioning],
-                   shell=True, stdout=subprocess.DEVNULL)
-
-    return effects_conditioned
-
-def do_conditional_joint_on_exposure_and_correct_outcome(exposure_associations, outcome_associations, bfile,
-                                                         tmp_prepend, p_val_thresh=0.05, maf=0.01,
-                                                         calculate_ld = False, clump=False):
-    """
-
-    Untested! will conditionally do all the effects, will often produce errrors or just provide unreasonable input.
-
-    :param exposure_associations:
-    :param outcome_associations:
-    :param bfile:
-    :param tmp_prepend:
-    :param p_val_thresh:
-    :param maf:
-    :param calculate_ld:
-    :param clump:
-    :return:
-    """
-
-
-    ##first make sure there is full overlap between effects.
-
-    overlapping_snps = exposure_associations.keys() & outcome_associations.keys()
-
-    if len(overlapping_snps) == 0:
-        raise ValueError("No overlap between exposure and outcome associations")
-
-    #now isolate both asssociations
-    exposure_associations = {x : exposure_associations[x] for x in exposure_associations.keys() if x in overlapping_snps}
-    outcome_associations = {x: outcome_associations[x] for x in outcome_associations.keys() if x in overlapping_snps}
-
-    exposure_cojo = do_gcta_cojo_joint_on_genetic_associations(exposure_associations, bfile, tmp_prepend,
-                                               p_val_thresh, maf, calculate_ld, clump)
-
-    if len(exposure_cojo.ma_results.keys()) == 0:
-        raise ValueError("COJO did not find any independent effects.")
-
-    associations_for_conditioning = {x: outcome_associations[x] for x in exposure_cojo.ma_results.keys()}
-
-    outcome_conditional = do_cojo_conditioning_on_effects(associations_for_conditioning, bfile, tmp_prepend + "_conditional", p_val_thresh, maf)
-
-    return exposure_cojo, outcome_conditional
 
 
 def make_gcta_ma_header():

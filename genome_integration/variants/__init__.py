@@ -6,5 +6,5 @@ __author__      = "Adriaan van der Graaf"
 __copyright__   = "Copyright 2017, Adriaan van der Graaf"
 
 from genome_integration.variants.SNP import *
-from genome_integration.variants.bim_file import *
+from genome_integration.utils.plink_utils import BimFile
 

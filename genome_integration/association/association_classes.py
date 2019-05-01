@@ -2,6 +2,7 @@ import warnings
 import scipy.stats
 import numpy as np
 from ..variants import *
+import sys
 
 
 class BaseAssociation:
@@ -118,9 +119,13 @@ class Association(BaseAssociation):
         )
 
         if self.se == 0:
+            warnings.filterwarnings("ignore")
             self.se = np.nextafter(0.0, 1)
-            self.z_score = np.sign(beta) * np.inf
-            print(f"se was zero, z score will be infinite.")
+            self.z_score = self.beta / self.se
+            warnings.filterwarnings("default")
+            print(f"Genetic association '{self.dependent_name}, {self.explanatory_name}': "
+                  f"se was zero, z score will be infinite.", file=sys.stderr)
+
         else:
             self.z_score = self.beta / self.se
 
