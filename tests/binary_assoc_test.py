@@ -2,6 +2,7 @@ import numpy as np
 import struct
 import os
 import gzip
+
 from genome_integration import association
 from genome_integration import variants
 
@@ -62,7 +63,8 @@ def test_reading_binary_file():
     start = time.time()
     # if this runs the associations are normal.
     bim_file = variants.BimFile("tests/test_resources/test_bim.bim")
-    a = genome_integration.association.binary_files.read_bin_file("tests/test_resources/binary_file_test.dat.gz", bim_file)
+    a = genome_integration.association.binary_files.read_bin_file("tests/test_resources/binary_file_test.dat.gz",
+                                                                  bim_file)
     end = time.time()
     print(end - start)
 

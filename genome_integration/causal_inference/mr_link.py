@@ -142,12 +142,12 @@ def mr_link_ridge(outcome_geno,
                                                 upper_r_sq_threshold)
 
 
-    geno_masked = outcome_geno[masked_instruments,:].transpose()
+    geno_masked = outcome_geno[:,masked_instruments]
 
     ridge_fit = BayesianRidge(fit_intercept=False)
 
     design_mat = np.zeros( (geno_masked.shape[0], geno_masked.shape[1]+1), dtype=float)
-    design_mat[:,0] = (outcome_geno[causal_exposure_indices,:].transpose() @ exposure_betas) / exposure_betas.shape[0]
+    design_mat[:,0] = (outcome_geno[:,causal_exposure_indices] @ exposure_betas) / exposure_betas.shape[0]
     design_mat[:,np.arange(1, design_mat.shape[1])] = geno_masked / np.sqrt(geno_masked.shape[1])
 
     ridge_fit.fit(design_mat, outcome_phenotype)

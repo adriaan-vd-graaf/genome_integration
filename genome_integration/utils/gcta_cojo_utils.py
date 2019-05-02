@@ -126,39 +126,26 @@ def do_gcta_cojo_slct(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.
     :param gc: genomic correction factor, default is 1.0. Make sure to check this in your associations
     :return: CojoCmaFile object with the results.
     """
-    base_file = None
-    for chr in range(1, 23):
-        std_out = open(out_prepend + '.out', 'w')
-        std_err = open(out_prepend + '.err', 'w')
-        subprocess.run(['gcta64',
-                        '--chr', str(chr),
-                        '--bfile', bfile_prepend,
-                        '--cojo-file', ma_file,
-                        '--cojo-slct',
-                        '--cojo-gc', str(gc),
-                        '--out', out_prepend,
-                        '--cojo-p', p_val,
-                        '--maf', maf,
-                        '--thread-num', '1'
-                        ],
-                       stdout=std_out,
-                       stderr=std_err,
-                       check=True
-                       )
-        std_out.close()
-        std_err.close()
-        try:
-            tmp_cojo = CojoCmaFile(out_prepend + ".jma.cojo", out_prepend)
-        except:
-            continue
 
-        if base_file is None:
-            base_file = tmp_cojo
-        else:
-            for i in tmp_cojo.ma_results.keys():
-                base_file.ma_results[i] = tmp_cojo.ma_results[i]
 
-    return base_file
+    subprocess.run(['gcta64',
+                    '--bfile', bfile_prepend,
+                    '--cojo-file', ma_file,
+                    '--cojo-slct',
+                    '--cojo-gc', str(gc),
+                    '--out',    out_prepend,
+                    '--cojo-p', p_val,
+                    '--maf', maf,
+                    '--thread-num', '1'
+                    ],
+                   stdout=subprocess.DEVNULL,
+                   stderr=subprocess.DEVNULL,
+                   check=True
+                   )
+
+    tmp_cojo = CojoCmaFile(out_prepend + ".jma.cojo", out_prepend)
+
+    return tmp_cojo
 
 
 
@@ -270,6 +257,7 @@ def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepen
         subprocess.run(["rm -f {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)
     else:
         subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, cojo_out)], shell=True, check=True)
+
     return cojo_eqtl
 
 
@@ -376,7 +364,7 @@ def make_gcta_ma_line(genetic_association):
     if not genetic_association.has_position_data or not genetic_association.has_allele_data or not genetic_association.has_frequency_data:
         raise RuntimeError("Cannot write an Ma line. Does not contain the necessary data")
 
-    if genetic_association.wald_p_val == None:
+    if genetic_association.p_val == None:
         raise RuntimeError("No p value present")
 
     return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(genetic_association.snp_name,
@@ -385,5 +373,5 @@ def make_gcta_ma_line(genetic_association):
                                                    genetic_association.minor_allele_frequency,
                                                    genetic_association.beta,
                                                    genetic_association.se,
-                                                   genetic_association.wald_p_val,
+                                                   genetic_association.p_val,
                                                    genetic_association.n_observations)

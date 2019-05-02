@@ -88,18 +88,19 @@ def read_geno_mat_plinkio(bed_location):
     return genotype_mat, plink_file
 
 
-def ld_from_geno_mat(geno_mat, axis = 2):
+def ld_from_geno_mat(geno_mat):
     """
     make an LD mat,
-    :param geno_mat: m x n numpy matrix, n number of individuals, m number of variants, has values 0, 1, 2 and missing is 3
-    :return: grm is None.
+    :param geno_mat: n x m numpy matrix,
+        n number of individuals, m number of variants, has values 0, 1, 2 and missing is 3
+    :param axis: int
+    axis on which to apply the function.
+    :return: pearson correlation matrix
     """
 
-    scaled_geno_mat = np.apply_along_axis(scale_geno_vec, axis, geno_mat)
-    grm = None # Not implemented.
-    ld = np.corrcoef(scaled_geno_mat)
-
-    return grm, ld
+    scaled_geno_mat = np.apply_along_axis(scale_geno_vec, 1, geno_mat)
+    ld = np.corrcoef(scaled_geno_mat.T)
+    return ld
 
 
 def do_gcta_cojo_conditional(reference_geno, associations, indices_of_interest, ref_loci):
@@ -118,28 +119,26 @@ def do_gcta_cojo_conditional(reference_geno, associations, indices_of_interest, 
         Genotype matrix
 
     :param associations: dict
-        Dict of the GeneticAssociation class containing a superset of associatinos to do cojo from,.
+        Dict of the GeneticAssociation class containing a superset of associations to do cojo from,.
 
-    :param indices_of_interest:
+    :param indices_of_interest: nparray of indices.
         Indices of ref_loci with which we want to do associations.
 
     :param ref_loci: list
         The names  of the SNPs which are selected for COJO (keys for associations)
 
-    :return: numpy array of len(indices_of_interest)x2
+    :return: numpy array of shape (len(indices_of_interest), 2)
         COJO results: conditional beta and se on the columns.
 
 
     """
 
-    sample_sizes = np.array([associations[x.snp_name].n_observations for x in ref_loci], dtype=int)
-
-    # sample_sizes = np.array([associations[ref_loci[0].snp_name].n_observations])
+    sample_sizes = np.array([associations[x].n_observations for x in ref_loci], dtype=int)
 
     beta_se_maf = np.asarray(
-                           [[associations[x.snp_name].beta,
-                             associations[x.snp_name].se,
-                             associations[x.snp_name].minor_allele_frequency
+                           [[associations[x].beta,
+                             associations[x].se,
+                             associations[x].minor_allele_frequency
                              ]
                          for x in ref_loci]
                         , dtype=float)
@@ -155,7 +154,7 @@ def do_gcta_cojo_conditional(reference_geno, associations, indices_of_interest, 
     new_b = np.zeros( (len(indices_of_interest), len(indices_of_interest)), dtype=float)
     new_d = np.zeros((len(indices_of_interest), len(indices_of_interest)), dtype=float)
 
-    w_sums = np.sum(reference_geno ** 2, axis=0)
+    w_sums = np.sum(reference_geno[:,indices_of_interest] ** 2, axis=0)
 
     # now fill in the b and d matrices.
     for j in range(len(indices_of_interest)):
@@ -175,8 +174,8 @@ def do_gcta_cojo_conditional(reference_geno, associations, indices_of_interest, 
                     2*beta_se_maf[indices_of_interest,2] * \
                     (1 - beta_se_maf[indices_of_interest,2])
 
-        w_vec = np.sum(reference_geno[:,j] ** 2) * w_sums
-        covariances = reference_geno.transpose() @ reference_geno[:, j]
+        w_vec = np.sum(reference_geno[:,indices_of_interest[j]] ** 2) * w_sums
+        covariances = reference_geno[:,indices_of_interest].transpose() @ reference_geno[:, indices_of_interest[j]]
 
         new_b[j,:] = n_vec * np.sqrt(  p_vec / w_vec  ) * covariances
 

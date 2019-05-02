@@ -1,115 +1,14 @@
 import os
-import numpy as np
 import sklearn
 import subprocess
 import bitarray
 import copy
-from .file_utils import *
-from .gcta_ma_utils import *
+import warnings
+
+from genome_integration.variants import BimFile
 from .. samples import Sample
-from .. variants import SNP
-from .. import variants
+from .gcta_ma_utils import *
 
-
-class BimFile:
-    """
-    Reads in a bim  file
-
-    Attributes
-    ----------
-
-    bim_results: dict
-        Values contains SNP information of all variants in the bim file. keys are the SNP name of the bim file.
-
-    bim_results_by_pos: dict
-        Values contains SNP information of all variants in the bim file. keys are the pos name "<chr>:<pos>"
-        of the bim file.
-
-    snp_names: list
-        ordered list of snp names
-
-    Methods
-    -------
-
-    add_frq_information(self, file_name):
-        Adds frequency information from a plink file (.frq or .freqx)
-
-
-    """
-
-    def __init__(self, file_name):
-        self.bim_results = {}
-        self.bim_results_by_pos = {}
-        self.snp_names = []
-        with open(file_name, 'r') as f:
-            for line in f:
-
-                split = [x for x in line[:-1].split() if x != ""]
-                tmp = SNP(snp_name=split[1],
-                            chromosome=split[0],
-                            position=split[3],
-                            major_allele=split[5],
-                            minor_allele=split[4],
-                            minor_allele_frequency=None
-                            )
-
-                posname = str(tmp.chromosome) + ":" + str(tmp.position)
-                self.snp_names.append(tmp.snp_name)
-                self.bim_results[tmp.snp_name] = tmp
-                self.bim_results_by_pos[posname] = tmp
-
-
-
-    def add_frq_information(self, file_name):
-        """
-        Adds frequency information from a plink file (.frq or .freqx)
-
-        :param file_name: file name of the plink frq or frqx file.
-        :return: self, with added frq information
-
-        """
-        with open(file_name, 'r') as f:
-            split = f.readline()[:-1].split("\t")
-
-            # frq file.
-            if len(split) == 5:
-                for line in f:
-                    split = [x for x in line.split() if x != ""]
-                    snp_name = split[1]
-                    try:
-                        self.bim_results[snp_name].add_minor_allele_frequency(split[3], split[2], float(split[4]))
-                    except KeyError:
-                        try:
-                            self.bim_results_by_pos[snp_name].add_minor_allele_frequency(split[3], split[2], float(split[4]))
-                        except KeyError:
-                            continue
-
-            # frqx file
-            elif len(split) == 10:
-                for line in f:
-                    split = [x for x in line.split() if x != ""]
-                    snp_name = split[1]
-                    a_one_count = int(split[4])*2 + int(split[5])
-                    a_two_count = int(split[6])*2 + int(split[5])
-                    if a_one_count <= a_two_count:
-                        minor = split[2]
-                        major = split[3]
-                        maf = float(a_one_count) / float(a_one_count + a_two_count)
-
-                    else:
-                        minor = split[3]
-                        major = split[2]
-
-                        maf = float(a_two_count) / float((a_one_count + a_two_count))
-                    try:
-                        self.bim_results[snp_name].add_minor_allele_frequency(major, minor, float(maf))
-                    except KeyError:
-                        try:
-                            self.bim_results_by_pos[snp_name].add_minor_allele_frequency(major, minor, float(maf))
-                        except:
-                            continue
-            else:
-                RuntimeError("The frq file header was not in any correct formatting.")
 
 
 class FamSample(Sample):
@@ -212,6 +111,10 @@ class PlinkFile:
         reads in the bed file takes about 5 seconds for 5,000 individuals ~14,000 variants.
         saves it to the class.
 
+    harmonize_genotypes(self, other_plink_file)
+        Harmonized another PlinkFile object to this files' alleles.
+        (flips alleles, and flips genotypes) (MAJOR and minor will be false names.)
+
     """
 
     def __init__(self, bfile_location):
@@ -297,7 +200,119 @@ class PlinkFile:
         self.genotypes = genotypes
         return genotypes
 
+    def harmonize_genotypes(self, other_plink_file):
+        """
+        Harmonizes the other plink file to the alleles of self.
+        requires that the variants are the same between files.
+        requires that the variants have the same alleles
 
+        WARNING: Will mean that the other plink file will have flipped major and minor alleles.
+
+        :param other_plink_file: Plink File to harmonize
+        :return: PlinkFile
+        """
+        if set(self.bim_data.snp_names) != set(other_plink_file.bim_data.snp_names):
+            raise ValueError("Both genotype files need to have exactly the same set of variants.")
+
+        if self.bim_data.snp_names != other_plink_file.bim_data.snp_names:
+            #This is a runtime check to ensure that the variants are ordered the same.
+            #One assumption is that plink orders the variants bades on position,
+            #so this should not be reached, otherwise ordering functionality needs to be implemented.
+            raise ValueError("Ordering of the variants needs to be exactly the same.")
+
+
+        indices_to_flip = []
+        for snp_name in self.bim_data.snp_names:
+            own_alleles = [self.bim_data.bim_results[snp_name].minor_allele,
+                              self.bim_data.bim_results[snp_name].major_allele]
+
+            other_alleles = [other_plink_file.bim_data.bim_results[snp_name].minor_allele,
+                             other_plink_file.bim_data.bim_results[snp_name].major_allele]
+
+            if own_alleles != other_alleles:
+                indices_to_flip.append(other_plink_file.bim_data.snp_names.index(snp_name))
+
+            if set(own_alleles) != set(other_alleles):
+                raise ValueError(f"Alleles sets are not the same for SNP "
+                                 f"{self.bim_data.bim_results[snp_name].snp_name}")
+
+        if self.genotypes is None:
+            warnings.warn("Reference genotypes where not loaded."
+                          "Reading them now, This could take prohibitively long or use a lot of memory",
+                          RuntimeWarning)
+            self.read_bed_file_into_numpy_array()
+
+        if other_plink_file.genotypes is None:
+            warnings.warn("Reference genotypes where not loaded."
+                          "Reading them now. This could take prohibitively long or use a lot of memory",
+                          RuntimeWarning)
+            other_plink_file.read_bed_file_into_numpy_array()
+
+        print(f"Flipping the alleles of {len(indices_to_flip)} variant")
+
+        for indice in indices_to_flip:
+            snp_name = other_plink_file.bim_data.snp_names[indice]
+            old_major = other_plink_file.bim_data.bim_results[snp_name].major_allele
+            other_plink_file.bim_data.bim_results[snp_name].major_allele = other_plink_file.bim_data.bim_results[snp_name].minor_allele
+            other_plink_file.bim_data.bim_results[snp_name].minor_allele = old_major
+            other_plink_file.genotypes[other_plink_file.genotypes[:, indice] != 3, indice] =  (
+                2 - other_plink_file.genotypes[other_plink_file.genotypes[:, indice] != 3, indice]
+                )
+
+        return other_plink_file, other_plink_file.genotypes
+
+
+def read_region_from_plink(bed_file, out_location, region, variants=None):
+
+    """
+    Reads a region from a plink file and writes it to an output.
+
+    This function can be used if you want to read only a small part of a plink file.
+
+
+
+    :param bed_file: str
+        prepend filelocation of a bed file.
+    :param out_location:
+        prepend file location of the pruned file.
+    :param region: StartEndRegion
+        Region to look for.
+    :param variants: iterable of str
+        iterable containing the variant names to keep for analysis.
+    :return: None
+    """
+    if variants is None:
+        subprocess.run(["plink",
+                        "--bfile", bed_file,
+                        "--chr", str(region.chromosome),
+                        "--from-bp", str(region.start),
+                        "--to-bp", str(region.end),
+                        "--make-bed", "--out", out_location
+                        ],
+                       check=True,
+                       stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL
+                       )
+    else:
+
+        variant_file = out_location + "_variants_to_extract"
+        with open(variant_file, "w") as f:
+            for variant in variants:
+                f.write(f"{variant}\n")
+
+        subprocess.run(["plink",
+                        "--bfile", bed_file,
+                        "--chr", str(region.chromosome),
+                        "--from-bp", str(region.start),
+                        "--to-bp", str(region.end),
+                        "--extract", variant_file,
+                        "--make-bed", "--out", out_location
+                        ],
+                       check=True,
+                       stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL
+                       )
+        subprocess.run(["rm", variant_file], check=True)
 
 
 
@@ -396,8 +411,8 @@ def isolate_snps_of_interest_make_bed(ma_file, exposure_name, b_file,
                               '--out', plink_files_out
                               ],
                              check=True,
-                             stdout=subprocess.DEVNULL, # to DEVNULL, because plink saves a log of everything
-                             stderr = subprocess.DEVNULL
+                             stdout=subprocess.DEVNULL,  # to DEVNULL, because plink saves a log of everything
+                             stderr=subprocess.DEVNULL
                              )
 
         bim_file = BimFile(plink_files_out + '.bim')

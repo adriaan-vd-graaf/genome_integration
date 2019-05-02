@@ -39,22 +39,26 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--bed_cohort_1",
-                        required=True,
-                        help="The bed file for cohort 1 (from which the exposure is calculated and saved)",
-
+                        # required=True,
+                        help="The bed file for cohort 1 (from which the exposure is calculated and saved), "
+                             "alleles need to be harmonized with bed_cohort_2",
+                        default="/home/adriaan/PhD/MR/simulate_mr/data_draft_004/geno_files/exposure_cohort"
                         )
+
     parser.add_argument("--bed_cohort_2",
-                        required=True,
-                        help="The bed file for cohort 2 (from which the outcome is calculated and saved)",
+                        # required=True,
+                        help="The bed file for cohort 2 (from which the outcome is calculated and saved)"
+                             "alleles need to be harmonized with bed_cohort_1",
+                        default="/home/adriaan/PhD/MR/simulate_mr/data_draft_004/geno_files/small_outcome_cohort"
                         )
 
 
     parser.add_argument("--out_prepend",
-                        default="temp_simulated_file_",
+                        default="simulated_files/temp_simulated_file_",
                         help="The prepend for where to place the file")
 
     parser.add_argument("--save_as",
-                        default="numpy",
+                        default="text",
                         help="How to save the results. "
                              "'numpy' will be more efficient and saves all data to a single file."
                              "'text' will be human readable but save to eight separate files per simulation." 
@@ -91,14 +95,11 @@ if __name__ == '__main__':
     parser.add_argument("--directional_pleiotropy", type=int, default=1,
                         help="If the effects of the second exposure should be directional")
 
-    parser.add_argument("--phenotypes_to_simulate", type=int, default=5,
-                        help= "How many phenotypes are saved could take a long time. But results are saved intermittendly")
+    parser.add_argument("--phenotypes_to_simulate", type=int, default=1,
+                        help= "How many phenotypes are saved could take a long time. "
+                              "Results are nonetheless saved after each simulation")
 
     args = parser.parse_args()
-
-
-    if args.save_as == "text":
-        raise NotImplementedError("Text file saving is still a todo")
 
 
     sim_scenario = "ex1-n-{}_ex2-n-{}_ex1-b-{}_ex2-b-{}_overl-{}_dir_pleio-{}".format(
@@ -114,14 +115,22 @@ if __name__ == '__main__':
     exposure_plink_file = utils.PlinkFile(args.bed_cohort_1)
     geno_exposure = exposure_plink_file.read_bed_file_into_numpy_array()
 
-    outcome_plink_file = utils.PlinkFile(args.bed_cohort_1)
-    geno_outcome = outcome_plink_file.read_bed_file_into_numpy_array()
+    outcome_plink_file = utils.PlinkFile(args.bed_cohort_2)
+    outcome_plink_file.read_bed_file_into_numpy_array()
+
+    outcome_plink_file, geno_outcome = exposure_plink_file.harmonize_genotypes(outcome_plink_file)
+
 
     exposure_ld = simulate_mr.ld_from_geno_mat(geno_exposure)
+
     exposure_maf = np.apply_along_axis(simulate_mr.geno_frq, 0, geno_exposure)
+    exposure_nobs = np.sum(geno_exposure != 3, axis=0)
+
     outcome_maf = np.apply_along_axis(simulate_mr.geno_frq, 0, geno_outcome)
 
+    outcome_nobs = np.sum(geno_outcome != 3, axis=0)
     print("Reading genotype files finished")
+
 
     i = 0
     while i < args.phenotypes_to_simulate:
@@ -173,8 +182,37 @@ if __name__ == '__main__':
         outcome_sum_stats = np.apply_along_axis(simulate_mr.do_gwas_on_scaled_variants,
                                             0, geno_outcome, dependent=outcome_phenotype).T
 
+        if args.save_as == "text":
+            # Will only save the data necessary for MR-link to run.
+            # Use the numpy file for different information.
+            with open(file_name + "_outcome_pheno.txt", "w") as f:
+                f.write(f"FID\tIID\tPHENO\n")
+                for sample_name, pheno in zip(outcome_plink_file.fam_data.sample_names, outcome_phenotype):
+                    sample = outcome_plink_file.fam_data.fam_samples[sample_name]
+                    f.write(f"{sample.fid}\t{sample.iid}\t{pheno}\n")
 
-        np.savez(file_name,
+            sumstats_files = [file_name + "outcome_sumstats.txt", file_name + "exposure_sumstats.txt"]
+            for outfile_name, tmp_plink_file, tmp_sum_stats, tmp_maf, tmp_obs in zip(sumstats_files,
+                                                    [outcome_plink_file, exposure_plink_file],
+                                                    [outcome_sum_stats, exposure_sum_stats],
+                                                    [outcome_maf, exposure_maf],
+                                                    [outcome_nobs, exposure_nobs]
+                                                    ):
+                with open(outfile_name, "w") as f:
+                    f.write("CHR\tPOS\tNAME\tREF_ALLELE\tEFFECT_ALLELE\tBETA\tSE\tMAF\tN_OBS\n")
+                    for variant_name, beta_se_tuple, maf, n_obs in zip(
+                                                                    tmp_plink_file.bim_data.snp_names,
+                                                                    tmp_sum_stats,
+                                                                    tmp_maf,
+                                                                    tmp_obs):
+                        tmp_var = tmp_plink_file.bim_data.bim_results[variant_name]
+                        f.write(f"{tmp_var.chromosome}\t{tmp_var.position}\t{tmp_var.snp_name}\t"
+                                f"{tmp_var.major_allele}\t{tmp_var.minor_allele}\t{beta_se_tuple[0]}\t"
+                                f"{beta_se_tuple[1]}\t{maf}\t{n_obs}\n")
+
+
+        elif args.save_as == "numpy":
+            np.savez(file_name,
                  exposure_phenotype=exposure_phenotype,
                  outcome_phenotype=outcome_phenotype,
                  exposure_1_causal_snps=exposure_1_causal_snps,

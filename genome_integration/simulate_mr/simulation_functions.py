@@ -378,7 +378,9 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
     """
     if exposure_2_n_causal - overlapping_causal_snps > 0:
 
-        exposure_1_causal_snps_non_overlapping = np.asarray([x for x in exposure_1_causal_snps if x not in exposure_2_overlapping_snps], dtype=int)
+        exposure_1_causal_snps_non_overlapping = np.asarray(
+            [x for x in exposure_1_causal_snps if x not in exposure_2_overlapping_snps],
+            dtype=int)
 
         #permute this vector, so ordering is random.
         permuted_exposure_1_causal_non_overlapping = np.random.permutation(exposure_1_causal_snps_non_overlapping)
@@ -409,13 +411,13 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
         Confounder, including the inside assumption
     """
 
-    confounder_exposure_cohort = np.random.normal(0, confounder_sd, exposure_geno.shape[1])
-    confounder_outcome_cohort = np.random.normal(0, confounder_sd, outcome_geno.shape[1])
+    confounder_exposure_cohort = np.random.normal(0, confounder_sd, exposure_geno.shape[0])
+    confounder_outcome_cohort = np.random.normal(0, confounder_sd, outcome_geno.shape[0])
 
     if inside_phi != 0.0:
         phi_values = np.random.uniform(0, inside_phi, (1, len(exposure_2_causal_snps)))
-        confounder_exposure_cohort += (phi_values @ exposure_geno[exposure_2_causal_snps,:]).reshape(exposure_geno.shape[1])
-        confounder_outcome_cohort += (phi_values @ outcome_geno[exposure_2_causal_snps, :]).reshape(outcome_geno.shape[1])
+        confounder_exposure_cohort += (phi_values @ exposure_geno[exposure_2_causal_snps,:]).reshape(exposure_geno.shape[0])
+        confounder_outcome_cohort += (phi_values @ outcome_geno[exposure_2_causal_snps, :]).reshape(outcome_geno.shape[0])
 
 
     """
@@ -534,25 +536,25 @@ def simulate_phenotypes_extended(geno,
 
     """
 
-    scaled_geno = np.apply_along_axis(geno_functions.scale_geno_vec, 1, geno)
+    scaled_geno = np.apply_along_axis(geno_functions.scale_geno_vec, 0, geno)
 
     # exposure 1: y_{e1} = X_{1}b_{e1} + C + e
-    exposure_1_phenotype = exposure_1_betas @ scaled_geno[exposure_1_causal_snps, :]
+    exposure_1_phenotype = scaled_geno[:,exposure_1_causal_snps] @ exposure_1_betas
 
     exposure_1_phenotype += confounder
-    exposure_1_phenotype += np.random.normal(0, error_scale, scaled_geno.shape[1])  # add some measurement error
+    exposure_1_phenotype += np.random.normal(0, error_scale, scaled_geno.shape[0])  # add some measurement error
 
     # exposure 2: y_{e2} = X_{2}b_{e2} + C + e
-    exposure_2_phenotype = exposure_2_betas @ scaled_geno[exposure_2_causal_snps, :]
+    exposure_2_phenotype = scaled_geno[:,exposure_2_causal_snps] @ exposure_2_betas
     exposure_2_phenotype += confounder
-    exposure_2_phenotype += np.random.normal(0, error_scale, scaled_geno.shape[1])  # add some measurement error
+    exposure_2_phenotype += np.random.normal(0, error_scale, scaled_geno.shape[0])  # add some measurement error
 
     # y_{o} = y_{e1} b_{1} + X_{1}b_{p,1} + X_{2}_b_{p,1} + y_{e2} b_{2} + C + e
     outcome_phenotype = exposure_1_phenotype * exposure_1_causal_effect
     outcome_phenotype += exposure_2_phenotype * exposure_2_causal_effect
 
     outcome_phenotype += confounder
-    outcome_phenotype += np.random.normal(0, error_scale, scaled_geno.shape[1])  # add some measurement error
+    outcome_phenotype += np.random.normal(0, error_scale, scaled_geno.shape[0])  # add some measurement error
 
     """
     Phenotypes are now simulated  

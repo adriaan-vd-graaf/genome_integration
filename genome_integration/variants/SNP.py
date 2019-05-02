@@ -354,3 +354,104 @@ class SNP:
         :return:
         """
         self.snp_name = "{}:{}".format(self.chromosome, self.position)
+
+
+class BimFile:
+    """
+    Reads in a plink formatted bim file that contains many different variants.
+
+    Attributes
+    ----------
+
+    bim_results: dict
+        Values contains SNP information of all variants in the bim file. keys are the SNP name of the bim file.
+
+    bim_results_by_pos: dict
+        Values contains SNP information of all variants in the bim file. keys are the pos name "<chr>:<pos>"
+        of the bim file.
+
+    snp_names: list
+        ordered list of snp names
+
+    Methods
+    -------
+
+    add_frq_information(self, file_name):
+        Adds frequency information from a plink file (.frq or .freqx)
+
+
+    """
+
+    def __init__(self, file_name):
+        self.bim_results = {}
+        self.bim_results_by_pos = {}
+        self.snp_names = []
+        with open(file_name, 'r') as f:
+            for line in f:
+
+                split = [x for x in line[:-1].split() if x != ""]
+                tmp = SNP(snp_name=split[1],
+                            chromosome=split[0],
+                            position=split[3],
+                            major_allele=split[5],
+                            minor_allele=split[4],
+                            minor_allele_frequency=None
+                            )
+
+                posname = str(tmp.chromosome) + ":" + str(tmp.position)
+                self.snp_names.append(tmp.snp_name)
+                self.bim_results[tmp.snp_name] = tmp
+                self.bim_results_by_pos[posname] = tmp
+
+
+
+    def add_frq_information(self, file_name):
+        """
+        Adds frequency information from a plink file (.frq or .freqx)
+
+        :param file_name: file name of the plink frq or frqx file.
+        :return: self, with added frq information
+
+        """
+        with open(file_name, 'r') as f:
+            split = f.readline()[:-1].split("\t")
+
+            # frq file.
+            if len(split) == 5:
+                for line in f:
+                    split = [x for x in line.split() if x != ""]
+                    snp_name = split[1]
+                    try:
+                        self.bim_results[snp_name].add_minor_allele_frequency(split[3], split[2], float(split[4]))
+                    except KeyError:
+                        try:
+                            self.bim_results_by_pos[snp_name].add_minor_allele_frequency(split[3], split[2], float(split[4]))
+                        except KeyError:
+                            continue
+
+            # frqx file
+            elif len(split) == 10:
+                for line in f:
+                    split = [x for x in line.split() if x != ""]
+                    snp_name = split[1]
+                    a_one_count = int(split[4])*2 + int(split[5])
+                    a_two_count = int(split[6])*2 + int(split[5])
+                    if a_one_count <= a_two_count:
+                        minor = split[2]
+                        major = split[3]
+                        maf = float(a_one_count) / float(a_one_count + a_two_count)
+
+                    else:
+                        minor = split[3]
+                        major = split[2]
+
+                        maf = float(a_two_count) / float((a_one_count + a_two_count))
+                    try:
+                        self.bim_results[snp_name].add_minor_allele_frequency(major, minor, float(maf))
+                    except KeyError:
+                        try:
+                            self.bim_results_by_pos[snp_name].add_minor_allele_frequency(major, minor, float(maf))
+                        except:
+                            continue
+            else:
+                RuntimeError("The frq file header was not in any correct formatting.")

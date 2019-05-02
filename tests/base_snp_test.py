@@ -1,7 +1,11 @@
+import genome_integration
 import genome_integration.variants as variants
 import warnings
 
 # this function tests the add_snp_data class.
+import genome_integration.variants.SNP
+
+
 def test_add_snp_snp_acceptance():
     """
     Tests some snps
@@ -239,5 +243,4 @@ test_update_position()
 test_update_alleles()
 test_adding_minor_allele_frequency()
 test_overwrite_snp_data()
-
 test_reading_bim_from_snp_pack()
