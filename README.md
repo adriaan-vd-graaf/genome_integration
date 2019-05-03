@@ -36,7 +36,7 @@ Everything was tested on Ubuntu 18.04, other flavors of linux should also work a
 
 Requirements are: Python >= 3.6
 with the following packages:
-numpy, scipy, sklearn, statsmodels, requests (for `enricher api`) and plinkio (used as a reference).
+numpy, scipy, sklearn, statsmodels, requests (for `enrichr` api), bitarray and plinkio (used as a reference).
 
 Please make sure that `gcta64` and `plink` (1.9) should be in your PATH as the subprocess module will directly refer to them.
 - [Download GCTA](http://cnsgenomics.com/software/gcta/#Download)

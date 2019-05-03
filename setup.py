@@ -62,7 +62,7 @@ setup(
     # simple. Or you can use find_packages().
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
 
-    install_requires=['numpy', 'scipy', 'sklearn', 'statsmodels', 'plinkio', 'requests'],
+    install_requires=['numpy', 'scipy', 'sklearn', 'statsmodels', 'plinkio', 'requests', 'bitarray'],
 
     extras_require={
         'dev': ['check-manifest'],
