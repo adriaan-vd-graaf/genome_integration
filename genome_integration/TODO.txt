@@ -1,4 +1,0 @@
-TODO
-
-1. add single variance term MR estimate
-2.
