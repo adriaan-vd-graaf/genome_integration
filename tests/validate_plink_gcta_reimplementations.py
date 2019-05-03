@@ -98,6 +98,8 @@ def test_compare_gcta_cojo_with_reference_no_missing():
     minor_allele_frequency = np.apply_along_axis(simulate_mr.geno_frq ,axis=0, arr=geno_mat).T
     ordered_loci = np.asarray([plinkfile.bim_data.bim_results[x] for x in plinkfile.bim_data.snp_names])
 
+
+
     sample_sizes = np.sum(geno_mat != 3, axis=0)
     genetic_assocs = turn_assocs_into_genetic_associations(assocs,
                                                            ordered_loci,
@@ -142,7 +144,7 @@ def test_compare_gcta_cojo_with_reference_no_missing():
         np.apply_along_axis(simulate_mr.scale_geno_vec, 0, geno_mat[:,indices]),
         assocs_of_interest,
         np.arange(3),
-        ordered_loci[indices]
+        np.asarray(plinkfile.bim_data.snp_names)[indices]
         )
 
     # Effects deviate slightly due to floating point errors and inverting.

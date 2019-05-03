@@ -124,7 +124,7 @@ def do_gcta_cojo_conditional(reference_geno, associations, indices_of_interest, 
     :param indices_of_interest: nparray of indices.
         Indices of ref_loci with which we want to do associations.
 
-    :param ref_loci: list
+    :param ref_loci: list of str
         The names  of the SNPs which are selected for COJO (keys for associations)
 
     :return: numpy array of shape (len(indices_of_interest), 2)

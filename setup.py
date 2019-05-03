@@ -1,16 +1,6 @@
-"""A setuptools based setup module.
-See:
-https://packaging.python.org/en/latest/distributing.html
-https://github.com/pypa/sampleproject
-"""
-
-# Always prefer setuptools over distutils
 from setuptools import setup
 from setuptools import find_packages
-from distutils.extension import Extension
 # To use a consistent encoding
-
-
 
 from codecs import open
 from os import path
@@ -18,7 +8,7 @@ from os import path
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
-with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
+with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 
@@ -42,7 +32,7 @@ setup(
     author_email='adriaan.vd.graaf@gmail.com',
 
     # Choose your license
-    license='Copyright 2018 Adriaan van der Graaf',
+    license='Copyright 2019 Adriaan van der Graaf',
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
@@ -50,7 +40,7 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 1 - Work in progress',
+        'Development Status :: 3 - Alpha',
 
         # Indicate who your project is intended for
         'Intended Audience :: Author',
