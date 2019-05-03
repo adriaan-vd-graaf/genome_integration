@@ -11,7 +11,10 @@ def test_plink_bed_file_reading():
     """
     rel_path = '/'.join(('test_resources', 'subset_of_exposure_cohort'))
 
-    plink_loc = "{}/{}".format("/".join(__file__.split("/")[:-1]), rel_path)
+    if len(__file__.split("/")) > 1:
+        plink_loc = "{}/{}".format("/".join(__file__.split("/")[:-1]), rel_path)
+    else:
+        plink_loc = rel_path
 
     plinkio = simulate_mr.read_geno_mat_plinkio(plink_loc)
 

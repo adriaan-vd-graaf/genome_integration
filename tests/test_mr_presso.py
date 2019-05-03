@@ -25,7 +25,10 @@ def test_mr_presso_with_reference_implementation():
 
     resource_path = '/'.join(('test_resources', 'mr_presso_data.txt'))
 
-    mr_presso_file =  "{}/{}".format("/".join(__file__.split("/")[:-1]), resource_path)
+    if len(__file__.split("/")) >1:
+        mr_presso_file =  "{}/{}".format("/".join(__file__.split("/")[:-1]), resource_path)
+    else:
+        mr_presso_file = resource_path
 
     with open(mr_presso_file, "r") as f:
         f.readline()

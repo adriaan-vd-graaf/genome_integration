@@ -73,10 +73,17 @@ def test_compare_gcta_cojo_with_reference_no_missing():
     np.random.seed(1313)
 
     rel_path = '/'.join(('test_resources', 'subset_of_exposure_cohort'))
-    plink_loc = "{}/{}".format("/".join(__file__.split("/")[:-1]), rel_path)
+
+    if len(__file__.split("/")) >1:
+        plink_loc = "{}/{}".format("/".join(__file__.split("/")[:-1]), rel_path)
+    else:
+        plink_loc = rel_path
+
 
     temp_data = '/'.join(('temp_data', 'gcta_cojo_test'))
-    temp_data = "{}/{}".format("/".join(__file__.split("/")[:-1]), temp_data)
+
+    if len(__file__.split("/")) > 1:
+        temp_data = "{}/{}".format("/".join(__file__.split("/")[:-1]), temp_data)
 
     plinkfile = utils.PlinkFile(plink_loc)
     geno_mat = plinkfile.read_bed_file_into_numpy_array()
@@ -160,10 +167,15 @@ def test_compare_plink_assoc():
     np.random.seed(13289)
 
     rel_path = '/'.join(('test_resources', 'subset_of_exposure_cohort'))
-    plink_loc = "{}/{}".format("/".join(__file__.split("/")[:-1]), rel_path)
+    if len(__file__.split("/")) > 1:
+        plink_loc = "{}/{}".format("/".join(__file__.split("/")[:-1]), rel_path)
+    else:
+        plink_loc = rel_path
 
     temp_data = '/'.join(('temp_data', 'plink_file_cojo_test'))
-    temp_data = "{}/{}".format("/".join(__file__.split("/")[:-1]), temp_data)
+
+    if len(__file__.split("/")) > 1:
+        temp_data = "{}/{}".format("/".join(__file__.split("/")[:-1]), temp_data)
 
     plinkfile = utils.PlinkFile(plink_loc)
     geno_mat = plinkfile.read_bed_file_into_numpy_array()
@@ -219,8 +231,11 @@ def test_compare_plink_assoc():
 
 
 rel_path = '/'.join(('temp_data', ''))
-test_data_dir = "{}/{}".format("/".join(__file__.split("/")[:-1]), rel_path)
-
+if len(__file__.split("/")) >1:
+    test_data_dir = "{}/{}".format("/".join(__file__.split("/")[:-1]), rel_path)
+else:
+    test_data_dir = rel_path
+    
 if not os.path.isdir(test_data_dir):
     os.mkdir(test_data_dir)
 

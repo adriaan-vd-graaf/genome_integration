@@ -282,9 +282,10 @@ def read_gene_information():
     """
 
     resource_path = '/'.join(('ensembl_data', '2018_05_18_ensembl_gene_information.txt.gz'))
-
-    gene_file =  "{}/{}".format("/".join(__file__.split("/")[:-1]), resource_path)
-
+    if len(__file__.split("/")) > 1:
+        gene_file =  "{}/{}".format("/".join(__file__.split("/")[:-1]), resource_path)
+    else:
+        gene_file = resource_path
     ensembl_genes = EnsemblGenes()
     with gzip.open(gene_file, "rb") as f:
         f.readline()

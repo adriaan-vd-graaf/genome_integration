@@ -352,7 +352,7 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
     #make sure the exposure Causal SNPs are not in > upper_ld_bound R^2 with another.
     exposure_1_causal_snps = np.zeros([exposure_1_n_causal], dtype=int)
     i=0
-    exposure_1_causal_snps[i] = np.random.choice(exposure_geno.shape[0], 1, replace=False)
+    exposure_1_causal_snps[i] = np.random.choice(exposure_geno.shape[1], 1, replace=False)
     i += 1
 
     while i < exposure_1_n_causal:
@@ -416,8 +416,8 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
 
     if inside_phi != 0.0:
         phi_values = np.random.uniform(0, inside_phi, (1, len(exposure_2_causal_snps)))
-        confounder_exposure_cohort += (phi_values @ exposure_geno[exposure_2_causal_snps,:]).reshape(exposure_geno.shape[0])
-        confounder_outcome_cohort += (phi_values @ outcome_geno[exposure_2_causal_snps, :]).reshape(outcome_geno.shape[0])
+        confounder_exposure_cohort += (exposure_geno[:,exposure_2_causal_snps] @ phi_values).reshape(exposure_geno.shape[0])
+        confounder_outcome_cohort += (outcome_geno[:,exposure_2_causal_snps] @phi_values).reshape(outcome_geno.shape[0])
 
 
     """

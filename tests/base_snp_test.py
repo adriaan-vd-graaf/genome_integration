@@ -233,7 +233,10 @@ def test_overwrite_snp_data():
 def test_reading_bim_from_snp_pack():
     rel_path = '/'.join(('test_resources', 'subset_of_exposure_cohort.bim'))
 
-    plink_loc = "{}/{}".format("/".join(__file__.split("/")[:-1]), rel_path)
+    if len(__file__.split("/")) > 1:
+        plink_loc = "{}/{}".format("/".join(__file__.split("/")[:-1]), rel_path)
+    else:
+        plink_loc = rel_path
     variants.BimFile(plink_loc)
 
 

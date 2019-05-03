@@ -111,6 +111,10 @@ class PlinkFile:
         reads in the bed file takes about 5 seconds for 5,000 individuals ~14,000 variants.
         saves it to the class.
 
+    prune_for_a_region(self, region):
+        prunes for a StartEndRegion
+
+
     harmonize_genotypes(self, other_plink_file)
         Harmonized another PlinkFile object to this files' alleles.
         (flips alleles, and flips genotypes) (MAJOR and minor will be false names.)
@@ -180,7 +184,6 @@ class PlinkFile:
 
         offset = 0
         for i in range(num_variants):
-
             bits = bitarray.bitarray(endian="little")
             bits.frombytes(all_bytes[offset:(offset+bytes_to_read)])
             array = bits.decode(self._decoder)[:num_individuals]
@@ -199,6 +202,44 @@ class PlinkFile:
 
         self.genotypes = genotypes
         return genotypes
+
+
+    def prune_for_a_region(self, region):
+        """
+        Prunes for a region in the plink file.
+
+        :param region: StartEndRegion
+            region to prune for
+        :return: self
+            with the variants outside the region removed.
+        """
+
+        if self.genotypes is None:
+            warnings.warn("Reference genotypes where not loaded."
+                          "Reading them now, this could take prohibitively long or use a lot of memory",
+                          RuntimeWarning)
+            self.read_bed_file_into_numpy_array()
+
+        variants_to_keep = []
+        variants_to_delete = []
+        for snp_name in self.bim_data.snp_names:
+            if region.snp_object_in_region(self.bim_data.bim_results[snp_name]):
+                variants_to_keep.append(snp_name)
+            else:
+                variants_to_delete.append(snp_name)
+
+        indices_to_keep = np.asarray([self.bim_data.snp_names.index(x) for x in variants_to_keep], dtype=int)
+
+        # Remove the variants
+        for snp_name_to_remove in variants_to_delete:
+            self.bim_data.snp_names.remove(snp_name_to_remove)
+            del self.bim_data.bim_results[snp_name_to_remove]
+
+        # Keep the remaining genotypes
+        self.genotypes = self.genotypes[:,indices_to_keep]
+
+        return self
+
 
     def harmonize_genotypes(self, other_plink_file):
         """
@@ -260,6 +301,10 @@ class PlinkFile:
                 )
 
         return other_plink_file, other_plink_file.genotypes
+
+
+
+
 
 
 def read_region_from_plink(bed_file, out_location, region, variants=None):
