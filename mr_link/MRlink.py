@@ -125,7 +125,6 @@ def read_outcome_genotypes_and_phenotypes(big_bed, tmp_loc, region,phenotype_fil
     return bed_file, genotypes, phenotype_vector
 
 
-
 def read_summary_statistic_file(file_name):
     assocs = {}
     correct_header = "CHR\tPOS\tNAME\tREF_ALLELE\tEFFECT_ALLELE\tBETA\tSE\tMAF\tN_OBS\n"

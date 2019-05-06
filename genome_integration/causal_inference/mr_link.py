@@ -102,10 +102,10 @@ def mr_link_ols(outcome_geno,
                                                 causal_exposure_indices,
                                                 upper_r_sq_threshold)
 
-    geno_masked = outcome_geno[masked_instruments,:].transpose()
+    geno_masked = outcome_geno[:, masked_instruments]
 
     design_mat = np.zeros( (geno_masked.shape[0], geno_masked.shape[1]+1), dtype=float)
-    design_mat[:,0] = (outcome_geno[causal_exposure_indices,:].transpose() @  exposure_betas) / exposure_betas.shape[0]
+    design_mat[:,0] = (outcome_geno[:, causal_exposure_indices] @  exposure_betas) / exposure_betas.shape[0]
     design_mat[:,np.arange(1, design_mat.shape[1])] = geno_masked / np.sqrt(geno_masked.shape[1])
 
     ols_fit = sm.OLS(endog=outcome_phenotype, exog=design_mat).fit()
@@ -203,11 +203,11 @@ def _mr_link_ridge_resample_tags(outcome_geno,
 
 
     ridge_fit = BayesianRidge(fit_intercept=False)
-    geno_masked = outcome_geno[masked_instruments,:].transpose()
+    geno_masked = outcome_geno[:,masked_instruments]
 
 
     design_mat = np.zeros( (geno_masked.shape[0], geno_masked.shape[1]+1), dtype=float)
-    design_mat[:,0] = (outcome_geno[causal_exposure_indices,:].transpose() @ exposure_betas) / exposure_betas.shape[0]
+    design_mat[:,0] = (outcome_geno[:,causal_exposure_indices] @ exposure_betas) / exposure_betas.shape[0]
     design_mat[:,np.arange(1, design_mat.shape[1])] = geno_masked / np.sqrt(geno_masked.shape[1])
 
     ridge_fit.fit(design_mat, outcome_phenotype)
@@ -227,9 +227,9 @@ def _mr_link_ridge_resample_tags(outcome_geno,
                                                   upper_r_sq_threshold,
                                                   shuffle_positions=True)
 
-            geno_masked = outcome_geno[sampled_tags, :].transpose()
+            geno_masked = outcome_geno[:, sampled_tags]
             design_mat = np.zeros((geno_masked.shape[0], geno_masked.shape[1] + 1), dtype=float)
-            design_mat[:, 0] = (outcome_geno[causal_exposure_indices, :].transpose() @ exposure_betas) / \
+            design_mat[:, 0] = (outcome_geno[:,causal_exposure_indices] @ exposure_betas) / \
                                exposure_betas.shape[0]
             design_mat[:, np.arange(1, design_mat.shape[1])] = geno_masked / np.sqrt(geno_masked.shape[1])
 
@@ -284,12 +284,12 @@ def _mr_link_ridge_cv(outcome_geno,
                                                 upper_r_sq_threshold)
 
 
-    geno_masked = outcome_geno[masked_instruments,:].transpose()
+    geno_masked = outcome_geno[:, masked_instruments]
 
     bayesian_ridge_fit = BayesianRidge(fit_intercept=False)
 
     design_mat = np.zeros( (geno_masked.shape[0], geno_masked.shape[1]+1), dtype=float)
-    design_mat[:,0] = (outcome_geno[causal_exposure_indices,:].transpose() @ exposure_betas) / exposure_betas.shape[0]
+    design_mat[:,0] = (outcome_geno[:, causal_exposure_indices] @ exposure_betas) / exposure_betas.shape[0]
     design_mat[:,np.arange(1, design_mat.shape[1])] = geno_masked / np.sqrt(geno_masked.shape[1])
 
     full_fit = bayesian_ridge_fit.fit(X=design_mat, y=outcome_phenotype)
@@ -332,8 +332,9 @@ def _mr_link_bootstrapped(outcome_geno,
                          bootstraps = 50
                          ):
     """
+    Warning: Could have some transposition error. untested since last big refactor.
 
-   Does MR-link solved by ridge regression.
+    Does MR-link solved by ridge regression.
 
    This function was created for internal analysis and tried to do bootstrapping the outcome phenotype to
    identify p values, but results were not fruitful.
@@ -354,12 +355,12 @@ def _mr_link_bootstrapped(outcome_geno,
                                                 upper_r_sq_threshold)
 
 
-    geno_masked = outcome_geno[masked_instruments,:].transpose()
+    geno_masked = outcome_geno[:, masked_instruments]
 
     ridge_fit = BayesianRidge(fit_intercept=False)
 
     design_mat = np.zeros( (geno_masked.shape[0], geno_masked.shape[1]+1), dtype=float)
-    design_mat[:,0] = (outcome_geno[causal_exposure_indices,:].transpose() @ exposure_betas) / exposure_betas.shape[0]
+    design_mat[:,0] = (outcome_geno[:, causal_exposure_indices ]@ exposure_betas) / exposure_betas.shape[0]
     design_mat[:,np.arange(1, design_mat.shape[1])] = geno_masked / np.sqrt(geno_masked.shape[1])
 
     ridge_fit.fit(design_mat, outcome_phenotype)
@@ -409,6 +410,8 @@ def _mr_link_lasso(outcome_geno,
                   upper_r_sq_threshold = 0.95,
                   ):
     """
+    Warning: Could have some transposition error. untested since last big refactor.
+
     Does MR-link in a two step fashion:
     first lasso regression to identify important features in the genotype matrix
     then ols on the IV*beta and important features
@@ -434,15 +437,15 @@ def _mr_link_lasso(outcome_geno,
                                                 prune_r_sq_thresh=0.95)
 
     lasso_fit = LassoCV(fit_intercept=False, cv=5, max_iter=5000, eps=0.001)
-    masked_geno = outcome_geno[masked_instruments,:]
-    lasso_fit.fit(X=masked_geno.T, y=outcome_phenotype)
+    masked_geno = outcome_geno[masked_instruments ]
+    lasso_fit.fit(X=masked_geno, y=outcome_phenotype)
 
     to_keep = lasso_fit.coef_ != 0.0
 
     print("check3")
-    new_mat = np.zeros((masked_geno.shape[1], np.sum(to_keep)+1), dtype=float)
-    new_mat[:,0] = ((outcome_geno[causal_exposure_indices, :].transpose() @ exposure_betas) / exposure_betas.shape[0])
-    new_mat[:,np.arange(1, int(np.sum(to_keep))+1)] = masked_geno[to_keep,:].transpose()
+    new_mat = np.zeros((masked_geno.shape[0], np.sum(to_keep)+1), dtype=float)
+    new_mat[:,0] = ((outcome_geno[:,causal_exposure_indices]@ exposure_betas) / exposure_betas.shape[0])
+    new_mat[:,np.arange(1, int(np.sum(to_keep))+1)] = masked_geno[:, to_keep]
 
     print(sum(to_keep))
 
