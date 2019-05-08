@@ -84,7 +84,8 @@ def add_p_values_to_associations_dict(associations):
 
     assoc_names = list(associations.keys())
     abs_z_scores = [abs(associations[assoc_name].z_score) for assoc_name in assoc_names]
-    p_vals = scipy.stats.norm.sf(abs_z_scores) * 2
+    n_obs = np.asarray([abs(associations[assoc_name].n_observations) for assoc_name in assoc_names], dtype=int)
+    p_vals = scipy.stats.t.sf(abs_z_scores, n_obs - 2) * 2
     [associations[assoc_names[i]].set_p_val(p_vals[i]) for i in range(len(assoc_names))]
     return associations, p_vals
 
