@@ -100,11 +100,63 @@ TODO
 
 
 
-#Example of MendelianRandomization class.
+#Examples 
 
-```Python3
-#eQTL betas, exposure tuples are beta and SE of the estimates.
+
+##Harmonization of associations
+Harmonization of associations can be done using the GeneticAssociation classes.
+This will flip betas (multiply by -1), and take the inverse of the allele frequency.
+
+```python
+from genome_integration import association
+
+exposure_association = association.GeneticAssociation(
+                                dependent_name="example_exposure",
+                                explanatory_name="example_variant_name",
+                                n_observations = 5000,
+                                beta=0.5,
+                                se=0.1,
+                                r_squared = None,
+                                chromosome = 6,
+                                position = 1000000,
+                                major_allele = "A",
+                                minor_allele = "C",
+                                minor_allele_frequency = 0.1
+                                )
+
+
+
+outcome_association = association.GeneticAssociation(
+                                dependent_name="example_outcome",
+                                explanatory_name="example_variant_name",
+                                n_observations = 15000,
+                                beta=0.2,
+                                se=0.05,
+                                r_squared = None,
+                                chromosome = 6,
+                                position = 1000000,
+                                major_allele = "C",
+                                minor_allele = "A",
+                                minor_allele_frequency = 0.89
+                                )
+#harmonize to the exposure
+outcome_association.add_snp_data(exposure_association)
+
+#major allele is now A for the outcome association.
+print(outcome_association.major_allele)
+#allele frequency is now 1-(old)
+print(outcome_association.minor_allele_frequency)
+#beta is flipped.
+print(outcome_association.beta)
+```
+
+
+
+
+##Mendelian randomization
+```python
 from genome_integration import causal_inference
+#eQTL betas, exposure tuples are beta and SE of the estimates.
 exposure_tuples = [ (0.5, 0.1),
                     (0.3, 0.1),
                     (0.2, 0.1)
@@ -127,6 +179,4 @@ mr_class.do_ivw_estimation()
 mr_class.do_egger_regression()
 
 etx.
-
-
 ```
