@@ -261,7 +261,7 @@ class MendelianRandomization:
 
         return [beta_smr, se_smr, p_value]
 
-    def do_and_add_smr_estimation(self, exposure_tuple, outcome_tuple, variant_name, pos, chr):
+    def do_and_add_smr_estimation(self, exposure_tuple, outcome_tuple, variant_name=None, pos=None, chr=None):
         """
         Does an SMR estimation (two variance terms included) and adds it to the class.
 

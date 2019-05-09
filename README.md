@@ -98,3 +98,35 @@ degrees of freedom.
 # Simulations of causality 
 TODO
 
+
+
+#Example of MendelianRandomization class.
+
+```Python3
+#eQTL betas, exposure tuples are beta and SE of the estimates.
+from genome_integration import causal_inference
+exposure_tuples = [ (0.5, 0.1),
+                    (0.3, 0.1),
+                    (0.2, 0.1)
+                    ]
+#outcome tuples same format
+outcome_tuples = [ (0.2, 0.05),
+                   (0.12, 0.07),
+                   (0.1, 0.04)
+                    ]
+
+mr_class = causal_inference.MendelianRandomization()
+for exposure_tuple, outcome_tuple in zip(exposure_tuples, outcome_tuples):
+    mr_class.do_and_add_smr_estimation(exposure_tuple, outcome_tuple, None, None, None)
+
+#ivw
+mr_class.do_ivw_estimation()
+
+
+#MR-Egger
+mr_class.do_egger_regression()
+
+etx.
+
+
+```
