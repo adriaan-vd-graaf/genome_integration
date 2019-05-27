@@ -3,7 +3,7 @@ These functions are being used to prioritize genes in certain already associated
 """
 
 __author__      = "Adriaan van der Graaf"
-
+from .. import variants
 
 class StartEndRegion:
     """
@@ -109,6 +109,16 @@ class StartEndRegion:
                 return self.chromosome < other.chromosome
 
         return self.start < other.start
+
+    def __contains__(self, item):
+        if isinstance(item, variants.SNP):
+            return self.snp_object_in_region(item)
+        elif isinstance(item, StartEndRegion):
+            return self.region_overlaps(item)
+        else:
+            raise ValueError("Only classes (or inheritance allowed:) SNP.variant or gene_regions.StartEndRegion")
+
+
 
 
 

@@ -1,12 +1,11 @@
 import scipy.stats
 import numpy as np
 import statsmodels.api  as sm
-from sklearn.linear_model import BayesianRidge, LassoCV
+from sklearn.linear_model import BayesianRidge, LassoCV, LogisticRegression
 
 
 def remove_highly_correlated_snps(r_sq_mat, r_sq_threshold=0.95):
     """
-
     This iteratively selects variants that are less correlated to each other than r_sq_threshold
     removes SNPs that are more correlated that `r_sq_threshold`.
 
@@ -165,6 +164,54 @@ def mr_link_ridge(outcome_geno,
         deg_freedom = design_mat.shape[0] - np.trace(2*hat_mat - hat_mat @ hat_mat.T)
         print(deg_freedom)
         p_val = 2* scipy.stats.t.sf(t_stat, deg_freedom)
+
+    return ridge_fit.coef_[0], np.sqrt(ridge_fit.sigma_[0,0]), p_val
+
+
+
+def mr_link_binary(outcome_geno,
+                     r_sq_mat,
+                     exposure_betas,
+                     causal_exposure_indices,
+                     outcome_phenotype,
+                     upper_r_sq_threshold=0.99,
+                     ):
+
+    """
+
+    Does MR-link solved by l2 regularized logistic regresssion.
+    Please note that the p value and se is uncorrected. so these is usually _very_ conservative.
+    See the MR-link manuscript for details.
+
+    :param outcome_geno: outcome genotypes
+    :param r_sq_mat: R^2 matrix in order of genotypes of outcome geno
+    :param exposure_betas: beta estimates of the exposure instrumental variables.
+    :param causal_exposure_indices:  indices of the exposure instrumental variables.
+    :param outcome_phenotype: outcome phenotype vector
+    :param upper_r_sq_threshold: the upper r_sq threshold for which the variants around the IVs are pruned.
+    :return: beta, se and p value estimate of the MR-link estimate
+    """
+
+
+    masked_instruments = mask_instruments_in_ld(r_sq_mat,
+                                                causal_exposure_indices,
+                                                upper_r_sq_threshold)
+
+
+    geno_masked = outcome_geno[:,masked_instruments]
+
+    ridge_fit = LogisticRegression(fit_intercept=False)
+
+    design_mat = np.zeros( (geno_masked.shape[0], geno_masked.shape[1]+1), dtype=float)
+    design_mat[:,0] = (outcome_geno[:,causal_exposure_indices] @ exposure_betas) / exposure_betas.shape[0]
+    design_mat[:,np.arange(1, design_mat.shape[1])] = geno_masked / np.sqrt(geno_masked.shape[1])
+
+    ridge_fit.fit(design_mat, outcome_phenotype)
+
+    t_stat = np.abs(ridge_fit.coef_[0] / np.sqrt(ridge_fit.sigma_[0, 0]))
+
+    p_val = 2 * scipy.stats.norm.sf(np.abs(t_stat))
+
 
     return ridge_fit.coef_[0], np.sqrt(ridge_fit.sigma_[0,0]), p_val
 

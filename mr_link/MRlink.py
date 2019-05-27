@@ -17,9 +17,6 @@ from genome_integration import utils
 import time
 
 
-
-
-
 def remove_plink_files(plink_file):
     subprocess.run(
         ["rm {}.*".format(plink_file)],

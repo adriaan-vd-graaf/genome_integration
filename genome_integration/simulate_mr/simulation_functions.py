@@ -238,6 +238,126 @@ def simulate_phenotypes_also_return_unobserved_phenotype(exposure_1_causal, expo
            exposure_2_phenotype
 
 
+def simulate_phenotypes_binary_outcome(exposure_1_causal, exposure_2_causal,
+                                        exposure_1_n_causal, exposure_2_n_causal,
+                                        exposure_geno, exposure_ld,
+                                        outcome_geno,
+                                        overlapping_causal_snps = 0,
+                                        error_sd = 1.0,
+                                        confounder_sd = 0.5,
+                                        inside_phi = 0.0,
+                                        directional_pleiotropy = True,
+                                        proportion_cases=0.5
+                                        ):
+    """
+
+    This function simulates two binary phenotypes in cohorts which are under the same genetic control
+    This function is present to ensure that across simulation scenarios, the same parameters are used.
+
+    Step by step:
+
+    1.
+        exposure 1 SNPs are chosen, and they are chosen not to be in higher ld than 0.95 R ^ 2
+
+    2.
+        exposure 2 SNPs are chosen in two ways. `overlapping_causal_snps` are chosen without replacement from the
+        exposure 1 SNPs, the rest are chosen from SNPs that are in LD with exposure 1.
+
+    3.
+        The confounder is simulated, based on some error and if `inside_phi` is non-zero, it is given a genetic effect.
+
+    4.
+        The effect sizes of exposure 1 and of exposure 2 eQTLs are chosen.
+
+    5.
+        The phenotypes are simulated based on the function simulate_phenotypes_extended,
+        in the exposure cohort, and the outcome cohort independently.
+
+    6.
+        returning the following:
+            exposure_phenotype, outcome_phenotype,
+            exposure_1_causal_snps, exposure_1_betas,
+            exposure_2_causal_snps, exposure_2_betas
+
+
+
+    :param exposure_1_causal:
+    The causal effect on exposure 1
+
+    :param exposure_2_causal:
+    The causal effect on exposure 2
+
+    :param exposure_1_n_causal:
+    The number of causal SNPs for exposure 1e
+
+    :param exposure_2_n_causal:
+    The number of causal SNPs for exposure 2
+
+    :param exposure_geno:
+    The genotype matrix for the exposure
+
+    :param exposure_ld:
+    The ld R matrix for the exposure genotypes
+
+    :param outcome_geno:
+    The genotype matrix for the outcome encoded
+
+    :param outcome_ld:
+    The ld R matrix for the outcome genotypes.
+
+    :param overlapping_causal_snps: int
+    An integer number representing the number of causal SNPs for exposure 2 that overlap exposure 1.
+
+    :param error_sd: float
+    The scale (standard deviation) parameter of the error that is added to a phenotype
+
+    :param inside phi: float
+    The phi parameter (from the egger paper notation), that makes the confounder dependent of the genotype.
+    if non zero, a genetic effect with effect size (0,2) is added to the confounder, using the exposure 2 causal SNPs
+
+    :param directional_pleiotropy: bool
+    if there should be directional pleiotropy or not.
+
+    :param proportion_cases: float
+        The proportion of cases and for the outcome phenotypes.
+
+
+    :return:
+    Returns a tuple of the following numpy arrays:
+
+    1 by n vector of simulated phenotypes for the exposure,
+    1 by n vector simulated binary phenotypes for the outcome, 1 = case, 0 = control
+    1 by n causal vector of the indices of the causal snps of exposure 1.
+    1 by n causal vector of the effect sizes of the causal snps of exposure 1.
+    1 by n causal vector of the indices of the causal snps of exposure 2.
+    1 by n causal vector of the effect sizes of the causal snps of exposure 2.
+
+    """
+
+    exposure_phenotype, outcome_phenotype, \
+        exposure_1_causal_snps, exposure_1_betas, \
+        exposure_2_causal_snps, exposure_2_betas =  simulate_phenotypes(
+                        exposure_1_causal, exposure_2_causal,
+                        exposure_1_n_causal, exposure_2_n_causal,
+                        exposure_geno, exposure_ld,
+                        outcome_geno,
+                        overlapping_causal_snps,
+                        error_sd,
+                        confounder_sd,
+                        inside_phi,
+                        directional_pleiotropy
+                        )
+
+    phenotype_cut = np.quantile(outcome_phenotype, 1-proportion_cases)
+
+    outcome_phenotype[outcome_phenotype > phenotype_cut] = 1
+    outcome_phenotype[outcome_phenotype <= phenotype_cut] = 0
+
+    return exposure_phenotype, outcome_phenotype, \
+           exposure_1_causal_snps, exposure_1_betas, \
+           exposure_2_causal_snps, exposure_2_betas
+
+
 
 
 def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
@@ -264,7 +384,7 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
         exposure 1 SNPs, the rest are chosen from SNPs that are in LD with exposure 1.
 
     3.
-        The confounder is simulated, based on some error and if `inside_phi` is nonzero, it is given a genetic effect.
+        The confounder is simulated, based on some error and if `inside_phi` is non-zero, it is given a genetic effect.
 
     4.
         The effect sizes of exposure 1 and of exposure 2 eQTLs are chosen.
