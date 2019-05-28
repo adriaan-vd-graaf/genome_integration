@@ -1,0 +1,19 @@
+docs_dir: _build/pydocmd
+pages:
+- {Home: index.md}
+- MR-link:
+  - {Running mr link: mr_link_intro.md}
+  - {Simulations of causal geno and phenotypes: mr_link_simulation.md}
+- Genome integration library:
+  - {About genome_integration: about_gi.md}
+  - {variants: variants.md}
+  - {gene_regions: gene_regions.md}
+  - {association: association.md}
+  - {resources: resources.md}
+  - {samples: samples.md}
+  - {causal_inference: causal_inference.md}
+  - {utils: utils.md}
+  - {simulate_mr: simulate_mr.md}
+site_dir: _build/site
+site_name: MR-link and genome_integration
+theme: readthedocs

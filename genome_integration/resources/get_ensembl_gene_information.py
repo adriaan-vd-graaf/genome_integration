@@ -4,8 +4,6 @@ import gzip
 """
 These classes are intended to easily access and query ensembl genes information, 
 But they have other uses as well, so it is possible that these will be joined with the ensembl
-
-
 """
 
 
@@ -242,7 +240,7 @@ class EnsemblGenes:
         if str in self.ensg_to_full.keys():
             return self.ensg_to_full[str]
         elif str in self.gene_to_full.keys():
-            return self.gene_to_full[str].gene_name
+            return self.gene_to_full[str]
         else:
             raise ValueError(f"{str} was not convertible to a gene that I know.")
 

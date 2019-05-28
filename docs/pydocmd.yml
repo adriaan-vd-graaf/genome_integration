@@ -1,0 +1,58 @@
+site_name: "MR-link and genome_integration"
+
+generate:
+- association.md:
+    - genome_integration.association++
+    - genome_integration.association.association_classes++
+    - genome_integration.association.binary_files++
+
+- causal_inference.md:
+    - genome_integration.causal_inference++
+    - genome_integration.causal_inference.mendelian_randomization++
+    - genome_integration.causal_inference.mr_link++
+
+- gene_regions.md:
+    - genome_integration.gene_regions++
+
+- resources.md:
+    - genome_integration.resources++
+    - genome_integration.resources.enrichments++
+    - genome_integration.resources.get_ensembl_gene_information++
+
+- samples.md:
+    - genome_integration.samples++
+
+- simulate_mr.md:
+    - genome_integration.simulate_mr++
+    - genome_integration.simulate_mr.geno_functions++
+    - genome_integration.simulate_mr.simulation_functions++
+
+- utils.md:
+    - genome_integration.utils++
+    - genome_integration.utils.file_utils++
+    - genome_integration.utils.gcta_cojo_utils++
+    - genome_integration.utils.gcta_ma_utils++
+    - genome_integration.utils.plink_utils++
+
+- variants.md:
+    - genome_integration.variants++
+    - genome_integration.variants.SNP++
+
+
+pages:
+- Home: index.md << ../README.md
+
+- MR-link:
+    - Running mr link: mr_link_intro.md << guides/about_mr_link.md
+    - Simulations of causal geno and phenotypes: mr_link_simulation.md << guides/simulation_for_mr_link.md
+
+- Genome integration library:
+    - About genome_integration: about_gi.md << guides/about_genome_integration.md
+    - variants: variants.md
+    - gene_regions: gene_regions.md
+    - association:  association.md
+    - resources: resources.md
+    - samples: samples.md
+    - causal_inference: causal_inference.md
+    - utils: utils.md
+    - simulate_mr: simulate_mr.md

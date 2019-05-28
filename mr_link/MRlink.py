@@ -1,12 +1,9 @@
 import subprocess
 import numpy as np
-import pickle
 import sqlite3
 import scipy.stats
 import argparse
 import copy
-import os
-from plinkio import plinkfile
 from genome_integration import resources
 from genome_integration import simulate_mr
 from genome_integration import causal_inference
@@ -166,7 +163,7 @@ if __name__ == '__main__':
                         type=str,
                         default="/home/adriaan/PhD/MR/simulate_mr/data_draft_004/geno_files/small_outcome_cohort",
                         # required=True,
-                        help="plink bed file of the outcome, in b37, this will be pruned for the region of the ensg_id ")
+                        help="plink bed file of the outcome, in b37, this will be pruned for the region of the ensg_id")
 
     parser.add_argument("--outcome_phenotype_file",
                         type=str,
@@ -224,20 +221,22 @@ if __name__ == '__main__':
     gene_info = resources.read_gene_information()
 
     # WARNING: this is used for testing, change before finishing.
-    ensg_info = gene_regions.StartEndRegion(["2", 100000000, 105000000])
-    region_of_interest = copy.deepcopy(ensg_info)
+    if args.ensg_id == "simulated_run":
+        ensg_info = gene_regions.StartEndRegion(["2", 100000000, 105000000])
 
-    # # start end region.
-    # ensg_info = gene_info.str_to_full(args.ensg_id)
-    #
-    # try:
-    #     region_of_interest = gene_regions.StartEndRegion([ensg_info.chromosome,
-    #                                                       ensg_info.start - 1500000,
-    #                                                       ensg_info.end + 1500000])
-    # except:
-    #     region_of_interest = gene_regions.StartEndRegion([ensg_info.chromosome,
-    #                                                       0,
-    #                                                       ensg_info.end + 1500000])
+        region_of_interest = copy.deepcopy(ensg_info)
+    else:
+        # start end region.
+        ensg_info = gene_info.str_to_full(args.ensg_id)
+
+        try:
+            region_of_interest = gene_regions.StartEndRegion([ensg_info.chromosome,
+                                                              ensg_info.start - 1500000,
+                                                              ensg_info.end + 1500000])
+        except:
+            region_of_interest = gene_regions.StartEndRegion([ensg_info.chromosome,
+                                                              0,
+                                                              ensg_info.end + 1500000])
 
     #read in exposure summary statistics
     exposure_assocs = read_summary_statistic_file(args.exposure_summary_statistics)
