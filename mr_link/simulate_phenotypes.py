@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
 
     parser.add_argument("--out_prepend",
-                        default="simulated_files/temp_simulated_file_",
+                        default="simulated_phenotypes/temp_simulated_file_",
                         help="The prepend for where to place the file")
 
     parser.add_argument("--save_as",

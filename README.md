@@ -32,26 +32,3 @@ the downloaded path
 python3 setup.py build install test
 ```
 After which you can run MR-link, details of which are on the MR-link page.
-
-
-##Features of MR-link 
-Features of MR-link are:
-
-- Identify robust causal relationships between gene expression and complex quantitative traits. 
-
-- Simulate causal phenotypes from a genetic region, specifying causal effect, causal variants and pleiotropic effects.
-
-##Features of `genome_integration`
-`genome_integration` is designed as a library with helper functions and analysis functionality that help the analysis 
- and integration of genomics data.  
-
-Features of genome_integration include:
-
-- Classes to handle single nucleotide polymorphism data 
-- Classes to handle genetic associations
-- Classes to handle individual samples
-- Causal inference using many different popular summary statistics based MR methods. (MR-Egger, IVW, MR-PRESSO, ...)
-- Causal inference using MR-link
-- Reading genotype files in the `plink` bed format
-- Exporting to, Running, and loading often used commands in the `plink` and `gcta64` programs.
-- Using the `enrichr` api on a set of genes to enrichment analyses. 

@@ -168,7 +168,7 @@ if __name__ == '__main__':
     parser.add_argument("--outcome_phenotype_file",
                         type=str,
                         # required=True,
-                        default="/home/adriaan/PhD/MR/genome_integration/mr_link/simulated_files/temp_simulated_file_ex1-n-5_ex2-n-5_ex1-b-0.0_ex2-b-0.4_overl-0_dir_pleio-1_run_0_outcome_pheno.txt",
+                        default="/home/adriaan/PhD/MR/genome_integration/mr_link/simulated_phenotypes/temp_simulated_file_ex1-n-5_ex2-n-5_ex1-b-0.0_ex2-b-0.4_overl-0_dir_pleio-1_run_0_outcome_pheno.txt",
                         help="phenotype file of the outcome")
 
     parser.add_argument("--reference_bed_file",
@@ -181,7 +181,7 @@ if __name__ == '__main__':
     parser.add_argument("--exposure_summary_statistics",
                         type=str,
                         # required=True,
-                        default="/home/adriaan/PhD/MR/genome_integration/mr_link/simulated_files/temp_simulated_file_ex1-n-5_ex2-n-5_ex1-b-0.0_ex2-b-0.4_overl-0_dir_pleio-1_run_0exposure_sumstats.txt",
+                        default="/home/adriaan/PhD/MR/genome_integration/mr_link/simulated_phenotypes/temp_simulated_file_ex1-n-5_ex2-n-5_ex1-b-0.0_ex2-b-0.4_overl-0_dir_pleio-1_run_0exposure_sumstats.txt",
                         help="eQTL summary statistics file of the exposure summary statistics"
                         )
     parser.add_argument("--ensg_id",
@@ -315,7 +315,6 @@ if __name__ == '__main__':
                                                  iv_selection,
                                                  outcome_plinkfile.bim_data.snp_names
                                                  )
-
 
     mr_link_results = causal_inference.mr_link_ridge(
         scaled_reference_geno,
