@@ -11,7 +11,7 @@ Structure of the package:
 Please revisit to read it in our upcoming publication.
 
 
-##R equirements
+## Requirements
 Everything was tested on Ubuntu 18.04, other flavors of linux should also work as well likely also macOS
 
 Requirements are: Python >= 3.6
@@ -25,7 +25,7 @@ Please make sure that `gcta64` and `plink` (1.9) should be in your PATH as the s
 If you want to check if they are in your path, try: `which plink` and `which gcta64`
 
 
-##installing:
+## Installing:
 If GCTA and plink are in your `$PATH`, you can install the genome_integration library with the command in 
 the downloaded path
 ```
