@@ -8,6 +8,8 @@ single instrumental variable available.
 Structure of the package: 
 `genome_integration` is the library and `./mr_link/` has the programs for an implementation of MR-link.
 
+More extensive documentation can be read at [readthedocs](https://genome-integration.readthedocs.io/en/latest/)
+
 Please revisit to read it in our upcoming publication.
 
 

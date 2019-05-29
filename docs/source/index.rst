@@ -32,6 +32,8 @@ This package contains MR-link, a Mendelian randomization (MR) method that effici
 between gene expression and complex traits, implicitly correcting for unobserved pleiotropy even if there is only as
 single instrumental variable available.
 
+The source code of the package can be found at `github <https://github.com/adriaan-vd-graaf/genome_integration>`_
+
 Structure of the package
 -------------------------
 ``genome_integration`` is the library and ``./mr_link/`` has the programs for an implementation of MR-link.
@@ -41,7 +43,7 @@ Please revisit to read it in our upcoming publication.
 
 Requirements
 --------------------
-Everything was tested on Ubuntu 18.04, other flavors of linux should also work as well likely also macOS
+Everything was tested on Ubuntu 18.04, other flavors of linux should also work as well, likely also macOS
 
 Requirements are: Python >= 3.6
 with the following packages:
