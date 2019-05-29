@@ -39,17 +39,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--bed_cohort_1",
-                        # required=True,
+                        required=True,
                         help="The bed file for cohort 1 (from which the exposure is calculated and saved), "
-                             "alleles need to be harmonized with bed_cohort_2",
-                        default="/home/adriaan/PhD/MR/simulate_mr/data_draft_004/geno_files/exposure_cohort"
+                             "alleles need to be harmonized with bed_cohort_2"
                         )
 
     parser.add_argument("--bed_cohort_2",
-                        # required=True,
+                        required=True,
                         help="The bed file for cohort 2 (from which the outcome is calculated and saved)"
                              "alleles need to be harmonized with bed_cohort_1",
-                        default="/home/adriaan/PhD/MR/simulate_mr/data_draft_004/geno_files/small_outcome_cohort"
                         )
 
 
@@ -64,7 +62,6 @@ if __name__ == '__main__':
                              "'text' will be human readable but save to eight separate files per simulation." 
                              "The latter can blow up the number of files in the file system.",
                         choices=['numpy', 'text'],
-                        # required=True
                         )
 
     parser.add_argument("--exposure_1_causal",
@@ -138,7 +135,6 @@ if __name__ == '__main__':
         file_name = f"{args.out_prepend}{sim_scenario}_run_{i}"
 
         try:
-
             exposure_phenotype, outcome_phenotype, \
             exposure_1_causal_snps, exposure_1_betas, \
             exposure_2_causal_snps, exposure_2_betas = \

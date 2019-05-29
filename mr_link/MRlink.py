@@ -161,33 +161,28 @@ if __name__ == '__main__':
 
     parser.add_argument("--outcome_bed_file",
                         type=str,
-                        default="/home/adriaan/PhD/MR/simulate_mr/data_draft_004/geno_files/small_outcome_cohort",
-                        # required=True,
+                        required=True,
                         help="plink bed file of the outcome, in b37, this will be pruned for the region of the ensg_id")
 
     parser.add_argument("--outcome_phenotype_file",
                         type=str,
-                        # required=True,
-                        default="/home/adriaan/PhD/MR/genome_integration/mr_link/simulated_phenotypes/temp_simulated_file_ex1-n-5_ex2-n-5_ex1-b-0.0_ex2-b-0.4_overl-0_dir_pleio-1_run_0_outcome_pheno.txt",
+                        required=True,
                         help="phenotype file of the outcome")
 
     parser.add_argument("--reference_bed_file",
                         type=str,
-                        default="/home/adriaan/PhD/MR/simulate_mr/data_draft_004/geno_files/exposure_cohort",
-                        # required=True,
+                        required=True,
                         help="plink bed file of the reference cohort, in b37, "
                              "can be the same as the outcome bed file, but results are untested")
 
     parser.add_argument("--exposure_summary_statistics",
                         type=str,
-                        # required=True,
-                        default="/home/adriaan/PhD/MR/genome_integration/mr_link/simulated_phenotypes/temp_simulated_file_ex1-n-5_ex2-n-5_ex1-b-0.0_ex2-b-0.4_overl-0_dir_pleio-1_run_0exposure_sumstats.txt",
+                        required=True,
                         help="eQTL summary statistics file of the exposure summary statistics"
                         )
     parser.add_argument("--ensg_id",
                         type=str,
-                        # required=True,
-                        default="ENSG00000115607",
+                        required=True,
                         help="ENSG id, so we can identify the region used and isolate "
                              "this from the reference and the outcome bed files."
                         )
@@ -198,6 +193,12 @@ if __name__ == '__main__':
                         help="location where temporary files can be stored.")
 
     parser.add_argument("--p_val_iv_selection_threshold",
+                        default=5e-8,
+                        type=float,
+                        help="p value selection theshold for GCTA COJO"
+                        )
+
+    parser.add_argument("--output_file",
                         default=5e-8,
                         type=float,
                         help="p value selection theshold for GCTA COJO"
@@ -220,7 +221,6 @@ if __name__ == '__main__':
 
     gene_info = resources.read_gene_information()
 
-    # WARNING: this is used for testing, change before finishing.
     if args.ensg_id == "simulated_run":
         ensg_info = gene_regions.StartEndRegion(["2", 100000000, 105000000])
 
@@ -324,8 +324,10 @@ if __name__ == '__main__':
         outcome_phenotypes,
         )
 
+    with open(args.output_file, "wa") as f:
+        # ensembl name, method, beta, se, p value (uncorrected)
+        f.write(f"{ensg_name}\tMR-link\t{mr_link_results[0]}\t{mr_link_results[1]}\t{mr_link_results[2]}")
 
     print("MR-link results:", mr_link_results)
-
     print(f"Finished MR-link for {ensg_name} in {time.time() - mr_link_start_time} seconds.")
 
