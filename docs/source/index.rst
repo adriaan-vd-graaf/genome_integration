@@ -11,6 +11,7 @@ MR-link and genome_integration
    :caption: Contents:
 
    Home <index>
+
    Introduction
    about_mr_link
    simulation_for_mr_link
@@ -48,15 +49,15 @@ Everything was tested on Ubuntu 18.04, other flavors of linux should also work a
 
 Requirements are: Python >= 3.6
 with the following packages:
-numpy, scipy, sklearn, statsmodels, requests (for `enrichr` api), bitarray and plinkio (used as a reference).
+numpy, scipy, sklearn, statsmodels, requests (for ``enrichr`` api), bitarray and plinkio (used as a reference).
 
-Please make sure that `gcta64` and `plink` (1.9) should be in your PATH as the subprocess module will directly refer to them.
+Please make sure that ``gcta64`` and ``plink`` (1.9) should be in your PATH as the subprocess module will directly refer to them.
 
 * `Download GCTA <http://cnsgenomics.com/software/gcta/#Download>`_
 
 * `Download plink <https://www.cog-genomics.org/plink2/>`_
 
-If you want to check if they are in your path, try: `which plink` and `which gcta64`
+If you want to check if they are in your path, try: ``which plink` and ``which gcta64`
 
 
 installation

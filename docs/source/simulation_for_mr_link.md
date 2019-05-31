@@ -33,7 +33,7 @@ The genome_integration package should be installed.
 ### Step 1. Simulation of genotypes from 1000 genomes.
 
 Before we start. Please go to the directory relative to where `genome_integration` was downloaded / cloned 
-`./mr_link/thousand_genomes_non_finnish_european_subset`.
+`./mr_link/simulation_of_genotypes/`.
 
 In this folder, the genotypes for our region of interest will be simulated.
 
