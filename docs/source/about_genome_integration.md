@@ -15,18 +15,28 @@ Features of genome_integration include:
 - Classes to handle single nucleotide polymorphism data 
 - Classes to handle genetic associations
 - Classes to handle individual samples
-- Causal inference using many different popular summary statistics based MR methods. (MR-Egger, IVW, MR-PRESSO, ...)
+- Causal inference using many different popular summary statistics based MR methods. 
+     
+     1. IVW,
+     2. IVW combined with the q test. 
+     3. MR-Egger, 
+     4. LDA-MR-Egger,
+     4. MR-PRESSO
+     
 - Causal inference using MR-link
 - Reading genotype files in the `plink` bed format
-- Exporting to, Running, and loading often used commands in the `plink` and `gcta64` programs.
+- Exporting to, running, and loading often used commands in the `plink` and `gcta64` programs.
 - Using the `enrichr` web api on a set of genes to enrichment analyses. 
 
 
 ## Examples of usage for genome_integration
 
-### Harmonization of associations
-Harmonization of associations can be done using the GeneticAssociation classes.
-This will flip betas (multiply by -1), and take the inverse of the allele frequency.
+##Harmonization of associations 
+Harmonization of associations is a pre-analysis step that set up, for each SNP, the effect allele in the outcome data 
+to be identical to the effect allele in the exposure summary statistics. This step is necessary so that we are i) 
+comparing the effect size for the same allele, 2) check if inconsistencies in alleles are present for the same data 
+set. It can be done using the GeneticAssociation classes. This will flip betas (multiply by -1), and take the inverse 
+of the allele frequency.
 
 ```python
 from genome_integration import association

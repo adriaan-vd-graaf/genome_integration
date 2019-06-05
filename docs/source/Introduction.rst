@@ -1,30 +1,3 @@
-.. MR-link and genome_integration documentation master file, created by
-   sphinx-quickstart on Tue May 28 18:10:10 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-MR-link and genome_integration
-==========================================================
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Contents:
-
-   Home <index>
-
-   Introduction
-   about_mr_link
-   simulation_for_mr_link
-   about_genome_integration.md
-
-   modules/variants
-   modules/samples
-   modules/gene_regions
-   modules/association
-   modules/causal_inference
-   modules/simulate_mr
-   modules/resources
-   modules/utils
 
 
 Introduction

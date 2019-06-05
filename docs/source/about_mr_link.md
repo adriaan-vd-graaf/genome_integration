@@ -48,13 +48,14 @@ them [here](simulation_for_mr_link.md)
 Phenotype files need to be a tab separated table with the following columns. 
 1. `FID` -- family ID that is matched with the plink genotype column.
 2. `IID` -- individual ID that is matched with the plink genotype column.
-3. `PHENO` -- Numeric phenotype
-First line is the header and will be checked against the following:
+3. `PHENO` -- Numeric phenotype (please note that MR-link has only been tested for quantitative phenotypes.)
+
+The first line is the header and will be checked against the following:
 ```
 correct_header= "FID\tIID\tPHENO\n"
 ```
 
-#### Summary statistic files
+#### Summary statistic file
 Phenotype files need to be a tab separated table with the following columns.
  
 1. `CHR` -- chromosome identifyer
@@ -64,7 +65,7 @@ Phenotype files need to be a tab separated table with the following columns.
 5. `ALT_ALLELE` -- alternative allele (usually the minor allele)
 6. `BETA` -- beta effect size of the marginal estimate
 7. `SE` -- standard error of the effect size of the marginal estimate.
-10. `MAF` -- allele frequency of the alternative allele (minor allele)
+10. `MAF` -- allele frequency of the alternative allele (alternative allele)
 11. `N_OBS` -- number of observations used for the estimate.
 
 first line of the file is the header and will be checked against the following:
