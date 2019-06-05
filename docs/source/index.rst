@@ -10,7 +10,6 @@ MR-link and genome_integration
    :maxdepth: 1
    :caption: Contents:
 
-   Home <index>
 
    Introduction
    about_mr_link
