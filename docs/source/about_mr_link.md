@@ -7,14 +7,58 @@ After [installing](Introduction.md) the `genome_integration` library it is possi
 MR-link requires the following for it to run
 - Individual level genotypes and phenotypes of the outcome (a complex trait) 
 - Summary statistics of the exposure (gene expression)
-- Genotype of a sufficiently large reference cohort.
+- Genotype of a sufficiently large reference cohort (>= 5000 individuals).
 
-If you do not have these requirments, but want to run MR-link from simulated data, it is possible to simulate that 
+Running an example gene for MR-link will take approximately 10 seconds on a quad core Intel Core i7-7700HQ CPU processor 
+and require up to 8 Gb of RAM. Running permutations will take longer. 
+Running Permutations take approximately 200 seconds, but is not necessary for non-significant genes. 
+
+If you want to simulate your own genotypes and phenotypes, it is possible to simulate that 
 [here](simulation_for_mr_link.md). Please set the ensg id option to: `--ensg_id simulated_run`, as simulations
 do not represent any gene locations.
 
 
-## Example code of MR-link
+## Quick examples to run MR-link
+
+To run MR-link, please go to the `./mr_link` directory.
+Running MR-link is possible using the following command:
+```bash
+python3 MRlink.py --outcome_bed_file example_genotypes/outcome_cohort \
+   --reference_bed example_genotypes/reference_cohort \
+   --exposure_summary_statistics example_files/no_causal_effect_exposure_sumstats.txt \
+   --outcome_phenotype_file  example_files/no_causal_effect_outcome_pheno.txt   \
+   --temporary_location_prepend tmp_loc \
+   --p_val_iv_selection_threshold 5e-8 \
+   --output_file no_causal_effect_example.txt \
+   --ensg_id simulated_run \
+   --permute False
+```
+
+Which will show MR-link output for a simulation scenario where the exposure is not causal to the outcome. 
+Results will be in the `no_causal_effect_example.txt` file.
+
+Running the command below will run MR-link with a causal effect.
+
+```bash
+python3 MRlink.py --outcome_bed_file example_genotypes/outcome_cohort \
+   --reference_bed example_genotypes/reference_cohort \
+   --exposure_summary_statistics example_files/yes_causal_effect_exposure_sumstats.txt \
+   --outcome_phenotype_file  example_files/yes_causal_effect_outcome_pheno.txt   \
+   --temporary_location_prepend tmp_loc \
+   --p_val_iv_selection_threshold 5e-8 \
+   --output_file yes_causal_effect_example.txt \
+   --ensg_id simulated_run \
+   --permute False
+```
+Results will be in the `yes_causal_effect_example.txt` file.
+
+For more detailed instructions on the `MRlink.py` script, see below.
+
+The p values of the MR-link results are usually conservative, therefore we have calibrated our p values using a beta  
+distribution. Instructions to calibrate p values can be found [here](calibrating_mr_link_p_values.md).
+
+
+## MR-link specifications.
 
 Running MR-link is possible using the following command in the `./mr_link/` directory
 ```bash
@@ -25,7 +69,7 @@ python3 MRlink.py \
     --exposure_summary_statitics <summary_statistics_file_of_the_exposure>\
     --ensg_id <ensembl_id_of_the_gene> \
     --temporary_location_prepend <a_location_to_store_temporary_files> \
-    --p_val_iv_selection_threshold <p_value_selection_threshold>
+    --p_val_iv_selection_threshold <p_value_selection_threshold> \ 
     --output_file <file_where_to_output_the_result>
     
 ```
@@ -34,11 +78,12 @@ The files and their formats are described below.
 
 The other options are described below. 
 - `--ensg_id` is the ensembl id used to identify the genomic region from where the 
-IVs and the causal relationship are estimated. (set this to `simulated_run` if you're running [simulated data](simulation_for_mr_link.md))
+IVs and the causal relationship are estimated. (set this to `simulated_run` if you're running the examples above or 
+[simulated data](simulation_for_mr_link.md))
 - `--temporary_locatoin_prepend` is a location (directory) where to store temporary files.
 - `--p_val_iv_selection_threshold` is the _p_ value used for GCTA-COJO.
 - `--output_file` is the file where the result is output (appended) to.
-
+- `--permute` is a boolean value ("True" or "False") to identify if you want to permute the results.
 
 #### Genotype files
 Genotypes need to be in the plink bed format. If you do not have genotypes, but want to run MR-link you can simulate 
@@ -58,7 +103,7 @@ correct_header= "FID\tIID\tPHENO\n"
 #### Summary statistic file
 Phenotype files need to be a tab separated table with the following columns.
  
-1. `CHR` -- chromosome identifyer
+1. `CHR` -- chromosome identifier
 2. `POS` -- base pair position
 3. `NAME` -- name of the SNP
 4. `REF_ALLELE` -- reference allele (usually the major allele)
@@ -74,3 +119,5 @@ correct_header = "CHR\tPOS\tNAME\tREF_ALLELE\tEFFECT_ALLELE\tBETA\tSE\tMAF\tN_OB
 ```
 In the analysis a _p_ value is estimated in the summary statistics using a two tailed T distribution with `N_OBS`-2 
 degrees of freedom.
+
+

@@ -14,6 +14,7 @@ MR-link and genome_integration
    Introduction
    about_mr_link
    simulation_for_mr_link
+   calibrating_mr_link_p_values
    about_genome_integration.md
 
    modules/variants
@@ -50,7 +51,7 @@ Everything was tested on Ubuntu 18.04, we expect MR-link to work on other unix b
 provided tha the following requirements are in place:
 
 Requirements are:
-* Python >= 3.6with the following packages: numpy, scipy, sklearn, statsmodels, requests (for ``enrichr`` api), bitarray and plinkio (used as a reference).
+* Python >= 3.6 with the following packages: numpy, scipy, sklearn, statsmodels, requests (for ``enrichr`` api), bitarray and plinkio (used as a reference).
 
 * ``gcta64`` and ``plink`` (1.9) are installed and in your PATH as the subprocess module will directly refer to them.
 
@@ -70,5 +71,6 @@ the downloaded path
 
    python3 setup.py build install test
 
+Which will take approximately 2 minutes to install
 After which you have installed the library to run MR-link. Running MR-link is possible using the guide on the
 `MR-link page <about_mr_link>`_.

@@ -65,7 +65,7 @@ class Enrich:
             self.do_enrichr_analysis(enrichment_name)
 
         if output:
-            self.write_fdr_one_in_twenty_go_enrichments()
+            self. write_fdr_one_in_twenty_go_enrichments()
 
     def reset(self):
 
@@ -96,7 +96,6 @@ class Enrich:
                 self.gene_name_list.append( self.gene_info.str_to_gene(gene))
             except ValueError as x:
                 print(f"{x}, occured, continueing with the following gene" )
-
 
 
     def do_enrichr_analysis(self, target_name):

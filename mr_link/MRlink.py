@@ -199,10 +199,15 @@ if __name__ == '__main__':
                         )
 
     parser.add_argument("--output_file",
-                        default=5e-8,
-                        type=float,
-                        help="p value selection theshold for GCTA COJO"
+                        type=str,
+                        help="the file name where the MR-link results will be output."
                         )
+
+    parser.add_argument("--permute",
+                        type=bool,
+                        default=False,
+                        help="If permutations should be performed on .")
+
 
     mr_link_start_time = time.time()
 
@@ -324,10 +329,36 @@ if __name__ == '__main__':
         outcome_phenotypes,
         )
 
-    with open(args.output_file, "wa") as f:
-        # ensembl name, method, beta, se, p value (uncorrected)
-        f.write(f"{ensg_name}\tMR-link\t{mr_link_results[0]}\t{mr_link_results[1]}\t{mr_link_results[2]}")
+    permuted_p = np.nan
+    print(f"Finished MR-link for {ensg_name} in {time.time() - mr_link_start_time} seconds.")
+    #permutation scheme.
+    if args.permute:
+        print("Starting permutations")
+        permuted_p_values = []
+        n_permutations = 1000
+        for i in range(n_permutations):
+            permuted_p_values.append(causal_inference.mr_link_ridge(
+                scaled_reference_geno,
+                outcome_ld ** 2,
+                beta_ses[:, 0],
+                iv_selection,
+                np.random.permutation(outcome_phenotypes),
+            )[2])
+
+        permuted_p = np.sum(permuted_p_values < mr_link_results[2]) / n_permutations
+
+        print(f"Finished MR-link and permutations for {ensg_name} in {time.time() - mr_link_start_time} seconds.")
+
+
+    with open(args.output_file, "w") as f:
+        f.write("ensembl_name\tmethod\tbeta\tse\tp_value_uncorrected\n")
+        f.write(f"{ensg_name}\tMR-link_uncalibrated\t{mr_link_results[0]}\t{mr_link_results[1]}\t{mr_link_results[2]}\n")
+        if args.permute:
+            f.write(f"{ensg_name}\tMR-link_permuted_iids\t{mr_link_results[0]}\t{mr_link_results[1]}\t{permuted_p}\n")
+
 
     print("MR-link results:", mr_link_results)
-    print(f"Finished MR-link for {ensg_name} in {time.time() - mr_link_start_time} seconds.")
+
+
+
 

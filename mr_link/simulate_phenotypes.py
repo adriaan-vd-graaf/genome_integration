@@ -92,8 +92,8 @@ if __name__ == '__main__':
     parser.add_argument("--directional_pleiotropy", type=int, default=1,
                         help="If the effects of the second exposure should be directional")
 
-    parser.add_argument("--phenotypes_to_simulate", type=int, default=1,
-                        help= "How many phenotypes are saved could take a long time. "
+    parser.add_argument("--phenotypes_to_simulate", type=int, default=10,
+                        help= "How many phenotypes are saved. Could take a long time. "
                               "Results are nonetheless saved after each simulation")
 
     args = parser.parse_args()
@@ -107,7 +107,6 @@ if __name__ == '__main__':
         args.overlapping_causal,
         args.directional_pleiotropy,
     )
-
 
     exposure_plink_file = utils.PlinkFile(args.bed_cohort_1)
     geno_exposure = exposure_plink_file.read_bed_file_into_numpy_array()
@@ -187,7 +186,7 @@ if __name__ == '__main__':
                     sample = outcome_plink_file.fam_data.fam_samples[sample_name]
                     f.write(f"{sample.fid}\t{sample.iid}\t{pheno}\n")
 
-            sumstats_files = [file_name + "outcome_sumstats.txt", file_name + "exposure_sumstats.txt"]
+            sumstats_files = [file_name + "_outcome_sumstats.txt", file_name + "_exposure_sumstats.txt"]
             for outfile_name, tmp_plink_file, tmp_sum_stats, tmp_maf, tmp_obs in zip(sumstats_files,
                                                     [outcome_plink_file, exposure_plink_file],
                                                     [outcome_sum_stats, exposure_sum_stats],
