@@ -2,6 +2,7 @@
 
 After [installing](Introduction.md) the `genome_integration` library it is possible to run MR-link.
 
+
 ## Requirements of MR-link
 
 MR-link requires the following for it to run
@@ -85,12 +86,16 @@ IVs and the causal relationship are estimated. (set this to `simulated_run` if y
 - `--output_file` is the file where the result is output (appended) to.
 - `--permute` is a boolean value ("True" or "False") to identify if you want to permute the results.
 
+
 #### Genotype files
-Genotypes need to be in the plink bed format. If you do not have genotypes, but want to run MR-link you can simulate 
-them [here](simulation_for_mr_link.md)   
+
+Genotypes need to be in the plink bed format, and should contain exactly the same variants in both the reference and the outcome cohort. 
+If you do not have genotypes, but want to run MR-link you can simulate them [here](simulation_for_mr_link.md)   
 
 #### Phenotype files
-Phenotype files need to be a tab separated table with the following columns. 
+Phenotype files need to be a tab separated table with the following columns.
+Phenotypes need to be quantitative and should be corrected for covariates before hand.
+ 
 1. `FID` -- family ID that is matched with the plink genotype column.
 2. `IID` -- individual ID that is matched with the plink genotype column.
 3. `PHENO` -- Numeric phenotype (please note that MR-link has only been tested for quantitative phenotypes.)
@@ -99,6 +104,7 @@ The first line is the header and will be checked against the following:
 ```
 correct_header= "FID\tIID\tPHENO\n"
 ```
+
 
 #### Summary statistic file
 Phenotype files need to be a tab separated table with the following columns.
@@ -117,7 +123,3 @@ first line of the file is the header and will be checked against the following:
 ```
 correct_header = "CHR\tPOS\tNAME\tREF_ALLELE\tEFFECT_ALLELE\tBETA\tSE\tMAF\tN_OBS\n"
 ```
-In the analysis a _p_ value is estimated in the summary statistics using a two tailed T distribution with `N_OBS`-2 
-degrees of freedom.
-
-

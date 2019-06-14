@@ -38,6 +38,9 @@ After which you can run MR-link, details of which are below, or more extensively
 
 ## Running MR-link on example data
 
+A full description of the input and output formats of MR-link is located in 
+[readthedocs](https://genome-integration.readthedocs.io/en/latest/about_mr_link.html)
+
 To run MR-link, please go to the `./mr_link` directory.
 Running MR-link is possible using the following command:
 
@@ -84,6 +87,7 @@ pip3 install pymc3
 Running a single p value calibration will take up to 30 minutes, but only has to be performed once at the end of 
 an analysis, when all the genes are run.
 
+A full description of the input and output formats for MR-link can be found in [readthedocs](https://genome-integration.readthedocs.io/en/latest/calibrating_mr_link_p_values.md)
 
 ### p value calibration example
 

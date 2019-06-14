@@ -206,7 +206,7 @@ if __name__ == '__main__':
     parser.add_argument("--permute",
                         type=bool,
                         default=False,
-                        help="If permutations should be performed on .")
+                        help="If permutations should be performed")
 
 
     mr_link_start_time = time.time()
@@ -351,13 +351,13 @@ if __name__ == '__main__':
 
 
     with open(args.output_file, "w") as f:
-        f.write("ensembl_name\tmethod\tbeta\tse\tp_value_uncorrected\n")
+        f.write("ensembl_name\tmethod\tbeta\tse\tp_value\n")
         f.write(f"{ensg_name}\tMR-link_uncalibrated\t{mr_link_results[0]}\t{mr_link_results[1]}\t{mr_link_results[2]}\n")
         if args.permute:
             f.write(f"{ensg_name}\tMR-link_permuted_iids\t{mr_link_results[0]}\t{mr_link_results[1]}\t{permuted_p}\n")
 
 
-    print("MR-link results:", mr_link_results)
+    print(f"Uncalibrated MR-link results: beta:{mr_link_results[0]}, se: {mr_link_results[1]}, p_value {mr_link_results[2]}")
 
 
 
