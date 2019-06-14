@@ -35,7 +35,7 @@ python3 setup.py build install test
 ```
 After which you can run MR-link, details of which are on the MR-link page.
 
-##Running MR-link on example data
+## Running MR-link on example data
 
 To run MR-link, please go to the `./mr_link` directory.
 Running MR-link is possible using the following command:
