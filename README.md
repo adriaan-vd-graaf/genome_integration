@@ -81,7 +81,7 @@ for this you require the `PYMC3` package. You can install this package using
 ``` bash
 pip3 install pymc3
 ```
-Running a single p value calibration will take up to 30 minutes, but should only have to be performed at the end of 
+Running a single p value calibration will take up to 30 minutes, but only has to be performed once at the end of 
 an analysis, when all the genes are run.
 
 
@@ -90,7 +90,7 @@ an analysis, when all the genes are run.
 To run p value calibration you need to install pymc3:
 
 ```bash
-pip3 install pymc3 
+pip3 install pymc3
 ```
 
 After installation of PYMC3 It is possible to run the p value calibration script using the following commands
