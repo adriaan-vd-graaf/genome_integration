@@ -71,7 +71,7 @@ python3 MRlink.py --outcome_bed_file example_genotypes/outcome_cohort \
 Results will be in the `yes_causal_effect_example.txt` file.
 
 
-## calibration of p values
+## Calibration of p values
 
 After a first pass of MR-link and if you have at least 100 and preferably 1,000 uncalibrated p values for different 
 genes, it is possible to calibrate them using the script located in `./mr_link/p_value_calibration.py` script.
@@ -84,7 +84,7 @@ Running a single p value calibration will take up to 30 minutes, but should only
 an analysis, when all the genes are run.
 
 
-## p value calibration example
+### p value calibration example
 
 To run p value calibration you need to install pymc3:
 
