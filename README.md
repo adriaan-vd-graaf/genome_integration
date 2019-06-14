@@ -99,16 +99,4 @@ After installation of PYMC3 It is possible to run the p value calibration script
 python3 p_value_calibration.py --input_file example_files/uncalibrated_p_values_example.txt --output_file calibrated_p_values.txt
 ```
 Which will output calibrated p values in the `calibrated_p_values.txt` file, and accept uncalibrated p values from the
-`uncalibrated_p_values_example.txt` file. 
-
-## p_value_calibration.py specifications
-
-The `--input_file` from which p values are calibrated should be a tab separated file with two columns:
-1. `exposure_name`
-2. `uncalibrated_p_value` 
-
-The `--output_file` is the same file, but with an extra column appended to it:
-1. `exposure_name`
-2. `uncalibrated_p_value`
-3. `calibrated_p_value`
-
+`uncalibrated_p_values_example.txt` file.
