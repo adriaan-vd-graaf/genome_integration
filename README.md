@@ -33,7 +33,8 @@ the downloaded path
 ```
 python3 setup.py build install test
 ```
-After which you can run MR-link, details of which are on the MR-link page.
+After which you can run MR-link, details of which are below, or more extensively described in 
+[readthedocs](https://genome-integration.readthedocs.io/en/latest/)*
 
 ## Running MR-link on example data
 
