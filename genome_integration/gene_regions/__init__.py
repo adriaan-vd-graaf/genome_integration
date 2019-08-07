@@ -40,10 +40,23 @@ class StartEndRegion:
 
 
     """
-    def __init__(self, list):
-        self.chromosome = str(list[0])
-        self.start = int(list[1])
-        self.end = int(list[2])
+    def __init__(self, *args, **kwargs):
+
+        if type(args[0]) == list and len(args) == 1:
+            self.chromosome = str(args[0][0])
+            self.start = int(args[0][1])
+            self.end = int(args[0][2])
+        elif len(args) == 3 and type(args[0]) != list:
+            self.chromosome = str(args[0])
+            self.start = int(args[1])
+            self.end = int(args[2])
+
+        elif type(args[0]) == str:
+            self.chr, _ , rest = args[0].partition(":")
+            self.start, self.end = [int(x) for x in rest.split('-')]
+        else:
+            raise ValueError("Constructor only accepts a list [<chr>, <start>, <end>], three arguments (<chr>, <start>, <end>) "
+                             "or a string formatted as 'chr:start-end' ")
 
         # Runtime checks.
         if self.start > self.end:

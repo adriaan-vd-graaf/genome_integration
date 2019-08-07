@@ -2,7 +2,8 @@
 import numpy as np
 from math import isclose
 from genome_integration import causal_inference
-
+import subprocess
+import os.path
 
 def test_smr_results():
     """
@@ -203,8 +204,75 @@ def test_q_meta_analysis_with_heterogeneity():
     assert np.median(z_scores) < 1.3
     np.random.seed()
 
+
+
+def test_weighted_median_meta_analysis():
+    # np.random.seed(1337)
+
+    num_invalid_ivs = 80
+    num_valid_ivs = 100
+    num_replicates = 30
+    z_scores = []
+    for i in range(num_replicates):
+        true_beta = np.random.normal()
+        good_exposure_betas = np.random.normal(0, 1, size=num_valid_ivs)
+        good_exposure_se = abs(np.random.normal(0, 0.2, size=num_valid_ivs))
+        good_outcome_betas = true_beta * good_exposure_betas + np.random.normal(0, 0.1, size=num_valid_ivs)
+        good_outcome_se = abs(np.random.normal(0, 0.1, size=num_valid_ivs))
+
+        bad_beta = true_beta
+        #give some difference between the good and bad betas
+        while abs(bad_beta - true_beta) < 0.2:
+            bad_beta = np.random.normal()
+
+        bad_exposure_betas = np.random.normal(0, 1, size=num_invalid_ivs)
+        bad_exposure_se = abs(np.random.normal(0, 0.2, size=num_invalid_ivs))
+        bad_outcome_betas = bad_beta * bad_exposure_betas + np.random.normal(0, 0.1, size=num_invalid_ivs)
+        bad_outcome_se = abs(np.random.normal(0, 0.1, size=num_invalid_ivs))
+
+        exposure_betas = np.append(good_exposure_betas, bad_exposure_betas)
+        exposure_ses = np.append(good_exposure_se, bad_exposure_se)
+        exposure_mat = np.append([exposure_betas], [exposure_ses], axis=0).T
+
+        outcome_betas = np.append(good_outcome_betas, bad_outcome_betas)
+        outcome_ses = np.append(good_outcome_se, bad_outcome_se)
+        outcome_mat = np.append([outcome_betas], [outcome_ses], axis=0).T
+
+        this_result = causal_inference.MendelianRandomization()
+        beta_wm, se_wm, p_wm = this_result.do_weighted_median_meta_analysis_on_estimate_vectors(exposure_mat, outcome_mat)
+        print(beta_wm, se_wm, p_wm)
+
+        rel_path = '/'.join(('test_resources', 'weighted_median_output'))
+
+        if len(__file__.split("/")) > 1:
+            out_loc = "{}/{}".format("/".join(__file__.split("/")[:-1]), rel_path)
+        else:
+            out_loc = rel_path
+
+        script_loc = "{}/{}".format("/".join(out_loc.split("/")[:-1]), 'weighted_median_reference_implementation.R')
+
+        with open(out_loc, 'w') as f:
+            f.write("beta_exposure\tse_exposure\tbeta_outcome\tse_outcome\n")
+            for i in range(outcome_mat.shape[0]):
+                f.write(f"{exposure_mat[i,0]}\t{exposure_mat[i,1]}\t{outcome_mat[i,0]}\t{outcome_mat[i,1]}\n")
+
+        proc = subprocess.run(["Rscript", script_loc, out_loc], stdout=subprocess.PIPE, bufsize=1, universal_newlines=True)
+        lines = proc.stdout.split("\n")
+        ref_implementation_beta  = float(lines[0])
+        ref_implementation_se = float(lines[1])
+
+        subprocess.run(['rm', out_loc], check=True)
+
+        assert(np.isclose(beta_wm, ref_implementation_beta))
+
+        # assert (np.isclose(se_wm, ref_implementation_se, atol=0.01))
+
+
+#
+#
 test_ivw_estimates()
 test_giant_celiac_from_r_implementation()
 test_smr_results()
 test_q_meta_analysis_without_heterogeneity()
 test_q_meta_analysis_with_heterogeneity()
+test_weighted_median_meta_analysis()

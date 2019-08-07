@@ -6,8 +6,6 @@ from . association_classes import *
 """
 These classes are helper functions to [semi] efficiently store and read association statistics.
 
-
-
 The format of the association file and struct package encoding reprsents the following.
 
 The first bytes, delimited by the b'\0' byte are the name of the gene
@@ -21,9 +19,7 @@ Then all associations are represented in the following manner until the file end
     float (f): se(b) standard error of the beta estimate
     float (f): R^2 variance explained by the model.
     
-    Effect alleles are not stored. These need to be known, or inferred from the  
-    
-
+    Effect alleles are not stored. These need to be known.
 """
 
 def turn_plink_assoc_line_into_bin(line):
@@ -144,10 +140,8 @@ def read_bin_file(file_name, bim_data):
 
 
 def read_bin_file_region(file_name, bim_data, gene_region):
-
     """
     Turns a compressed file of associations into a dict that fully contains the GeneticAssociation class.
-
 
     :param file_name: File where the binary associations are stored
     :param bim_data: the BimFile object (see genome_integration.variants) that is

@@ -161,6 +161,33 @@ class MendelianRandomization:
         self.estimation_data.append(beta_se_tuple)
         self.estimation_snps.append((variant_name, pos, chr))
 
+    def do_ivw_heterogeneity_estimation(self):
+        """
+        Run a heterogeneity estimation on an already done IVW estimation.
+        :return: a p value of estimation.
+        """
+        heterogeneity_p_value = self.do_ivw_heterogeneity_estimation_on_estimate_vector(self.estimation_data)
+        return heterogeneity_p_value
+
+    def do_ivw_heterogeneity_estimation_on_estimate_vector(self, estimation_vector):
+        """
+        Provides a heterogeneity estimation p value of an ivw estimation based on an estimation vector.
+
+        :param estimation_vector: estimation vector of MR estimates.
+        :return: a p value of heterogeneity.
+        """
+        if len(self.estimation_data) < 3:
+            raise ValueError("Less than three estimates supplied, cannot do cochrans q heterogeneity analysis")
+
+        ivw_estimate = self.do_ivw_estimation_on_estimate_vector(estimation_vector, save_intermediate=False)
+
+        chi_sq_sum = 0.0
+        for sub_estimate in estimation_vector:
+            chi_sq_sum += (ivw_estimate[0] - sub_estimate[0]) **2 / sub_estimate[1] ** 2
+
+        return scipy.stats.chi2.sf(chi_sq_sum, len(estimation_vector) - 1)
+
+
     def do_ivw_estimation(self):
         """
         Does IVW estimation on all the methods
@@ -173,6 +200,7 @@ class MendelianRandomization:
         self.estimation_done = True
 
         return beta, se, wald_p_val
+
 
     def do_ivw_estimation_on_estimate_vector(self, estimation_vec, save_intermediate=False):
         """
@@ -188,10 +216,8 @@ class MendelianRandomization:
         beta_top = 0.0
         beta_bottom = 0.0
 
-
         ivw_intermediate_top = []
         ivw_intermediate_bottom = []
-
 
         i = 0
 
@@ -282,6 +308,73 @@ class MendelianRandomization:
         self.outcome_tuples.append(outcome_tuple)
         self.exposure_tuples.append(exposure_tuple)
 
+    def do_weighted_median_meta_analysis(self):
+        return self.do_weighted_median_meta_analysis_on_estimate_vectors(self.exposure_tuples, self.outcome_tuples)
+
+    def do_weighted_median_meta_analysis_on_estimate_vectors(self, exposure_associations, outcome_associations):
+        """
+        Performs the weighted median estimation
+        following Web Appendix 2 from
+        Genet Epidemiol. 2016 May; 40(4): 304–314.
+        Published online 2016 Apr 7. doi: 10.1002/gepi.21965
+        PMCID: PMC4849733
+        PMID: 27061298
+        Consistent Estimation in Mendelian Randomization with Some Invalid Instruments Using a Weighted Median Estimator
+        Jack Bowden, 1 George Davey Smith, 1 Philip C. Haycock, 1 and Stephen Burgess
+
+        :param estimation_vector:
+        :return: Weighted median estimator.
+
+        """
+
+        def weighted_median_beta(betas_per_iv, weights):
+            if len(betas_per_iv) < 2:
+                raise ValueError("Weighted median estimator requires a minimum of 2 ivs")
+            if len(weights) != len(betas_per_iv):
+                raise ValueError("Betas and weights should have the same shape")
+
+            ordering = np.argsort(betas_per_iv)
+            betas = betas_per_iv[ordering]
+            weights = 1 / (weights[ordering] ** 2)
+            weight_sum = (np.cumsum(weights) - 0.5* weights) / np.sum(weights)
+            below = np.max(np.where(weight_sum < 0.5)[0])
+            weighted_estimate = betas[below] + (betas[below+1]-betas[below]) * (
+                                0.5-weight_sum[below]) / (weight_sum[below+1] - weight_sum[below])
+
+            return weighted_estimate
+
+        def bootstrap_se_of_wm_estimate(exposure_tuple, outcome_tuple, weights, n_bootstraps=1000):
+
+            exposure_mat = np.asarray(exposure_tuple)[:,:2]
+            outcome_mat = np.asarray(outcome_tuple)[:,:2]
+
+            exposure_draws = np.random.normal(exposure_mat[:,0], exposure_mat[:,1],
+                                              size=(n_bootstraps, exposure_mat.shape[0]))
+
+            outcome_draws = np.random.normal(outcome_mat[:,0], outcome_mat[:,1],
+                                             size=(n_bootstraps, outcome_mat.shape[0]))
+
+            mr_draws = outcome_draws / exposure_draws
+
+            bootstrapped_wm = np.zeros(n_bootstraps)
+            for i in range(n_bootstraps):
+                bootstrapped_wm[i] = weighted_median_beta(mr_draws[i,:], weights)
+            return np.std(bootstrapped_wm)
+
+        if len(exposure_associations) != len(outcome_associations):
+            raise ValueError(f"Exposure tuples should have the same length as the outcome tuple")
+
+        estimates  = [self.do_single_term_mr_estimate(exposure_associations[i], outcome_associations[i]) for i in
+                              range(len(exposure_associations))]
+
+        mr_betas = np.asarray([x[0] for x in estimates])
+        mr_weights = np.asarray([x[1] if x[1] > 1e-10 else 1e-10 for x in estimates])
+
+        beta_wm = weighted_median_beta(mr_betas, mr_weights)
+        se_wm = bootstrap_se_of_wm_estimate(exposure_associations, outcome_associations, mr_weights)
+        p_val = scipy.stats.t.sf(abs(beta_wm / se_wm), df = len(mr_betas) - 1)
+
+        return beta_wm, se_wm, p_val
 
 
     def do_chochrans_q_meta_analysis(self, p_value_threshold):
@@ -293,8 +386,8 @@ class MendelianRandomization:
 
         :return: tuple of floats: beta, se, wald_p_val of the estimate after chochran's Q meta analysis.
         """
-        if len(self.estimation_data) < 3:
-            raise ValueError("Less than three estimates supplied, cannot do cochrans q analysis")
+        if len(self.estimation_data) < 2:
+            raise ValueError("Less than 2 estimates supplied, cannot do cochrans q analysis")
 
         if not self.estimation_done:
             raise ValueError("No causal_inference estimation done.")
@@ -314,7 +407,7 @@ class MendelianRandomization:
 
         p_val = 0.0
 
-        while (p_value_threshold > p_val) and (len(indices_remaining) >= 3):
+        while (p_value_threshold > p_val) and (len(indices_remaining) >= 2):
             old_indices = copy.deepcopy(indices_remaining)
 
             #determine the Q statistic, per estimate.
@@ -488,6 +581,7 @@ class MendelianRandomization:
         p_value = scipy.stats.norm.sf(abs(z_score)) * 2
 
         return beta_mr, se_mr, p_value
+
 
     def do_and_add_single_term_mr_estimation(self, exposure_tuple, outcome_tuple):
         """
