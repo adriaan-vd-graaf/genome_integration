@@ -52,7 +52,7 @@ class StartEndRegion:
             self.end = int(args[2])
 
         elif type(args[0]) == str:
-            self.chr, _ , rest = args[0].partition(":")
+            self.chromosome, _ , rest = args[0].partition(":")
             self.start, self.end = [int(x) for x in rest.split('-')]
         else:
             raise ValueError("Constructor only accepts a list [<chr>, <start>, <end>], three arguments (<chr>, <start>, <end>) "
