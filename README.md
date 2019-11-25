@@ -10,7 +10,7 @@ Structure of the package:
 
 *More extensive documentation can be read at [readthedocs](https://genome-integration.readthedocs.io/en/latest/)*
 
-Please revisit to read it in our upcoming publication.
+Please find more details in our publication [preprint](https://www.biorxiv.org/content/10.1101/671537v1)
 
 ## Requirements
 Everything was tested on Ubuntu 18.04, other flavors of linux should also work as well likely also macOS
