@@ -339,6 +339,100 @@ def do_gcta_cojo_joint_on_genetic_associations(genetic_associations, bfile, tmp_
     return cojo_eqtl
 
 
+def do_gcta_conditional_of_snps(bfile_prepend, ma_file, snp_file_name, out_prepend, gc=1.0):
+    """
+        Doeas GCTA COJO stepwise selection (no joint effects)
+
+
+        :param bfile_prepend: bedfile location
+        :param ma_file: ma file location
+        :param out_prepend: where to output
+        :param p_val: p value threshold for stepwise selection
+        :param maf: minor allele frequency threshold for stepwise selection
+        :param gc: genomic correction factor, default is 1.0. Make sure to check this in your associations
+        :return: CojoCmaFile object with the results.
+        """
+
+    subprocess.run(['gcta64',
+                    '--bfile', bfile_prepend,
+                    '--cojo-file', ma_file,
+                    '--cojo-cond', snp_file_name,
+                    '--cojo-gc', str(gc),
+                    '--out', out_prepend,
+                    '--thread-num', '1'
+                    ],
+                   stdout=subprocess.DEVNULL,
+                   stderr=subprocess.DEVNULL,
+                   check=True
+                   )
+
+    tmp_cojo = CojoCmaFile(out_prepend + ".cma.cojo", out_prepend)
+
+    return tmp_cojo
+
+
+
+
+def do_gcta_cojo_snp_conditional_on_genetic_associations(genetic_associations, bfile, tmp_prepend,
+                                         _keep_ma_files=False):
+    """
+    :param genetic_associations: a dict of genetic associations,  keys should be explantory name
+    :param bfile: plink bed file
+    :param tmp_prepend: temporary name of files where to store.
+    :param _keep_ma_files: This is used for testing. MA files are used to know the exact floating point input.
+    :return: Cojo results a Cojo CMA file object, which is an extension of the geneticassociation file.
+    """
+
+
+    # define the names.
+    ma_name = tmp_prepend + "_temp.ma"
+    snp_out = tmp_prepend + "_snp_list.txt"
+    plink_pruned = tmp_prepend + "_plink_pruned"
+    cojo_out = tmp_prepend + "_cojo_out"
+
+    snps = list(genetic_associations.keys())
+    try:
+        gene_name = genetic_associations[snps[0]].dependent_name.decode("utf8")
+    except AttributeError:
+        gene_name = genetic_associations[snps[0]].dependent_name
+
+    ma_lines = [make_gcta_ma_header()]
+
+    [
+        ma_lines.append(make_gcta_ma_line(genetic_associations[x]))
+        for x in genetic_associations
+        if genetic_associations[x].snp_name in snps
+    ]
+
+    write_list_to_newline_separated_file(ma_lines, ma_name)
+
+
+
+    try:
+        isolate_snps_of_interest_make_bed(ma_file=ma_name, exposure_name=gene_name, b_file=bfile,
+                                                      snp_file_out=snp_out, plink_files_out=plink_pruned,
+                                                      calculate_ld=False)
+
+    except Exception as x:
+        print("isolating snps raised an exception while processing " + gene_name )
+        subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
+        raise x
+
+
+    try:
+        cojo_eqtl = do_gcta_conditional_of_snps(plink_pruned, snp_out, ma_name, cojo_out)
+    except Exception as x:
+        print("GCTA cojo raised an exception while processing " + gene_name)
+        subprocess.run(["rm {} {} {}* {}*".format(ma_name, snp_out, plink_pruned, cojo_out)], shell=True, check=True)
+        raise x
+
+    if _keep_ma_files:
+        subprocess.run(["rm -f {} {}* {}*".format(snp_out,plink_pruned,cojo_out)], shell=True, check = True)
+    else:
+        subprocess.run(["rm -f {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)
+
+    return cojo_eqtl
+
 def make_gcta_ma_header():
     """
     Will create an ma header. for GCTA-COJO
