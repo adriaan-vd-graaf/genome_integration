@@ -52,12 +52,14 @@ python3 MRlink.py --outcome_bed_file example_genotypes/outcome_cohort \
    --temporary_location_prepend tmp_loc \
    --p_val_iv_selection_threshold 5e-8 \
    --output_file no_causal_effect_example.txt \
-   --ensg_id simulated_run \
-   --permute False
+   --ensg_id ENSG00000000000
 ```
 
 Which will show MR-link output for a simulation scenario where the exposure is not causal to the outcome. 
-Results will be in the `no_causal_effect_example.txt` file.
+Results will be in the `no_causal_effect_example.txt` file. 
+
+If you want to permute these results, you can do so by adding the `--permute` flag to the command, which will take some 
+extra runtime.  
 
 Running the command below will run MR-link with a causal effect.
 
@@ -69,8 +71,7 @@ python3 MRlink.py --outcome_bed_file example_genotypes/outcome_cohort \
    --temporary_location_prepend tmp_loc \
    --p_val_iv_selection_threshold 5e-8 \
    --output_file yes_causal_effect_example.txt \
-   --ensg_id simulated_run \
-   --permute False
+   --ensg_id ENSG00000000000
 ```
 Results will be in the `yes_causal_effect_example.txt` file.
 

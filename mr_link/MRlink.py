@@ -203,18 +203,14 @@ if __name__ == '__main__':
                         help="the file name where the MR-link results will be output."
                         )
 
-    parser.add_argument("--permute",
-                        type=bool,
-                        default=False,
-                        help="If permutations should be performed")
-
+    parser.add_argument("--permute", action='store_true',
+                        help="Use this flag if you want permutations to occur (will add substantial runtime)")
 
     mr_link_start_time = time.time()
 
     args = parser.parse_args()
     tmp_dir = args.temporary_location_prepend
     ensg_name = args.ensg_id
-
     big_outcome_bed_file = args.outcome_bed_file
     big_reference_bed_file = args.reference_bed_file
 
@@ -226,7 +222,7 @@ if __name__ == '__main__':
 
     gene_info = resources.read_gene_information()
 
-    if args.ensg_id == "simulated_run":
+    if args.ensg_id == "simulated_run" or args.ensg_id == 'ENSG00000000000':
         ensg_info = gene_regions.StartEndRegion(["2", 100000000, 105000000])
 
         region_of_interest = copy.deepcopy(ensg_info)
@@ -314,15 +310,19 @@ if __name__ == '__main__':
 
 
     scaled_reference_geno = np.apply_along_axis(simulate_mr.scale_geno_vec, 1, reference_geno)
-    scaled_outcome_geno = np.apply_along_axis(simulate_mr.scale_geno_vec, 1, reference_geno)
-    beta_ses = simulate_mr.do_gcta_cojo_conditional(scaled_reference_geno,
-                                                 exposure_assocs,
-                                                 iv_selection,
-                                                 outcome_plinkfile.bim_data.snp_names
-                                                 )
+    scaled_outcome_geno = np.apply_along_axis(simulate_mr.scale_geno_vec, 1, outcome_geno)
+
+    iv_names = [reference_plinkfile.bim_data.snp_names[x] for x in iv_selection]
+    beta_ses = np.asarray([[exposure_cojo.ma_results[x].beta, exposure_cojo.ma_results[x].se] for x in iv_names])
+    #
+    # beta_ses = simulate_mr.do_gcta_cojo_conditional(scaled_reference_geno,
+    #                                              exposure_assocs,
+    #                                              iv_selection,
+    #                                              outcome_plinkfile.bim_data.snp_names
+    #                                              )
 
     mr_link_results = causal_inference.mr_link_ridge(
-        scaled_reference_geno,
+        scaled_outcome_geno,
         outcome_ld ** 2,
         beta_ses[:, 0],
         iv_selection,
@@ -357,7 +357,7 @@ if __name__ == '__main__':
             f.write(f"{ensg_name}\tMR-link_permuted_iids\t{mr_link_results[0]}\t{mr_link_results[1]}\t{permuted_p}\n")
 
 
-    print(f"Uncalibrated MR-link results: beta:{mr_link_results[0]}, se: {mr_link_results[1]}, p_value {mr_link_results[2]}")
+    print(f"Uncalibrated MR-link results: beta: {mr_link_results[0]:.4f}, se: {mr_link_results[1]:.5f}, p value: {mr_link_results[2]:.2e}")
 
 
 
