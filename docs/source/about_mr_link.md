@@ -30,11 +30,15 @@ python3 MRlink.py --outcome_bed_file example_genotypes/outcome_cohort \
    --temporary_location_prepend tmp_loc \
    --p_val_iv_selection_threshold 5e-8 \
    --output_file no_causal_effect_example.txt \
-   --ensg_id simulated_run
+   --ensg_id ENSG00000000000
 ```
 
 Which will show MR-link output for a simulation scenario where the exposure is not causal to the outcome. 
-Results will be in the `no_causal_effect_example.txt` file.
+Results will be in the `no_causal_effect_example.txt` file. 
+Output will contain the following following line with the MR-link result for this example. Note thay the p value is approximately 0.9 
+```
+Uncalibrated MR-link results: beta: -0.0128, se: 0.10784, p value: 9.06e-01
+```
 
 Running the command below will run MR-link with a causal effect.
 
@@ -46,9 +50,13 @@ python3 MRlink.py --outcome_bed_file example_genotypes/outcome_cohort \
    --temporary_location_prepend tmp_loc \
    --p_val_iv_selection_threshold 5e-8 \
    --output_file yes_causal_effect_example.txt \
-   --ensg_id simulated_run
+   --ensg_id ENSG00000000000
 ```
 Results will be in the `yes_causal_effect_example.txt` file.
+The standard output will contain the following following line with the result for this example. 
+```
+Uncalibrated MR-link results: beta: 0.4150, se: 0.14734, p value: 4.85e-03
+```
 
 For more detailed instructions on the `MRlink.py` script, see below.
 
