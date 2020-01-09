@@ -1,7 +1,7 @@
 # Calibrating MR-link p values
 
 After a first pass of MR-link and if you have at least 100 and preferably 1,000 uncalibrated p values for different 
-genes, it is possible to calibrate them using the script located in `./mr_link/p_value_calibration.py` script.
+genes, it is possible to calibrate them using the script located in `./mr_link/p_value_calibration.py`.
 
 for this you require the `PYMC3` package. You can install this package using
 ``` bash
@@ -14,7 +14,7 @@ an analysis, when all the genes are run.
 ## p value calibration example
 After installation of PYMC3 It is possible to run the p value calibration script using the following commands
 
-```bashgit
+```bash
 #Run this from the ./mr_link/ directory
 python3 p_value_calibration.py --input_file example_files/uncalibrated_p_values_example.txt --output_file calibrated_p_values.txt
 ```
