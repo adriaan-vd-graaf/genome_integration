@@ -351,10 +351,30 @@ if __name__ == '__main__':
 
 
     with open(args.output_file, "w") as f:
-        f.write("ensembl_name\tmethod\tbeta\tse\tp_value\n")
-        f.write(f"{ensg_name}\tMR-link_uncalibrated\t{mr_link_results[0]}\t{mr_link_results[1]}\t{mr_link_results[2]}\n")
+        iv_summary_string = ','.join(
+            [f'{exposure_cojo.ma_results[x].snp_name};'
+             f'{exposure_cojo.ma_results[x].effect_allele};'
+             f'{exposure_cojo.ma_results[x].beta:.5f};'
+             f'{exposure_cojo.ma_results[x].se:.5f};'
+             f'{exposure_cojo.ma_results[x].minor_allele_frequency:.3f}' for x in iv_names])
+        f.write("ensembl_name\tmethod\tbeta\tse\tp_value\tn_ivs\tiv_summary\n")
+
+        f.write(f"{ensg_name}\t"
+                f"MR-link_uncalibrated\t"
+                f"{mr_link_results[0]:.5f}\t"
+                f"{mr_link_results[1]:.5f}\t"
+                f"{mr_link_results[2]:.3e}\t"
+                f"{len(exposure_cojo.ma_results)}\t"
+                f"{iv_summary_string}\n")
+
         if args.permute:
-            f.write(f"{ensg_name}\tMR-link_permuted_iids\t{mr_link_results[0]}\t{mr_link_results[1]}\t{permuted_p}\n")
+            f.write(f"{ensg_name}\t"
+                    f"MR-link_permuted_iids\t"
+                    f"{mr_link_results[0]:.5f}\t"
+                    f"{mr_link_results[1]:.5f}\t"
+                    f"{permuted_p:.3e}\t"
+                    f"{len(exposure_cojo.ma_results)}\t"
+                    f"{iv_summary_string}\n")
 
 
     print(f"Uncalibrated MR-link results: beta: {mr_link_results[0]:.4f}, se: {mr_link_results[1]:.5f}, p value: {mr_link_results[2]:.2e}")
