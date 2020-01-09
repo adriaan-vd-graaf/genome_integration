@@ -4,10 +4,9 @@ This is a python library used to integrate specific genetic information.
 This library comes with the MR-link software, which can be used for causal inference of gene expression traits to 
 complex traits
 
-Many things are of yet undocumented.
 
 ## Features of genome_integration
-`genome_integration` is designed as a library with helper functions and analysis functionality that help the analysis 
+`genome_integration` is designed as a library with helper functions and analysis functionality that aids in the analysis 
  and integration of genomics data.  
 
 Features of genome_integration include:
@@ -32,11 +31,11 @@ Features of genome_integration include:
 ## Examples of usage for genome_integration
 
 ##Harmonization of associations 
-Harmonization of associations is a pre-analysis step that set up, for each SNP, the effect allele in the outcome data 
-to be identical to the effect allele in the exposure summary statistics. This step is necessary so that we are i) 
+Harmonization of associations is important if you have multiple traits or cohorts with associations, and you want to compare them between one another. Alleles need to be identical to have identical effect alleles summary statistics for comparison. In an MR context harmonization is necessary so that we are we are i) 
 comparing the effect size for the same allele, 2) check if inconsistencies in alleles are present for the same data 
-set. It can be done using the GeneticAssociation classes. This will flip betas (multiply by -1), and take the inverse 
-of the allele frequency.
+set. 
+
+It is possible to harmonize alleles using the GeneticAssociation classes. This will flip betas (multiply by -1), and take the inverse  of the allele frequency if effect alleles are not consitent.
 
 ```python
 from genome_integration import association
@@ -70,6 +69,7 @@ outcome_association = association.GeneticAssociation(
                                 minor_allele = "A",
                                 minor_allele_frequency = 0.89
                                 )
+
 #harmonize to the exposure
 outcome_association.add_snp_data(exposure_association)
 
@@ -82,6 +82,9 @@ print(outcome_association.beta)
 ```
 
 ### Mendelian randomization
+
+`genome_integration` Is able to do MR analyses in the following way: 
+
 ```python
 from genome_integration import causal_inference
 #eQTL betas, exposure tuples are beta and SE of the estimates.
