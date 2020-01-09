@@ -203,9 +203,6 @@ if __name__ == '__main__':
                         help="the file name where the MR-link results will be output."
                         )
 
-    parser.add_argument("--permute", action='store_true',
-                        help="Use this flag if you want permutations to occur (will add substantial runtime)")
-
     mr_link_start_time = time.time()
 
     args = parser.parse_args()
@@ -314,12 +311,6 @@ if __name__ == '__main__':
 
     iv_names = [reference_plinkfile.bim_data.snp_names[x] for x in iv_selection]
     beta_ses = np.asarray([[exposure_cojo.ma_results[x].beta, exposure_cojo.ma_results[x].se] for x in iv_names])
-    #
-    # beta_ses = simulate_mr.do_gcta_cojo_conditional(scaled_reference_geno,
-    #                                              exposure_assocs,
-    #                                              iv_selection,
-    #                                              outcome_plinkfile.bim_data.snp_names
-    #                                              )
 
     mr_link_results = causal_inference.mr_link_ridge(
         scaled_outcome_geno,
@@ -329,25 +320,7 @@ if __name__ == '__main__':
         outcome_phenotypes,
         )
 
-    permuted_p = np.nan
     print(f"Finished MR-link for {ensg_name} in {time.time() - mr_link_start_time} seconds.")
-    #permutation scheme.
-    if args.permute:
-        print("Starting permutations")
-        permuted_p_values = []
-        n_permutations = 1000
-        for i in range(n_permutations):
-            permuted_p_values.append(causal_inference.mr_link_ridge(
-                scaled_reference_geno,
-                outcome_ld ** 2,
-                beta_ses[:, 0],
-                iv_selection,
-                np.random.permutation(outcome_phenotypes),
-            )[2])
-
-        permuted_p = np.sum(permuted_p_values < mr_link_results[2]) / n_permutations
-
-        print(f"Finished MR-link and permutations for {ensg_name} in {time.time() - mr_link_start_time} seconds.")
 
 
     with open(args.output_file, "w") as f:
@@ -367,14 +340,6 @@ if __name__ == '__main__':
                 f"{len(exposure_cojo.ma_results)}\t"
                 f"{iv_summary_string}\n")
 
-        if args.permute:
-            f.write(f"{ensg_name}\t"
-                    f"MR-link_permuted_iids\t"
-                    f"{mr_link_results[0]:.5f}\t"
-                    f"{mr_link_results[1]:.5f}\t"
-                    f"{permuted_p:.3e}\t"
-                    f"{len(exposure_cojo.ma_results)}\t"
-                    f"{iv_summary_string}\n")
 
 
     print(f"Uncalibrated MR-link results: beta: {mr_link_results[0]:.4f}, se: {mr_link_results[1]:.5f}, p value: {mr_link_results[2]:.2e}")
