@@ -88,7 +88,7 @@ pip3 install pymc3
 Running a single p value calibration will take up to 30 minutes, but only has to be performed once at the end of 
 an analysis, when all the genes are run.
 
-A full description of the input and output formats for MR-link can be found in [readthedocs](https://genome-integration.readthedocs.io/en/latest/calibrating_mr_link_p_values.md)
+A full description of the input and output formats for MR-link can be found in [readthedocs](https://genome-integration.readthedocs.io/en/latest/about_mr_link.html)
 
 ### p value calibration example
 
