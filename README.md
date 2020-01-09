@@ -56,8 +56,8 @@ python3 MRlink.py --outcome_bed_file example_genotypes/outcome_cohort \
 
 Which will show MR-link output for a simulation scenario where the exposure is not causal to the outcome. 
 Results will be in the `no_causal_effect_example.txt` file. 
-Output of the program will contain the following following line with the MR-link result for this example. 
-Note thay the p value is approximately 0.9. 
+Output of the program will contain the following line with the MR-link result for this example. 
+Note that the _p_ value is approximately 0.9. 
 ```
 Uncalibrated MR-link results: beta: -0.0128, se: 0.10784, p value: 9.06e-01
 ```
@@ -75,7 +75,7 @@ python3 MRlink.py --outcome_bed_file example_genotypes/outcome_cohort \
    --ensg_id ENSG00000000000
 ```
 Results will be in the `yes_causal_effect_example.txt` file.
-The standard output will contain the following following line with the result for this example. 
+The standard output will contain the following line with the result for this example. 
 ```
 Uncalibrated MR-link results: beta: 0.4150, se: 0.14734, p value: 4.85e-03
 ```
