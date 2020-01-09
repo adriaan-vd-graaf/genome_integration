@@ -13,7 +13,7 @@ Structure of the package
 -------------------------
 ``genome_integration`` is the library and ``./mr_link/`` has the programs for an implementation of MR-link.
 
-For more information please read our _`preprint <https://www.biorxiv.org/content/10.1101/671537v1>`_
+For more information please read our `preprint <https://www.biorxiv.org/content/10.1101/671537v1>`_
 
 If you use MR-link, please cite us.
 
