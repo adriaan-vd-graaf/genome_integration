@@ -5,7 +5,7 @@ Introduction
 
 This package contains MR-link, a Mendelian randomization (MR) method that efficiently identifies causal relationships
 between gene expression and complex traits, implicitly correcting for unobserved pleiotropy even if there is only one
-single instrumental variable available.
+ instrumental variable available.
 
 The source code of the package can be found at `github <https://github.com/adriaan-vd-graaf/genome_integration>`_
 
@@ -13,9 +13,9 @@ Structure of the package
 -------------------------
 ``genome_integration`` is the library and ``./mr_link/`` has the programs for an implementation of MR-link.
 
-For more information please read our upcoming publication
+For more information please read our _`preprint <https://www.biorxiv.org/content/10.1101/671537v1>`_
 
-If you use MR-link, please cite our paper.
+If you use MR-link, please cite us.
 
 
 Requirements
