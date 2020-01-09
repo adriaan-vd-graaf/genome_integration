@@ -10,7 +10,7 @@ We will simulate data in two steps:
 
 After running these steps, a user can run MR-link to identify causal relationships.    
 
-If you already have two genotype file from which you want to simulate phenotypes in two separate cohort please go to 
+If you already have two genotype files from which you want to simulate phenotypes in two separate cohort please go to 
 step 2.
 
 #### Requirements for simulations of genotypes
@@ -20,7 +20,7 @@ For the simulation of genotypes, we require the following:
 2. bash shell with awk and wget
 3. internet access to download the 1000g chromosome 2 (1.2Gb), 
 4. The HAPGEN2 program
-5. Python version  >= 3.6, possibly other versions of python3
+5. Python version  >= 3.6.
 6. The downloaded genome integration package on your filesystem.
 7. plink version 1.9
 
@@ -48,7 +48,7 @@ Isolate a region 100 - 105 Mb from chromosome 2 from the file that was just down
 awk '{ if( (substr($1, 1, 1) == "#") || (($2 > 100000000) && ($2 < 105000000))) print $0 }' <(zcat ALL.chr2.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz) | gzip -c > ALL.chr2.phase3.100.to.105.Mb.1000g.vcf.gz
 ```
 
-To save disk space, the full file was removed and only the small region was kept. 
+To save disk space, the full file will be removed below and only the small region was kept. 
 
 ```
 rm ALL.chr2.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz
@@ -71,14 +71,14 @@ and unpack only the second chromosome using
 tar -xvf genetic_map_HapMapII_GRCh37.tar.gz genetic_map_GRCh37_chr2.txt
 ```
 
-Interpolation was done using the following python script 
+Interpolation is  done using the following python script 
 ```
 python3 interpolate_genetic_map.py
 ```
     
 
 Haplotypes of biallelic snps were isolated from the individuals which are part of the European superpopulation, 
-except for Finnish individuals. The list of individuals to include were saved in the file `non_finnish_european_individuals.txt`.
+except for Finnish individuals. The list of individuals to include are saved in the file `non_finnish_european_individuals.txt`.
 which was made based on the sample table from samples in the `20130606_sample_info.xlsx`.
 from `ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/working/20130606_sample_info/`. 
 
@@ -88,7 +88,7 @@ python3 isolate_variants_make_hapgen_compatible.py
 ```
  
 Using the HAPGEN 2 program genotypes were simulated for 25,000 individuals. 
-The `hapgen2` executable should be in this directory, please download it.
+The `hapgen2` executable should be in your working directory, please download it if you have not done so already.
 
 ```
 ./hapgen2 -m interpolated_genetic_map.100Mb.to.105Mb.map -l europeans_1000g_chr2_100_to_105_Mb.legend -h europeans_1000g_chr2_100_to_105_Mb.hap -o simulated_geno -int 100000000 105000000 -n 25000 0 -dl 100202391 0 0.1 0.2
@@ -103,7 +103,7 @@ mv tmp_output.gen simulated_geno.controls.gen
 ```
     
 
-Using plink the files are turned into bed files for later use, in the subsequent simulations. 
+Using plink the files are converted into bed files for use in the subsequent simulations. 
 Filtering for MAF 1%  in the full population, and then divided up into two 5,000 individual cohorts and one 15,000 individual 
 which are subsequently not MAF filtered, to ensure variants remain the same across cohorts.
 
@@ -132,7 +132,7 @@ And this finalizes the simulation of genotypes for the cohorts, so that we can s
 ### STEP 2. simulation of causal relationships
 
 The python script `mr_link/simulate_phenotypes.py` can be used to simulate phenotypes which are causally related in 2 different cohorts, 
-which are then by default stored  in the `mr_link/simulated_phenotypes/` directory in a file format that the mr link script 
+which are then by default stored  in the `mr_link/simulated_phenotypes/` directory in a file format that the MR-link script 
 (`mr_link/MRlink.py`) can understand.
 
 
@@ -193,7 +193,7 @@ optional arguments:
                         Results are nonetheless saved after each simulation
 ```
 
-and you can simulated phenotypes using the default settings by running:
+and you can simulate phenotypes using the default settings by running:
 ```
 python3 simulate_phenotypes.py --bed_cohort_1 exposure_cohort --bed_cohort_2 outcome_cohort
 ```
