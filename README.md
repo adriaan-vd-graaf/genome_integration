@@ -24,8 +24,7 @@ Please make sure that `gcta64` and `plink` (1.9) should be in your PATH as the s
 If you want to check if they are in your path, try: `which plink` and `which gcta64`
 
 Running an example gene for MR-link will take approximately 10 seconds on a quad core Intel Core i7-7700HQ CPU processor 
-and require up to 8 GB of RAM.  Running permutations take approximately 3 minutes per gene, but is not necessary 
-for non-significant genes.
+and require up to 8 GB of RAM.
 
 ## Installing:
 If GCTA and plink are in your `$PATH`, you can install the genome_integration library with the command in 
@@ -58,8 +57,6 @@ python3 MRlink.py --outcome_bed_file example_genotypes/outcome_cohort \
 Which will show MR-link output for a simulation scenario where the exposure is not causal to the outcome. 
 Results will be in the `no_causal_effect_example.txt` file. 
 
-If you want to permute these results, you can do so by adding the `--permute` flag to the command, which will take some 
-extra runtime.  
 
 Running the command below will run MR-link with a causal effect.
 
@@ -85,7 +82,7 @@ for this you require the `PYMC3` package. You can install this package using
 ``` bash
 pip3 install pymc3
 ```
-Running a single p value calibration will take up to 30 minutes, but only has to be performed once at the end of 
+Running a single p value calibration will take up to 30 minutes, but only has to brformed once at the end of 
 an analysis, when all the genes are run.
 
 A full description of the input and output formats for MR-link can be found in [readthedocs](https://genome-integration.readthedocs.io/en/latest/about_mr_link.html)
