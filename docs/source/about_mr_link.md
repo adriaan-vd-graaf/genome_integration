@@ -7,7 +7,7 @@ After [installing](Introduction.md) the `genome_integration` library it is possi
 
 MR-link requires the following for it to run
 - Individual level genotypes and phenotypes of the outcome (a complex trait) 
-- Summary statistics of the exposure (gene expression)
+- Summary statistics multiple exposures (gene expression)
 - Genotype of a sufficiently large reference cohort (>= 5000 individuals).
 
 Running an example gene for MR-link will take approximately 10 seconds on a quad core Intel Core i7-7700HQ CPU processor 
@@ -23,6 +23,7 @@ do not represent any gene locations.
 To run MR-link, please go to the `./mr_link` directory.
 Running MR-link is possible using the following command:
 ```bash
+# This will run a single example gene that shows no causal effect
 python3 MRlink.py --outcome_bed_file example_genotypes/outcome_cohort \
    --reference_bed example_genotypes/reference_cohort \
    --exposure_summary_statistics example_files/no_causal_effect_exposure_sumstats.txt \
@@ -44,6 +45,7 @@ Uncalibrated MR-link results: beta: -0.0128, se: 0.10784, p value: 9.06e-01
 Running the command below will run MR-link with a causal effect.
 
 ```bash
+# This will a command with a causal effect
 python3 MRlink.py --outcome_bed_file example_genotypes/outcome_cohort \
    --reference_bed example_genotypes/reference_cohort \
    --exposure_summary_statistics example_files/yes_causal_effect_exposure_sumstats.txt \
@@ -54,15 +56,17 @@ python3 MRlink.py --outcome_bed_file example_genotypes/outcome_cohort \
    --ensg_id ENSG00000000000
 ```
 Results will be in the `yes_causal_effect_example.txt` file.
-The standard output will contain the  following line with the result for this example. 
+The standard out will contain the  following line with the result for this example. 
 ```
 Uncalibrated MR-link results: beta: 0.4150, se: 0.14734, p value: 4.85e-03
 ```
 
-For more detailed instructions on the `MRlink.py` script, see below.
+Below, we discuss the `MRlink.py` script in more details.
 
-The p values of the MR-link results are usually very conservative, therefore we have calibrated our p values using a beta  
+The _p_ values of the MR-link results are very conservative, therefore we have calibrated our p values using a beta  
 distribution. Instructions to calibrate p values can be found [here](calibrating_mr_link_p_values.md).
+
+If you tun 
 
 
 ## MR-link specifications.
