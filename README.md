@@ -9,9 +9,11 @@ single instrumental variable available.
 `genome_integration` is the library and the folder `./mr_link/` has the programs for an 
 implementation of MR-link.
 
-*More extensive documentation can be read in our [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/)*
+**Extensive documentation of MR-link and the genome integration package can be read in our [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/)**
 
 Please find more details of the method in our [preprint](https://www.biorxiv.org/content/10.1101/671537v1)
+
+If you want to **contribute**, or have any questions please don't hesitate to file a pull request, or submit an issue in github.
 
 ## Requirements
 
@@ -156,7 +158,7 @@ correct_header= "FID\tIID\tPHENO\n"
 ```
  
 
-## MR-link output format
+### MR-link output format
 MR-link outputs a file with two lines, one header and one result line for the gene, results are tab separated
 The header looks like this: `"ensembl_name\tmethod\tbeta\tse\tp_value\tn_ivs\tiv_summary\n"`
 
@@ -207,7 +209,7 @@ The `--output_file` is the same file, but with an extra column appended to it:
 
 
 
-#Example Simulation of causal phenotypes.
+## Example Simulation of causal phenotypes.
 
 This section gives an example on how to simulate phenotypes that are causal from a single locus. 
 In our manuscript this was used  so that we were able to benchmark MR-link and other widely used MR methods. 
@@ -261,3 +263,8 @@ We have used these phenotypes for the simulations in our manuscript.
 
 The output files are of the same formats as the summary statistics files and phenotype files, described above.
 These files can be directly used as an input to MR-link.
+
+## Running MR-link on your own data
+
+###### Data requirements before you begin 
+If you have individual level genotype and data of your outcome of interest and summary statistics on at least 100 _cis_-regulated exposures 
