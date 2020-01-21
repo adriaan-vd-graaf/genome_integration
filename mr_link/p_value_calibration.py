@@ -50,8 +50,8 @@ if __name__ == '__main__':
         y_like = pm.Beta('distribution', alpha=alpha, beta=beta, observed=uncalibrated_p_values)
 
         # draw 100,000 posterior samples after 1,000,000 tuning steps.
-        step = pm.Slice()
-        trace = pm.sample(100000, slice=step, tune=1000000, chains=2)
+
+        trace = pm.sample(100000, tune=1000000, chains=2)
 
     result = pm.summary(trace)
 

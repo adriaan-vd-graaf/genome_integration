@@ -19,7 +19,8 @@ Requirements are:
 
 - Python >= 3.6 and GCC
 - pip3 for installing python packages
-- setuptools (`pip3 install setuptools --user`), which installs setuptools. Used to setup the libary. 
+- setuptools (`pip3 install setuptools`), which installs setuptools. Used to setup the libary. 
+- python wheel (`pip3 install wheel`), which installs setuptools. Used to setup the libary.
 
 Please make sure that `gcta64` and `plink` (1.9) should be in your PATH as the subprocess module will directly refer to them.
 - [Download GCTA](http://cnsgenomics.com/software/gcta/)
@@ -99,10 +100,14 @@ After a first pass of MR-link and if you have at least 100 and preferably at lea
 different  genes, it is possible to calibrate them using the script located in 
 `./mr_link/p_value_calibration.py`.
 
-for this you require the `PYMC3` package. You can install this package using
+
+For this you require the `PYMC3` package as well as the gcc c++ compiler (`g++` ). 
+You can install `PYMC3` package using
 ``` bash
 pip3 install pymc3
 ```
+
+
 Running a single p value calibration will take up to 30 minutes, but only has to be performed once at the end of 
 an analysis, when all your genes are run.
 
