@@ -30,6 +30,7 @@ Requirements are:
 
 * setuptools for installing ``genome_integration`` you can install setuptools using ``pip3 install setuptools``
 
+* Wheel for easy package management (``pip3  install wheel``)
 
 * ``gcta64`` and ``plink`` (1.9) are installed and in your PATH as the subprocess module will directly refer to them.
 

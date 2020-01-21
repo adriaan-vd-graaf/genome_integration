@@ -3,7 +3,7 @@
 After a first pass of MR-link and if you have at least 100 and preferably 1,000 uncalibrated p values for different 
 genes, it is possible to calibrate them using the script located in `./mr_link/p_value_calibration.py`.
 
-for this you require the `PYMC3` package. You can install this package using
+for this you require the `PYMC3` package and the gcc C++ compiler ``g++``. You can install this package using
 ``` bash
 pip3 install pymc3
 ```
