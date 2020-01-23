@@ -5,7 +5,22 @@ This package contains MR-link, a Mendelian randomization (MR) method that effici
 between gene expression and complex traits, implicitly correcting for unobserved pleiotropy even if there is only a 
 single instrumental variable available.
 
-#### Structure of the package: 
+#### Table of contents
+ This readme contains the following information
+* [Introduction](#Introduction)
+* [Requirements](#Requirements)
+* [Installation](#Installation)
+* [MR-link](#mr-link)
+    - [MR-link input formats](#mr-link-input-formats)
+    - [MR-link output format](#mr-link-output-format)
+* [Calibration of p values](#Calibration-of-p-values)
+    - [_p_ value calibration file formats](#_p_-value-calibration-file-formats)
+* [Step by step guide to an MR-link analysis](#step-by-step-guide-to-an-mr-link-analysis)
+* [Example simulation of causal phenotypes](#Example-simulation-of-causal-phenotypes)
+
+**If something is not clear, or if you want more information, please see our more extensive [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/)**
+
+#### Structure of the package 
 `genome_integration` is the library and the folder `./mr_link/` has the programs for an 
 implementation of MR-link.
 
@@ -13,7 +28,7 @@ implementation of MR-link.
 
 Please find more details of the method in our [preprint](https://www.biorxiv.org/content/10.1101/671537v1)
 
-If you want to **contribute**, or have any questions please don't hesitate to file a pull request, or submit an issue in github.
+If you want to contribute, or have any questions please don't hesitate to file a pull request, or submit an issue in github.
 
 ## Requirements
 
@@ -45,7 +60,7 @@ and require up to 8 GB of RAM.
 Running the p value calibration script takes approximately 30 minutes, but is only required once after all the genes are
 considered. 
 
-## Installing:
+## Installation
 If all the requirements are met, you can install the genome_integration library with the command in 
 the downloaded path
 ```
@@ -105,12 +120,12 @@ The stdout  will contain the following line with the result for this example.
 ```
 Uncalibrated MR-link results: beta: 0.4150, se: 0.14734, p value: 4.85e-03
 ```
-The pvalue for the causal effect of the exposure ENSG00000000000 is 4.8e-03. 
+The pvalue for the causal effect of the exposure ENSG00000000000 is 4.9e-03. 
 
 A full description of the input and output formats of MR-link is located in our
 [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/about_mr_link.html) 
 
-## MR-link input formats.
+##### MR-link input formats
 
 MR-link requires the following inputs:
 - A summary statistics file of the exposure phenotype. (`--exposure_summary_statistics`) 
@@ -145,21 +160,20 @@ correct_header = "CHR\tPOS\tNAME\tREF_ALLELE\tEFFECT_ALLELE\tBETA\tSE\tMAF\tN_OB
 MR-link requires the outcome phenotype to be directly measured in the individuals that are present in 
 the outcome 
 
-Phenotype files need to be a tab separated table with the following columns.
+Phenotype files need to be a tab delimited file with the following columns.
 Phenotypes need to be quantitative and should be corrected for covariates before hand.
  
 1. `FID` -- family ID that is matched with the plink genotype column.
 2. `IID` -- individual ID that is matched with the plink genotype column.
-3. `PHENO` -- Numeric phenotype (please note that MR-link has only been tested for quantitative phenotypes.)
+3. `PHENO` -- Numeric phenotype (MR-link has only been tested for quantitative phenotypes)
 
 The first line is the header and will be checked against the following:
 ```
 correct_header= "FID\tIID\tPHENO\n"
 ```
 
-
-### MR-link output format
-MR-link outputs a file with two lines, one header and one result line for the gene, results are tab separated
+#### MR-link output format
+MR-link outputs a file with two lines, one header and one result line for the gene, fields are tab separated
 The header looks like this: `"ensembl_name\tmethod\tbeta\tse\tp_value\tn_ivs\tiv_summary\n"`
 
 The result line contains the following fields:
@@ -174,7 +188,7 @@ The result line contains the following fields:
 
 ## Calibration of p values
 
-After a first pass of MR-link and if you have at least 100 and preferably at least 1,000 uncalibrated p values for 
+After a first pass of MR-link and if you have at least 100 and preferably at least 1,000 uncalibrated _p_ values for 
 different  genes, it is possible to calibrate them using the script located in 
 `./mr_link/p_value_calibration.py`.
 
@@ -183,21 +197,23 @@ an analysis, when MR-link has causal estimates for all your genes.
 
 A full description of the input and output formats for MR-link can be found in [readthedocs](https://genome-integration.readthedocs.io/en/latest/about_mr_link.html)
 
-### An example of p value calibration
+###### An example of p value calibration
 
-After installation of PYMC3 It is possible to run the p value calibration script using the following commands
+After installation of PYMC3 It is possible to run the p value calibration.
 
 After a first pass of MR-link and if you have at least 100 and preferably at least 1,000 p values for different  genes,
 it is possible to calibrate them using the script located in 
 `./mr_link/p_value_calibration.py`.
+
 ```bash
 #Run this from the ./mr_link/ directory
 python3 p_value_calibration.py --input_file example_files/uncalibrated_p_values_example.txt --output_file calibrated_p_values.txt
 ```
+
 Which will output calibrated _p_ values in the `calibrated_p_values.txt` file, and accept uncalibrated p values from the
 `uncalibrated_p_values_example.txt` file. 
 
-###### File formats for p value calibration
+#### _p_ value calibration file formats
 
 The `--input_file` from which p values are calibrated should be a tab separated file with two columns:
 1. `exposure_name` the name of the exposure that is run
@@ -208,7 +224,7 @@ The `--output_file` is the same file, but with an extra column appended to it:
 2. `uncalibrated_p_value`
 3. `calibrated_p_value` the p value after calibration
 
-###### p value calibration of non-null simulations
+###### _p_ value calibration of non-null simulations
 If you want to calibrate p values without computing the beta distribution, you specify the alpha and beta parameters 
 combined with the `--only_calibrate` option in the following way: 
 ```bash
@@ -225,7 +241,7 @@ non-null scenarios.
 
 
 
-## Step by step guide to running MR-link on your own data
+## Step by step guide to an MR-link analysis
 
 This is the basic workflow for using MR-link.
 
@@ -328,6 +344,7 @@ We have used these phenotypes for the simulations in our manuscript.
 The output files are of the [summary statistic format](#Summary-statistics-input-file) and 
 [phenotype format](#Phenotype-input-file). These files can be directly used as an input to MR-link.
 
-If you want to calibrate _p_ values for scenarios with a non null causal effect, it's important to do the calibration on the same scenario, 
-but with a zero causal effect, and use the `--only_calibrate` option in the `p_value_calibration.py` script.
+After running MR-link on the simulated values, it's important to consider that p value calibration should only be done 
+on simulation scenarios with no causal effect, save the parameters of the beta distribution and use the 
+`--only_calibrate` option in the `p_value_calibration.py` script for the scenarios with a real causal effect.
 
