@@ -63,7 +63,9 @@ def mask_instruments_in_ld(r_sq_mat,
 
         masked_variants[tmp_mask] = True
 
-    #this shuffles the LD matrix, just to be sure. Analyis of this effect did not seem to change the results much
+    # This shuffles the LD matrix, just to be sure.
+    # Analysis of shuffling the ordering of pruning, did not to change the results in preliminary analysis
+    # Therefore it is not used.
     if shuffle_positions:
         int_indices = np.where(masked_variants)[0]
         np.random.shuffle(int_indices)
