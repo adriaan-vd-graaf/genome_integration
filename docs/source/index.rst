@@ -36,8 +36,6 @@ single instrumental variable available.
 
 The source code of the package can be found at `github <https://github.com/adriaan-vd-graaf/genome_integration>`_
 
-Structure of the package
--------------------------
 ``genome_integration`` is the library and ``./mr_link/`` has the programs for an implementation of MR-link.
 
 For more information please read our upcoming publication
@@ -72,6 +70,4 @@ the downloaded path
    python3 setup.py build install test
 
 Which will take approximately 2 minutes to install
-After which you have installed the library to run MR-link. Running MR-link is possible using the guide on the
-`MR-link page <about_mr_link>`_.
-
+After which you have installed the library to run MR-link.

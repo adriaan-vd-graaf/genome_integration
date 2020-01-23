@@ -250,11 +250,8 @@ This is the basic workflow for using MR-link.
 You require the following (large) data for running a succesful MR-link analysis
 
 - One cohort with individual level genotype and phenotype data
-- Gene expression summary statistics of multiple gene expression traits*
+- Gene expression summary statistics of multiple gene expression traits
 - (Recommended) a cohort with reference genotypes of sufficient size (n >= 5,000)   
-
-[*] Only gene expression data is supported, other _cis_-regulated phenotypes can be implemented if there is demand. 
-Please open an issue in the issue tracker if you want to run other _cis_-regulated phenotypes.
 
 __Nb.__ The source of these data needs to be from an ethnically matched population (genotypes _and_ summary statistics)
 
@@ -304,7 +301,7 @@ For our purposes, we discard the second exposure and only keep a single exposure
 how well the tested MR methods are able to deal with pleiotropy.
 
 It is possible to simulate phenotypes (after installation of the `genome_integration` package) using the 
-`simulate_phenotypes.py` script in the `./mr_link/` subfolder. If you go enter the subfolder, you can simulate 
+`simulate_phenotypes.py` script in the `./mr_link/` subfolder. After entering the the subfolder, you can simulate 
 phenotypes in the following way:
 
 ```shell script

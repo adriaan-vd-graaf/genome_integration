@@ -14,7 +14,7 @@ Running an example gene for MR-link will take approximately 10 seconds on a quad
 and require up to 8 Gb of RAM.
 
 If you want to simulate your own genotypes and phenotypes, it is possible to simulate that 
-[here](simulation_for_mr_link.md). Please set the ensg id option to: `--ensg_id simulated_run`, as simulations
+[here](simulation_for_mr_link.md). Please set the ensg_id option to: `--ensg_id simulated_run`, as simulations
 do not represent any gene locations.
 
 
@@ -65,9 +65,6 @@ Below, we discuss the `MRlink.py` script in more details.
 
 The _p_ values of the MR-link results are very conservative, therefore we have calibrated our p values using a beta  
 distribution. Instructions to calibrate p values can be found [here](calibrating_mr_link_p_values.md).
-
-If you tun 
-
 
 ## MR-link specifications.
 
@@ -127,7 +124,6 @@ The first line is the header and will be checked against the following:
 ```
 correct_header= "FID\tIID\tPHENO\n"
 ```
-
 
 #### Summary statistic file
 Phenotype files need to be a tab separated table with the following columns.
