@@ -18,7 +18,7 @@ single instrumental variable available.
 * [Step by step guide to an MR-link analysis](#step-by-step-guide-to-an-mr-link-analysis)
 * [Example simulation of causal phenotypes](#Example-simulation-of-causal-phenotypes)
 
-**If something is not clear, or if you want more information, please see our more extensive [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/)**
+**If something is not clear, or if you want more information, please see our more extensive [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/Introduction.html)**
  
  
 `genome_integration` is the library and the folder `./mr_link/` has the programs for an implementation of MR-link.
