@@ -51,17 +51,14 @@ considered.
 
 Installation
 ------------
-If GCTA and plink are in your ``$PATH``, you can install the genome_integration library with the following command:
+If GCTA and plink are in your ``$PATH``, you can install the genome_integration library with the following command::
 
    python3 setup.py build install --user
 
 Which will take about 2 minutes to install. If you want to install the genome_integration library for all users, remove
 the ``--user`` option from the command.
-
-Next, you can test the library with:
-
-    python3 setup.py test
-
 Now you have installed the library to run MR-link.
 
+Next, you can test the library with::
 
+    python3 setup.py test
