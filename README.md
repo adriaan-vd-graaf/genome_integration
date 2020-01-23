@@ -225,7 +225,7 @@ The `--output_file` is the same file, but with an extra column appended to it:
 3. `calibrated_p_value` the _p_ value after calibration
 
 ###### _p_ value calibration of non-null simulations
-If you want to calibrate _p_ values without computing the beta distribution, you specify the alpha and beta parameters 
+If you want to calibrate _p_ values without computing the beta distribution coefficients, you specify the alpha and beta parameters 
 combined with the `--only_calibrate` option in the following way: 
 ```shell script
 #Run this from the ./mr_link/ directory
