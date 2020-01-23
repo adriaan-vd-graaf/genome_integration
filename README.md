@@ -20,13 +20,11 @@ single instrumental variable available.
 
 **If something is not clear, or if you want more information, please see our more extensive [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/)**
 
-#### Structure of the package 
+####### Structure of the package 
 `genome_integration` is the library and the folder `./mr_link/` has the programs for an 
 implementation of MR-link.
-
-Please find more details of the method in our [preprint](https://www.biorxiv.org/content/10.1101/671537v1)
-
-If you want to contribute, or have any questions please don't hesitate to file a pull request, or submit an issue in github.
+Please find more details of the method in our **[preprint](https://www.biorxiv.org/content/10.1101/671537v1)**
+If you want to contribute, or have any questions please don't hesitate to file a pull request, or submit an issue in github issue tracker.
 
 ## Requirements
 
@@ -59,8 +57,8 @@ Running the _p_ value calibration script takes approximately 30 minutes, but is 
 considered. 
 
 ## Installation
-If all the requirements are met, you can install the genome_integration library with the command in 
-the downloaded path
+If all the requirements are met, you can install the `genome_integration` library with the command in 
+the folder where you downloaded / cloned the package
 ```
 python3 setup.py build install --user
 ```
@@ -69,15 +67,14 @@ Installation will take approximately 2 minutes.
 If you want to install the genome_integration library for all Python users, remove the ``--user`` option 
 from the command.
 
-Now that the genome_integration library is installed, we can run MR-link, two examples are described below.
-More extensive documentation is available at our [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/)*
+Now that the `genome_integration` library is installed, we can run MR-link, two examples are described below. 
 
 ###### Testing the library (optional)
 Testing the genome integration library is done with the following command:
 ```shell script
 python3 setup.py test
 ```
-Which should pass all tests. If it doesn't please submit an issue to the issue tracker. 
+Which should pass all tests. If it doesn't, please submit an issue to the issue tracker. 
 
 ## MR-link
 
