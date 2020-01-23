@@ -9,7 +9,7 @@ single instrumental variable available.
 `genome_integration` is the library and the folder `./mr_link/` has the programs for an 
 implementation of MR-link.
 
-**Extensive documentation of MR-link and the genome integration package can be read in our [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/)**
+**Extensive documentation of MR-link and the genome_integration package can be read in our [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/)**
 
 Please find more details of the method in our [preprint](https://www.biorxiv.org/content/10.1101/671537v1)
 
@@ -18,7 +18,7 @@ If you want to **contribute**, or have any questions please don't hesitate to fi
 ## Requirements
 
 Everything was tested on Ubuntu 18.04 and macOSX, we assume other distributions of linux work as well.
-All analyses can be run on non-standard hardware. 
+All analyses can be run on standard hardware. 
 
 Requirements are: 
 - GCC C and C++ compiler (`gcc`, `g++`)
@@ -59,7 +59,7 @@ from the command.
 Now that the genome_integration library is installed, we can run MR-link, two examples are described below.
 More extensive documentation is available at our [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/)*
 
-##MR-link
+## MR-link
 
 To run MR-link, please go to the `./mr_link` directory.
 
@@ -328,6 +328,6 @@ We have used these phenotypes for the simulations in our manuscript.
 The output files are of the [summary statistic format](#Summary-statistics-input-file) and 
 [phenotype format](#Phenotype-input-file). These files can be directly used as an input to MR-link.
 
-If you want to calibrate _p_ values for non-null scenarios, it's important to do the calibration on the same scenario, 
-but with no causal effect, and use the `--only_calibrate` option in the `p_value_calibration.py` script.
+If you want to calibrate _p_ values for scenarios with a non null causal effect, it's important to do the calibration on the same scenario, 
+but with a zero causal effect, and use the `--only_calibrate` option in the `p_value_calibration.py` script.
 
