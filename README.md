@@ -24,8 +24,6 @@ single instrumental variable available.
 `genome_integration` is the library and the folder `./mr_link/` has the programs for an 
 implementation of MR-link.
 
-**Extensive documentation of MR-link and the genome_integration package can be read in our [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/)**
-
 Please find more details of the method in our [preprint](https://www.biorxiv.org/content/10.1101/671537v1)
 
 If you want to contribute, or have any questions please don't hesitate to file a pull request, or submit an issue in github.
