@@ -21,8 +21,7 @@ Everything was tested on Ubuntu 18.04 and macOSX, we assume other distributions 
 All analyses can be run on non-standard hardware. 
 
 Requirements are: 
-- GCC C compiler
-- GCC C++ compiler (only required for the p value calibration step)
+- GCC C and C++ compiler (`gcc`, `g++`)
 - Python >= 3.6 
 - pip3 for installing python packages
 
@@ -31,7 +30,8 @@ And the following python3 packages (which can be installed using pip3)
 - Python wheel (`pip3 install wheel`)
 - Python PYMC3 (`pip3 install pymc3`) for the p value calibration step
 
-Please make sure that `gcta64` and `plink` (1.9) should be in your PATH as the subprocess module will directly refer to them.
+Please make sure that `gcta64` and `plink` (1.9) are in your PATH as `genome_integration` and MR-link will directly 
+refer to these programs.
 - [Download GCTA](http://cnsgenomics.com/software/gcta/)
 - [Download plink](https://www.cog-genomics.org/plink2/)
 
@@ -59,7 +59,7 @@ from the command.
 Now that the genome_integration library is installed, we can run MR-link, two examples are described below.
 More extensive documentation is available at our [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/)*
 
-## Running MR-link on two example phenotypes
+##MR-link
 
 To run MR-link, please go to the `./mr_link` directory.
 
@@ -114,7 +114,7 @@ A full description of the input and output formats of MR-link is located in our
 
 MR-link requires the following inputs:
 - A summary statistics file of the exposure phenotype. (`--exposure_summary_statistics`) 
-- A phenotype file of the output (`-outcome_phenotype_file`)
+- A phenotype file of the output (`--outcome_phenotype_file`)
 - Outcome genotypes  (plink bed file format) (`--outcome_bed_file`)
 - Reference genotypes (plink bed file format) (`--reference_bed_file`)
 
@@ -156,13 +156,13 @@ The first line is the header and will be checked against the following:
 ```
 correct_header= "FID\tIID\tPHENO\n"
 ```
- 
+
 
 ### MR-link output format
 MR-link outputs a file with two lines, one header and one result line for the gene, results are tab separated
 The header looks like this: `"ensembl_name\tmethod\tbeta\tse\tp_value\tn_ivs\tiv_summary\n"`
 
-Then the result line contains the following fields:
+The result line contains the following fields:
 1. `ensembl_name`: the ensembl gene id that was tested.
 2. `method` : The method used for causal inference. Currently this is only `MR-link_uncalibrated`, could be expanded in later versions.
 3. `beta`: Is the ridge regression beta (this has been regularized so the direction is more important than the magnitude)
@@ -196,7 +196,8 @@ python3 p_value_calibration.py --input_file example_files/uncalibrated_p_values_
 ```
 Which will output calibrated _p_ values in the `calibrated_p_values.txt` file, and accept uncalibrated p values from the
 `uncalibrated_p_values_example.txt` file. 
-###### file formats for p value calibration
+
+###### File formats for p value calibration
 
 The `--input_file` from which p values are calibrated should be a tab separated file with two columns:
 1. `exposure_name` the name of the exposure that is run
@@ -208,8 +209,7 @@ The `--output_file` is the same file, but with an extra column appended to it:
 3. `calibrated_p_value` the p value after calibration
 
 
-
-## Example Simulation of causal phenotypes.
+## Example simulation of causal phenotypes
 
 This section gives an example on how to simulate phenotypes that are causal from a single locus. 
 In our manuscript this was used  so that we were able to benchmark MR-link and other widely used MR methods. 
@@ -261,10 +261,63 @@ The parameters for the simulations are:
 For a description of all phenotype simulation parameters, please see the [documentation](https://genome-integration.readthedocs.io/en/latest/simulation_for_mr_link.html).
 We have used these phenotypes for the simulations in our manuscript.  
 
-The output files are of the same formats as the summary statistics files and phenotype files, described above.
-These files can be directly used as an input to MR-link.
+The output files are of the [summary statistic format](#Summary-statistics-input-file) and 
+[phenotype format](#Phenotype-input-file). These files can be directly used as an input to MR-link.
 
-## Running MR-link on your own data
+## Step by step guide to running MR-link on your own data
 
-###### Data requirements before you begin 
-If you have individual level genotype and data of your outcome of interest and summary statistics on at least 100 _cis_-regulated exposures 
+This is the basic workflow for using MR-link.
+
+###### Step 0. Data requirements before you begin 
+
+You require the following (large) data for running a succesful MR-link analysis
+
+- One cohort with individual level genotype and phenotype data
+- Gene expression summary statistics of multiple gene expression traits*
+- (Recommended) a cohort with reference genotypes of sufficient size (n >= 5,000)   
+
+[*] Only gene expression data is supported, other _cis_ regulated phenotypes can be implemented if there is demand 
+
+__Nb.__ The source of these data needs to be from an ethnically matched population (genotypes _and_ summary statistics)
+
+
+###### Step 1. Format your data
+You need to format the following data
+
+- Format your genotypes into the plink bed format.
+- Format your outcome phenotypes into the [phenotype format](#Phenotype-input-file) 
+- Format your exposure summary statistic files into the [summary statistic format](#Summary-statistics-input-file)
+
+###### Step 2. Run MR-link on all the exposures
+
+After data formatting, it is possible to run MR-link for all your gene expression phenotypes as an exposure.
+All options for MR-link are documented [here](https://genome-integration.readthedocs.io/en/latest/about_mr_link.html)
+
+###### Step 3. Run the _p_ value calibration
+
+After all the exposures are run and finished, you can calibrate the p values to their expected distribution.
+Every gene saves itself into it's own file, which needs to be formatted into an [input file for _p_ calibration](#file-formats-for-p-value-calibration)
+If you have a directory with all the MR-link results, you can make an input file for p value calibration with the following command:
+
+```bash
+filename=your_uncalibrated_p_values.txt
+echo -e 'exposure_name\tuncalibrated_p_value' > "$filename"
+ls | while read mr_link_file
+do 
+    tail -n 1 "${mr_link_file}" | awk '{print $1"\t"$5}' 
+done >> "$filename"
+```
+Your input file for p value calibration will be saved in the file that is named `your_uncalibrated_p_values.txt`
+
+The full documentation for _p_ value calibration is documented [here](https://genome-integration.readthedocs.io/en/latest/calibrating_mr_link_p_values.html) 
+
+###### Step 4. Analyze results
+In our work, we analyze our results by taking a Bonferroni threshold of the calibrated _p_ values. 
+We have used these genes as targets of interest.
+
+
+## Reproducing the simulation results
+
+It is possible to reproduce the simulation results for MR-link [using the simulation of phenotypes script](#Example-simulation-of-causal-phenotypes)
+simulating 1,500 phenotypes and summary statistics of a specific scenario. 
+With these phenotypes and  summary statistics, you can run MR-link. 
