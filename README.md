@@ -19,11 +19,9 @@ single instrumental variable available.
 * [Example simulation of causal phenotypes](#Example-simulation-of-causal-phenotypes)
 
 **If something is not clear, or if you want more information, please see our more extensive [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/)**
-
-####### Structure of the package 
-
-`genome_integration` is the library and the folder `./mr_link/` has the programs for an 
-implementation of MR-link.
+ 
+ 
+`genome_integration` is the library and the folder `./mr_link/` has the programs for an implementation of MR-link.
 Please find more details of the method in our **[preprint](https://www.biorxiv.org/content/10.1101/671537v1)**
 If you want to contribute, or have any questions please don't hesitate to file a pull request, or submit an issue in github issue tracker.
 
