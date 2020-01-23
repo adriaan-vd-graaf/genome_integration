@@ -59,7 +59,7 @@ considered.
 ## Installation
 If all the requirements are met, you can install the `genome_integration` library with the command in 
 the folder where you downloaded / cloned the package
-```
+```shell script
 python3 setup.py build install --user
 ```
 Installation will take approximately 2 minutes.
@@ -83,7 +83,7 @@ To run MR-link, please go to the `./mr_link` directory.
 The first example will be an analysis where the gene (exposure) has been simulated to have no causal effect effect on the outcome.
  
 Running MR-link is possible using the following command:
-```bash
+```shell script
 # This will run an example of a non-causal gene.
 python3 MRlink.py --outcome_bed_file example_genotypes/outcome_cohort \
    --reference_bed example_genotypes/reference_cohort \
@@ -105,7 +105,7 @@ Note that the _p_ value is approximately 0.9.
 The input and output file formats are fully documented below.
 
 Running the command below will run MR-link using an example data set where the gene was simulated to have a causal effect.
-```bash
+```shell script
 # This will run an example of a gene with a causal effect.
 python3 MRlink.py --outcome_bed_file example_genotypes/outcome_cohort \
    --reference_bed example_genotypes/reference_cohort \
@@ -206,7 +206,7 @@ After installation of PYMC3 It is possible to run the _p_ value calibration.
 After the analysis of the `MRlink.py` script resulting in uncalibrated _p_ values it is possible to calibrate them using the  
 `./mr_link/p_value_calibration.py` script.
 
-```bash
+```shell script
 #Run this from the ./mr_link/ directory
 python3 p_value_calibration.py --input_file example_files/uncalibrated_p_values_example.txt --output_file calibrated_p_values.txt
 ```
@@ -228,7 +228,7 @@ The `--output_file` is the same file, but with an extra column appended to it:
 ###### _p_ value calibration of non-null simulations
 If you want to calibrate _p_ values without computing the beta distribution, you specify the alpha and beta parameters 
 combined with the `--only_calibrate` option in the following way: 
-```bash
+```shell script
 #Run this from the ./mr_link/ directory
 python3 p_value_calibration.py \
     --input_file example_files/uncalibrated_p_values_example.txt \
@@ -277,7 +277,7 @@ After all the exposures are run and finished, you can calibrate the _p_ values t
 Every gene saves itself into it's own file, which needs to be formatted into an [input file for _p_ calibration](#file-formats-for-p-value-calibration)
 If you have a directory with all the MR-link results, you can make an input file for _p_ value calibration with the following command:
 
-```bash
+```shell script
 filename=your_uncalibrated_p_values.txt
 echo -e 'exposure_name\tuncalibrated_p_value' > "$filename"
 ls | while read mr_link_file
@@ -302,14 +302,13 @@ described here.
 
 In our implementation three phenotypes are simulated: two (potentially) causal exposures and one outcome phenotype. 
 For our purposes, we discard the second exposure and only keep a single exposure and the outcome so that we determine 
-how well the tested MR methods are able to deal with pleiotropy. In these analyses, the second exposure is discarded  
-and is considered as unobserved pleiotropy.
+how well the tested MR methods are able to deal with pleiotropy.
 
 It is possible to simulate phenotypes (after installation of the `genome_integration` package) using the 
 `simulate_phenotypes.py` script in the `./mr_link/` subfolder. If you go enter the subfolder, you can simulate 
 phenotypes in the following way:
 
-```bash
+```shell script
 # This will simulate phenotypes into the simulated_files/ folder
 python3 simulate_phenotypes.py --bed_cohort_1 example_genotypes/exposure_cohort \
                                --bed_cohort_2 example_genotypes/outcome_cohort \
@@ -322,13 +321,12 @@ python3 simulate_phenotypes.py --bed_cohort_1 example_genotypes/exposure_cohort 
                                --phenotypes_to_simulate 10 
 ```
 
-This will save in 10 simulated phenotypes into the `simulated_files/example*` prepend. 
-Per simulation run there are 3 files saved, the summary statistics of the exposure (a file that ends with `exposure_sumstats.txt`) 
-and the outcome (a file that ends with `outcome_sumstats.txt`) , and the phenotype of the outcome (a file that ends with `outcome_pheno.txt`).  
-resulting into a total of 30 files. The file names contain the parameters of the simulation themselves. 
+This will save in 10 sets of simulated phenotypes into the `simulated_files/example*` prepend. 
+Per simulation run there are 3 files saved, the summary statistics of the exposure (a file that ends with `exposure_sumstats.txt`), the outcome (a file that ends with `outcome_sumstats.txt`) 
+and the phenotype of the outcome (a file that ends with `outcome_pheno.txt`).  
+Resulting in a total of 30 files. The file names contain the parameters of the simulation themselves. 
 These files are formatted so that `MRlink.py` accepts them.
 
-An explanation of the simulation parameters are:
 The parameters for the simulations are:  
 - `--bed_cohort_1` The cohort from which the exposure is saved 
 - `--bed_cohort_2` The cohort from which the outcome is saved
@@ -338,15 +336,16 @@ The parameters for the simulations are:
 - `--n_causal_exposure_1` The number of causal variants for the observed exposure
 - `--n_causal_exposure_1` The number of causal variants for the observed exposure
 - `--overlapping_causal` The number of variants that are the same between the two exposures, otherwise they are in LD 0.25 r^2 < 0.95
-- `--phenotypes_to_simulate` the number of phenotypes that are simulated.
+- `--phenotypes_to_simulate` the number of phenotype sets that are simulated.
 
 For a description of all phenotype simulation parameters, please see the [documentation](https://genome-integration.readthedocs.io/en/latest/simulation_for_mr_link.html).
-We have used these phenotypes for the simulations in our manuscript.  
+We have used these phenotypes for the simulation section of our manuscript.  
 
 The output files are of the [summary statistic format](#Summary-statistics-input-file) and 
 [phenotype format](#Phenotype-input-file). These files can be directly used as an input to MR-link.
 
 After running MR-link on the simulated values, it's important to consider that _p_ value calibration should only be done 
-on simulation scenarios with no causal effect, save the parameters of the beta distribution and use the 
-`--only_calibrate` option in the `p_value_calibration.py` script for the scenarios with a real causal effect.
+on simulation scenarios with no causal effect. To calibrate the _p_ values of a non-null causal effect, save the 
+parameters of the beta distribution and use the `--only_calibrate` option in the `p_value_calibration.py` script for the
+scenarios with a real causal effect.
 
