@@ -67,7 +67,6 @@ Next, you can test the library with:
 Now you have installed the library to run MR-link.
 
 
-
 Requirements
 --------------------
 
@@ -98,7 +97,6 @@ and require up to 8 GB of RAM.
 
 Running the _p_ value calibration script takes approximately 30 minutes, but is only required once after all the genes are
 considered.
-
 
 
 Installation

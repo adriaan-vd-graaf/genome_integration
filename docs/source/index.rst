@@ -7,11 +7,11 @@ MR-link and genome_integration
 ==========================================================
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 0
    :caption: Contents:
 
-
    Introduction
+
    about_mr_link
    simulation_for_mr_link
    calibrating_mr_link_p_values
@@ -38,8 +38,7 @@ The source code of the package can be found at `github <https://github.com/adria
 
 ``genome_integration`` is the library and ``./mr_link/`` has the programs for an implementation of MR-link.
 
-For more information please read our upcoming publication
-
-
 For more information please read our `preprint <https://www.biorxiv.org/content/10.1101/671537v1>`_
+
+
 
