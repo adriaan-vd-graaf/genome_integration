@@ -18,11 +18,11 @@
 # -- Project information -----------------------------------------------------
 
 project = 'MR-link and genome_integration'
-copyright = '2019, Adriaan van der Graaf'
+copyright = '2020, Adriaan van der Graaf'
 author = 'Adriaan van der Graaf'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.0alpha'
+release = '0.1'
 
 
 # -- General configuration ---------------------------------------------------

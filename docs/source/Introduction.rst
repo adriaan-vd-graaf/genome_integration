@@ -35,8 +35,8 @@ And the following python3 packages (which can be installed using pip3)
 
 Please make sure that ``gcta64`` and ``plink`` (1.9) are in your PATH as ``genome_integration`` and MR-link will directly
 refer to these programs.
-* [Download GCTA](http://cnsgenomics.com/software/gcta/)
-* [Download plink](https://www.cog-genomics.org/plink2/)
+    * `Download GCTA <http://cnsgenomics.com/software/gcta/>`_
+    * `Download plink <https://www.cog-genomics.org/plink2/>`_
 
 If you want to check if they are in your path, try: ``which plink`` and ``which gcta64``
 

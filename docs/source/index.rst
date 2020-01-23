@@ -7,7 +7,7 @@ MR-link and genome_integration
 ==========================================================
 
 .. toctree::
-   :maxdepth: 0
+   :maxdepth: 1
    :caption: Contents:
 
    Introduction
