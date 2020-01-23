@@ -207,7 +207,9 @@ After the analysis of the `MRlink.py` script resulting in uncalibrated _p_ value
 
 ```shell script
 #Run this from the ./mr_link/ directory
-python3 p_value_calibration.py --input_file example_files/uncalibrated_p_values_example.txt --output_file calibrated_p_values.txt
+python3 p_value_calibration.py \
+               --input_file example_files/uncalibrated_p_values_example.txt \
+               --output_file calibrated_p_values.txt
 ```
 
 Which will output calibrated _p_ values in the `calibrated_p_values.txt` file, and accept uncalibrated _p_ values from the
