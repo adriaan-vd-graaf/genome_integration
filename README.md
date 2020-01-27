@@ -18,7 +18,7 @@ single instrumental variable available.
 * [Step by step guide to an MR-link analysis](#step-by-step-guide-to-an-mr-link-analysis)
 * [Example simulation of causal phenotypes](#Example-simulation-of-causal-phenotypes)
 
-**If something is not clear, or if you want more information, please see our more extensive [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/Introduction.html)**
+**If something is not clear, or if you want more information, please see our more extensive [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/Introduction.html).**
  
  
 `genome_integration` is the library and the folder `./mr_link/` has the programs for an implementation of MR-link.
@@ -52,7 +52,7 @@ If you run the tests in the code, you also need to install  R: `Rscript` needs t
 Running an example gene for MR-link will take approximately 10 seconds on a quad core Intel Core i7-7700HQ CPU processor 
 and require up to 8 GB of RAM.
 
-Running the _p_ value calibration script takes approximately 30 minutes, but is only required once after all the genes are
+Running the _p_ value calibration script takes approximately 30 minutes, but is only required once, after all the genes are
 considered. 
 
 ## Installation
