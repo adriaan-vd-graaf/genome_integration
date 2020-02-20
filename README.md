@@ -333,7 +333,7 @@ The parameters for the simulations are:
 - `--exposure_2_causal` The causal effect of the unobserved exposure
 - `--n_causal_exposure_1` The number of causal variants for the observed exposure
 - `--n_causal_exposure_1` The number of causal variants for the observed exposure
-- `--overlapping_causal` The number of variants that are the same between the two exposures, otherwise they are in LD 0.25 r^2 < 0.95
+- `--overlapping_causal` The number of variants that are the same between the two exposures, otherwise they are in LD 0.25 < r^2 < 0.95
 - `--phenotypes_to_simulate` the number of phenotype sets that are simulated.
 
 For a description of all phenotype simulation parameters, please see the [documentation](https://genome-integration.readthedocs.io/en/latest/simulation_for_mr_link.html).
