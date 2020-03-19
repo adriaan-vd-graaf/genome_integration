@@ -611,10 +611,10 @@ def simulate_phenotypes_extended(geno,
     Simulation is done through up two exposures, which can both be causal for some outcome.
 
     The math behind it is the following:
-    exposure 1: y_{e1} = X_{1} \cdot b_{e1} + C + e
-    exposure 2: y_{e2} = X_{2} \cdot b_{e2} + C + e
+    exposure 1: y_{e1} = X_{1} cdot b_{e1} + C + e
+    exposure 2: y_{e2} = X_{2} cdot b_{e2} + C + e
 
-    outcome:  y_{o} =  y_{e1} b_{1} + X_{1} \cdot b_{p,1} + X_{2} \cdot b_{p,1} + y_{e2} b_{2} + C + e
+    outcome:  y_{o} =  y_{e1} b_{1} + X_{1} cdot b_{p,1} + X_{2} cdot b_{p,1} + y_{e2} b_{2} + C + e
 
     :param geno:
     A genotype matrix, and n individuals by m variants,
