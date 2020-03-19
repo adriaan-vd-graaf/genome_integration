@@ -582,7 +582,7 @@ def make_gcta_ma_line(genetic_association):
     if genetic_association.p_val == None:
         raise RuntimeError("No p value present")
 
-    return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(genetic_association.snp_name,
+    return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".forma(genetic_association.snp_name,
                                                    genetic_association.minor_allele,
                                                    genetic_association.major_allele,
                                                    genetic_association.minor_allele_frequency,
