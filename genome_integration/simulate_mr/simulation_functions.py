@@ -4,240 +4,6 @@ import statsmodels.api as sm
 from . import geno_functions
 
 
-def simulate_phenotypes_also_return_unobserved_phenotype(exposure_1_causal, exposure_2_causal,
-                                                            exposure_1_n_causal, exposure_2_n_causal,
-                                                            exposure_geno, exposure_ld,
-                                                            outcome_geno,
-                                                            overlapping_causal_snps=0,
-                                                            error_sd=1.0,
-                                                            confounder_sd=0.5,
-                                                            inside_phi=0.0,
-                                                            directional_pleiotropy=True
-                                                            ):
-    """
-    This function simulates two cohorts which are under the same genetic control
-    This function is present to ensure that across simulation scenarios, the same parameters are used.
-
-    Step by step:
-
-    1.
-        exposure 1 SNPs are chosen, and they are chosen not to be in higher ld than 0.95 R ^ 2
-
-    2.
-        exposure 2 SNPs are chosen in two ways. `overlapping_causal_snps` are chosen without replacement from the
-        exposure 1 SNPs, the rest are chosen from SNPs that are in LD with exposure 1.
-
-    3.
-        The confounder is simulated, based on some error and if `inside_phi` is nonzero, it is given a genetic effect.
-
-    4.
-        The effect sizes of exposure 1 and of exposure 2 eQTLs are chosen.
-
-    5.
-        The phenotypes are simulated based on the function simulate_phenotypes_extended,
-        in the exposure cohort, and the outcome cohort indepdently.
-
-    6.
-        returning the following:
-            exposure_phenotype, outcome_phenotype,
-            exposure_1_causal_snps, exposure_1_betas,
-            exposure_2_causal_snps, exposure_2_betas
-
-
-
-    :param exposure_1_causal:
-    The causal effect on exposure 1
-
-    :param exposure_2_causal:
-    The causal effect on exposure 2
-
-    :param exposure_1_n_causal:
-    The number of causal SNPs for exposure 1e
-
-    :param exposure_2_n_causal:
-    The number of causal SNPs for exposure 2
-
-    :param exposure_geno:
-    The genotype matrix for the exposure
-
-    :param exposure_ld:
-    The ld R^2 matrix for the exposure genotypes
-
-    :param outcome_geno:
-    The genotype matrix for the outcome
-
-    :param outcome_ld:
-    The ld R^2 matrix for the outcome genotypes. currently not used.
-
-    :param overlapping_causal_snps:
-    An integer number representing the number of causal SNPs for exposure 2 that overlap exposure 1.
-
-    :param error_sd:
-    The scale (standard deviation) parameter of the error that is added to a phenotype
-
-    :param inside phi:
-    The phi parameter (from the egger paper notation), that makes the confounder dependent of the genotype.
-    if non zero, a genetic effect with effect size (0,2) is added to the confounder, using the exposure 2 causal SNPs
-
-    :param directional_pleiotropy:
-    if there should be directional pleiotropy or not.
-
-    :return:
-    Returns a tuple of the following numpy arrays:
-
-    1 by n vector of simulated phenotypes for the exposure,
-    1 by n vector simulated phenotypes for the outcome,
-    1 by n causal vector of the indices of the causal snps of exposure 1.
-    1 by n causal vector of the effect sizes of the causal snps of exposure 1.
-    1 by n causal vector of the indices of the causal snps of exposure 2.
-    1 by n causal vector of the effect sizes of the causal snps of exposure 2.
-
-    """
-
-    # runtime check
-    if overlapping_causal_snps > exposure_1_n_causal:
-        raise RuntimeError("The total number of overlapping snps cannot be larger than the number of causal snps for " +
-                           "exposure 1 ")
-    if overlapping_causal_snps > exposure_2_n_causal:
-        raise RuntimeError("The total number of overlapping snps cannot be larger than the number of causal snps for " +
-                           "exposure 2 ")
-
-    exposure_beta_limits = (-.5, .5)  # the limits of the normal distribution for the exposure.
-
-    upper_ld_bound = 0.95  # The upper r^2 boundary for causal SNP selection of linkage
-    lower_ld_bound = 0.25  # The lower r^2 boundary for cauasal SNP selection of linkage
-
-    exposure_ld = exposure_ld ** 2
-
-    """
-    Step 1.
-    """
-
-    # make sure the exposure Causal SNPs are not in > upper_ld_bound R^2 with another.
-    exposure_1_causal_snps = np.zeros([exposure_1_n_causal], dtype=int)
-    i = 0
-    exposure_1_causal_snps[i] = np.random.choice(exposure_geno.shape[0], 1, replace=False)
-    i += 1
-
-    while i < exposure_1_n_causal:
-        # choosing SNPS that are not in full linkage (R**2 > 0.95) with one another, but do share some linkage.
-        lower_than_upper = np.sum(exposure_ld[exposure_1_causal_snps[:i], :] < upper_ld_bound, axis=0) == i
-        choice = np.random.choice(np.where(lower_than_upper)[0], 1, replace=False)
-        exposure_1_causal_snps[i] = choice
-        i += 1
-
-    """
-    Step 2.
-        Select overlapping.
-        If there are non overlapping SNPs left, select SNPs in LD with exposure 1.
-    """
-    # Here, the snps of exposure are overlapped, depending on the `overlapping_causal_snps` number, could be zero.
-    exposure_2_overlapping_snps = np.random.choice(exposure_1_causal_snps, overlapping_causal_snps, replace=False)
-
-    """
-        Here we select SNPs for exposure 2, that are in LD with exposure 1.
-        But we do not look for LD with already overlapping causal snps for exposure 1.
-
-        Only if there are no overlapping snps left for exposure 2 will we just sat our exposure 2 causal snps are done.
-    """
-    if exposure_2_n_causal - overlapping_causal_snps > 0:
-
-        exposure_1_causal_snps_non_overlapping = np.asarray(
-            [x for x in exposure_1_causal_snps if x not in exposure_2_overlapping_snps], dtype=int)
-
-        # permute this vector, so ordering is random.
-        permuted_exposure_1_causal_non_overlapping = np.random.permutation(exposure_1_causal_snps_non_overlapping)
-        exposure_2_ld_snps = np.zeros((exposure_2_n_causal - overlapping_causal_snps), dtype=int)
-
-        # iterate over all causal snps, and choose one that is within the ld window
-        i = 0
-        while i < (exposure_2_n_causal - overlapping_causal_snps):
-
-            ld_with_causal = exposure_ld[permuted_exposure_1_causal_non_overlapping[i], :]
-
-            try:
-                chosen_indice = np.random.choice(
-                    np.where((ld_with_causal > lower_ld_bound) & (ld_with_causal < upper_ld_bound))[0], 1)
-                exposure_2_ld_snps[i] = chosen_indice
-                i += 1
-            except:
-                raise ValueError("Could not find SNPs in an ld window around the exposure snp.")
-
-        exposure_2_causal_snps = np.concatenate((exposure_2_overlapping_snps, exposure_2_ld_snps))
-
-    else:
-        exposure_2_causal_snps = exposure_2_overlapping_snps
-
-    """
-    Step 3
-        Confounder, including the inside assumption
-    """
-
-    confounder_exposure_cohort = np.random.normal(0, confounder_sd, exposure_geno.shape[1])
-    confounder_outcome_cohort = np.random.normal(0, confounder_sd, outcome_geno.shape[1])
-
-    if inside_phi != 0.0:
-        phi_values = np.random.uniform(0, inside_phi, (1, len(exposure_2_causal_snps)))
-        confounder_exposure_cohort += (phi_values @ exposure_geno[exposure_2_causal_snps, :]).reshape(
-            exposure_geno.shape[1])
-        confounder_outcome_cohort += (phi_values @ outcome_geno[exposure_2_causal_snps, :]).reshape(
-            outcome_geno.shape[1])
-
-    """
-    Step 4
-        Simulate the effect sizes of the causal snps
-    """
-
-    exposure_1_betas = np.random.uniform(exposure_beta_limits[0], exposure_beta_limits[1],
-                                         exposure_1_n_causal)
-    if directional_pleiotropy:
-        exposure_2_betas = np.random.uniform(0.0, exposure_beta_limits[1],
-                                             exposure_2_n_causal)
-    else:
-        exposure_2_betas = np.random.uniform(exposure_beta_limits[0], exposure_beta_limits[1],
-                                             exposure_2_n_causal)
-
-    """
-    Step 5
-        The actual phenotypes are simulated.
-    """
-
-    # exposure 1 is of interest. after simulation of phenotypes, exposure 2 is discarded.
-    exposure_phenotype, exposure_2_phenotype, _ = simulate_phenotypes_extended(exposure_geno,
-                                                            exposure_1_causal_snps=exposure_1_causal_snps,
-                                                            exposure_1_causal_effect=exposure_1_causal,
-                                                            exposure_1_betas=exposure_1_betas,
-                                                            exposure_2_causal_snps=exposure_2_causal_snps,
-                                                            exposure_2_causal_effect=exposure_2_causal,
-                                                            exposure_2_betas=exposure_2_betas,
-                                                            error_scale=error_sd,
-                                                            confounder=confounder_exposure_cohort
-                                                            )
-    # center to zero, set variance to 1
-    exposure_phenotype -= np.mean(exposure_phenotype)
-    exposure_phenotype /= np.std(exposure_phenotype)
-
-    _, _, outcome_phenotype = simulate_phenotypes_extended(outcome_geno,
-                                                           exposure_1_causal_snps=exposure_1_causal_snps,
-                                                           exposure_1_causal_effect=exposure_1_causal,
-                                                           exposure_1_betas=exposure_1_betas,
-                                                           exposure_2_causal_snps=exposure_2_causal_snps,
-                                                           exposure_2_causal_effect=exposure_2_causal,
-                                                           exposure_2_betas=exposure_2_betas,
-                                                           error_scale=error_sd,
-                                                           confounder=confounder_outcome_cohort
-                                                           )
-
-    # center to zero, set variance to 1
-    outcome_phenotype -= np.mean(outcome_phenotype)
-    outcome_phenotype /= np.std(outcome_phenotype)
-
-    return exposure_phenotype, outcome_phenotype, \
-           exposure_1_causal_snps, exposure_1_betas, \
-           exposure_2_causal_snps, exposure_2_betas, \
-           exposure_2_phenotype
-
-
 def simulate_phenotypes_binary_outcome(exposure_1_causal, exposure_2_causal,
                                         exposure_1_n_causal, exposure_2_n_causal,
                                         exposure_geno, exposure_ld,
@@ -368,7 +134,8 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
                         error_sd = 1.0,
                         confounder_sd = 0.5,
                         inside_phi = 0.0,
-                        directional_pleiotropy = True
+                        directional_pleiotropy = True,
+                        known_exposure_lower_ld_bound=0.0
                         ):
     """
     This function simulates two cohorts which are under the same genetic control
@@ -417,7 +184,7 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
     The genotype matrix for the exposure
 
     :param exposure_ld:
-    The ld R matrix for the exposure genotypes
+    The ld R matrix for the exposure genotypes -- NB. NOT squared correlation
 
     :param outcome_geno:
     The genotype matrix for the outcome
@@ -475,12 +242,23 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
     exposure_1_causal_snps[i] = np.random.choice(exposure_geno.shape[1], 1, replace=False)
     i += 1
 
+    #i indicates how many snps have been chosen
     while i < exposure_1_n_causal:
-        #choosing SNPS that are not in full linkage (R**2 > 0.95) with one another, but do share some linkage.
+        # choosing SNPS that are not in full linkage (R**2 > 0.95) with one another, but do share some linkage.
         lower_than_upper = np.sum(exposure_ld[exposure_1_causal_snps[:i], :] < upper_ld_bound, axis=0) == i
-        choice = np.random.choice(np.where(lower_than_upper)[0], 1, replace=False)
+
+        if known_exposure_lower_ld_bound >= 0.0: #this part tries to find causal exposure variants in high LD.
+            higher_than_lower = np.sum(exposure_ld[exposure_1_causal_snps[:i], :] >= known_exposure_lower_ld_bound, axis=0) >= 1
+            if sum(higher_than_lower) == 0:
+                raise ValueError("Could not find known exposure variants within the lower LD bound")
+            if sum(higher_than_lower & lower_than_upper) == 0:
+                raise ValueError("Could not find known exposure variants within the lower AND higher LD bound")
+            choice = np.random.choice(np.where(higher_than_lower & lower_than_upper)[0], 1, replace=False)
+        else:
+            choice = np.random.choice(np.where(lower_than_upper)[0], 1, replace=False)
+
         exposure_1_causal_snps[i] = choice
-        i+=1
+        i += 1
 
     """
     Step 2.
