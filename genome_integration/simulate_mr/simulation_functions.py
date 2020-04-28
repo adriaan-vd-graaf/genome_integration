@@ -130,6 +130,7 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
                         exposure_1_n_causal, exposure_2_n_causal,
                         exposure_geno, exposure_ld,
                         outcome_geno,
+                        exposure_ld_r_sq = None,
                         overlapping_causal_snps = 0,
                         error_sd = 1.0,
                         confounder_sd = 0.5,
@@ -230,7 +231,13 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
     upper_ld_bound = 0.95 # The upper r^2 boundary for causal SNP selection of linkage
     lower_ld_bound = 0.25 # The lower r^2 boundary for cauasal SNP selection of linkage
 
-    exposure_ld = exposure_ld ** 2
+
+    if exposure_ld is not None:
+        exposure_ld = exposure_ld ** 2
+    elif exposure_ld_r_sq is not None and exposure_ld is None:
+        exposure_ld = exposure_ld_r_sq
+    else:
+        raise ValueError("Programmer Error")
 
     """
     Step 1.
