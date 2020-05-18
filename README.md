@@ -146,7 +146,7 @@ The summary statistic files need to be a tab separated table with the following 
 2. `POS` -- base pair position
 3. `NAME` -- name of the SNP
 4. `REF_ALLELE` -- reference allele (usually the major allele)
-5. `ALT_ALLELE` -- alternative allele (usually the minor allele)
+5. `EFFECT_ALLELE` -- alternative allele (usually the minor allele)
 6. `BETA` -- beta effect size of the marginal estimate
 7. `SE` -- standard error of the effect size of the marginal estimate.
 10. `MAF` -- allele frequency of the alternative allele (alternative allele)
