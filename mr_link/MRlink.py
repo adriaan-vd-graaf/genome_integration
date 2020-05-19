@@ -148,7 +148,6 @@ def read_summary_statistic_file(file_name):
 
             assocs[split[2]] = tmp_assoc
 
-
     return assocs
 
 
@@ -288,8 +287,8 @@ if __name__ == '__main__':
             old_major = exposure_cojo.ma_results[snp_name].major_allele
             exposure_cojo.ma_results[snp_name].major_allele = exposure_cojo.ma_results[snp_name].minor_allele
             exposure_cojo.ma_results[snp_name].minor_allele = old_major
-            exposure_cojo.beta *= -1
-            exposure_cojo.z_score *= -1
+            exposure_cojo.ma_results[snp_name].beta *= -1
+            exposure_cojo.ma_results[snp_name].z_score *= -1
 
 
     outcome_ld = simulate_mr.ld_from_geno_mat(outcome_geno)
