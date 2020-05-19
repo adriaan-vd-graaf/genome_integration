@@ -264,11 +264,22 @@ if __name__ == '__main__':
                                  region_of_interest,
                                  variants=exposure_assocs.keys())
 
-    exposure_cojo = utils.do_gcta_cojo_on_genetic_associations(exposure_assocs,
-                                                               ref_geno_for_cojo,
-                                                               tmp_cojo,
-                                                               p_val_thresh=args.p_val_iv_selection_threshold,
-                                                               maf=0.01)
+    try:
+        exposure_cojo = utils.do_gcta_cojo_on_genetic_associations(exposure_assocs,
+                                                                   ref_geno_for_cojo,
+                                                                   tmp_cojo,
+                                                                   p_val_thresh=args.p_val_iv_selection_threshold,
+                                                                   maf=0.01)
+
+    except:
+        raise ValueError(
+            f"GCTA-COJO was unable to identify conditionally independent variants for {args.exposure_summary_statistics}")
+
+    if len(exposure_cojo.ma_results.keys()) == 0:
+        raise ValueError(
+            f"GCTA-COJO found no independent variants for {args.exposure_summary_statistics} "
+            f"at the {args.p_val_iv_selection_threshold:.2e} threshold"
+        )
 
     #remove the isolated bed, as it's not being removed yet.
     subprocess.run([f"rm {ref_geno_for_cojo}.*"], shell=True, check=True)
@@ -302,8 +313,8 @@ if __name__ == '__main__':
         raise ValueError("The loci list for the outcome genotypes is not the same as the exposure genotypes")
 
     iv_selection_names = list(exposure_cojo.ma_results.keys())
+    print(f'Debug: the names of the snps are {sorted(iv_selection_names)}')
     iv_selection = np.asarray([outcome_plinkfile.bim_data.snp_names.index(x) for x in iv_selection_names], dtype=int)
-
 
     scaled_reference_geno = np.apply_along_axis(simulate_mr.scale_geno_vec, 1, reference_geno)
     scaled_outcome_geno = np.apply_along_axis(simulate_mr.scale_geno_vec, 1, outcome_geno)
