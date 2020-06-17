@@ -186,5 +186,5 @@ def do_gcta_cojo_conditional(reference_geno, associations, indices_of_interest, 
     return np.asarray([beta, np.sqrt(np.diag(new_b_inv))], dtype=float).transpose()
 
 
-if __name__ is '__main__':
+if __name__ == '__main__':
     pass
