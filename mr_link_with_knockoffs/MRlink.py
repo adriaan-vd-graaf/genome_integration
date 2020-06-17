@@ -1,5 +1,6 @@
 import subprocess
 import numpy as np
+import sqlite3
 import scipy.stats
 import argparse
 import copy
@@ -22,6 +23,48 @@ def remove_plink_files(plink_file):
         # stderr=subprocess.DEVNULL:
     )
 
+
+def check_db(gene_name):
+    db = sqlite3.connect("gtex_analysis/dbs/" + gene_name + "_ldl_cholesterol_results.db", timeout=600)
+
+    try:
+        db.execute('''CREATE TABLE ldl_cholesterol_results_003
+                        (tissue text,
+                         gene_name text, 
+                         method text, 
+                         selection_method text, 
+                         p_val_thresh real, 
+                         estimated_beta real, 
+                         estimated_se real, 
+                         p_val_of_estimate real,
+                         snps_identified real
+                         )''')
+
+    except Exception as x:
+        print(x)
+
+    db.commit()
+    db.close()
+
+
+def save_result_to_db(beta_se_n_tuple, method, selection_method, gene_name, threshold, tissue):
+    database = sqlite3.connect("gtex_analysis/dbs/" + gene_name + "_ldl_cholesterol_results.db", timeout=600)
+
+    database.execute("""INSERT  INTO ldl_cholesterol_results_003 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                     (tissue,
+                      gene_name,
+                      method,
+                      selection_method,
+                      threshold,
+                      beta_se_n_tuple[0],
+                      beta_se_n_tuple[1],
+                      beta_se_n_tuple[3],
+                      beta_se_n_tuple[2],
+                      )
+                     )
+
+    database.commit()
+    database.close()
 
 def read_outcome_genotypes_and_phenotypes(big_bed, tmp_loc, region,phenotype_file=None, variants_to_keep=None):
     bed_file = None
@@ -288,6 +331,7 @@ if __name__ == '__main__':
         )
 
     print(f"Finished MR-link for {ensg_name} in {time.time() - mr_link_start_time} seconds.")
+
 
     with open(args.output_file, "w") as f:
         iv_summary_string = ','.join(

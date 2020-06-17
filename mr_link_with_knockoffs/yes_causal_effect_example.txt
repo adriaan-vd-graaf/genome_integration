@@ -1,0 +1,2 @@
+ensembl_name	method	beta	se	p_value	n_ivs	iv_summary
+simulated_run	MR-link_uncalibrated	0.41501	0.14734	4.852e-03	2	rs11679856;G;0.31542;0.02761;0.197,rs62156384;G;-0.73949;0.02757;0.197
