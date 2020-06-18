@@ -98,6 +98,9 @@ class SNP:
         return f"{self.snp_name}, {self.chromosome}:{self.position}, major: {self.major_allele}, " \
             f"minor: {self.minor_allele}, MAF: {self.minor_allele_frequency}"
 
+    def _bim_str(self):
+        #this only works when using the minor allele as alle
+        return f'{self.chromosome}\t{self.snp_name}\t0\t{self.position}\t{self.minor_allele}\t{self.major_allele}'
 
     def add_snp_data(self, snp_data, overwrite=False):
         """
@@ -403,6 +406,10 @@ class BimFile:
                 self.bim_results[tmp.snp_name] = tmp
                 self.bim_results_by_pos[posname] = tmp
 
+    def _write_bim(self, file_name):
+        with open(file_name,'w') as f:
+            for snp_name in self.snp_names:
+                f.write(f'{self.bim_results[snp_name]._bim_str()}\n')
 
 
     def add_frq_information(self, file_name):

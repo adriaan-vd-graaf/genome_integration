@@ -31,7 +31,15 @@ class FamSample(Sample):
         self.fid =  fid
         self.iid = iid
         self.sex = sex
+        self.phenotype = phenotype
 
+
+    def __str__(self):
+        #sex family members are not supported
+        if self.phenotype is None:
+            return f'{self.fid} {self.iid} 0 0 {self.sex} -9'
+        else:
+            return f'{self.fid} {self.iid} 0 0 {self.sex} {self.phenotype}'
 
 
 class FamFile:
@@ -72,6 +80,10 @@ class FamFile:
                 self.sample_names.append(this_individual.name)
                 self.fam_samples[this_individual.name] = this_individual
 
+    def _write_fam(self, file_name):
+        with open(file_name, 'w') as f:
+            for sample in self.sample_names:
+                f.write(f'{self.fam_samples[sample]}\n')\
 
 
 
@@ -164,21 +176,24 @@ class PlinkFile:
             encodes missing values as three, plinkio default.
         :return: n indivduals by m variants numpy array (floats) of genotypes.
         """
-        bed_file = open(self.bed_loc, "rb")
-        magick = bed_file.read(3)
-        if magick != b'l\x1b\x01':
-            raise ValueError("Plink file magic string is not correct.")
+        self._missing_encoding = missing_encoding
+        self._allele_2_as_zero = allele_2_as_zero
 
-        all_bytes = bed_file.read()
+        with open(self.bed_loc, "rb") as bed_file:
+            magick = bed_file.read(3)
+            if magick != b'l\x1b\x01':
+                raise ValueError("Plink file magic string is not correct.")
 
-        num_variants = len(self.bim_data.snp_names)
-        num_individuals = len(self.fam_data.sample_names)
+            all_bytes = bed_file.read()
 
-        bytes_to_read = int(np.ceil(num_individuals / 4))
+            num_variants = len(self.bim_data.snp_names)
+            num_individuals = len(self.fam_data.sample_names)
 
-        if len(all_bytes) != (bytes_to_read*num_variants):
-            ValueError(f"{self.bed_loc} has an incorrect number of bytes: expected {(bytes_to_read*num_variants)}, found: {len(all_bytes)}")
-        bed_file.close()
+            bytes_to_read = int(np.ceil(num_individuals / 4))
+
+            if len(all_bytes) != (bytes_to_read*num_variants):
+                ValueError(f"{self.bed_loc} has an incorrect number of bytes: expected {(bytes_to_read*num_variants)}, found: {len(all_bytes)}")
+
 
         genotypes = np.zeros( (num_individuals, num_variants), dtype=np.uint8)
 
@@ -241,6 +256,92 @@ class PlinkFile:
         return self
 
 
+    def prune_for_a_list_of_snps(self, snp_list, verbose=False):
+        """
+        prunes a list of variants,
+
+        :param snp_list: list of variants that should be at least partially overlapping with the variants in the
+                        .bim_data attribute of this class
+
+        :param verbose: print things about what is happening
+        :return: self, with only the variants specified in the snp_list.
+        """
+
+        if self.genotypes is None:
+            warnings.warn("Genotypes where not loaded."
+                          "Reading them now, this could take prohibitively long or use a lot of memory",
+                          RuntimeWarning)
+            self.read_bed_file_into_numpy_array()
+
+
+        snps_to_keep = set(snp_list) & set(self.bim_data.snp_names)
+
+        if len(snps_to_keep) == 0:
+            raise ValueError("No overlapping SNPs and therefore none will be kept")
+        elif verbose == True:
+            print(f"Pruning for variants, keeping {len(snps_to_keep)} snps")
+
+        ##prune the bim data
+        indices_to_keep = np.asarray([self.bim_data.snp_names.index(x) for x in snps_to_keep], dtype=int)
+        # Remove the variants
+
+        variants_to_remove = [x for x in self.bim_data.snp_names if x in snps_to_keep]
+        for snp_name_to_remove in variants_to_remove:
+            self.bim_data.snp_names.remove(snp_name_to_remove)
+            del self.bim_data.bim_results[snp_name_to_remove]
+
+
+        # Keep the remaining genotypes
+        self.genotypes = self.genotypes[:,indices_to_keep]
+
+        return self
+
+
+    def output_genotypes_to_bed_file(self, output_prepend):
+        """
+        Writes a bed file to the final list.
+
+        :param output_prepend: This is the output prepend for after which .bed,  .bim .fam are appended.
+        :return: Nothing, but bed, bim fam are written
+        """
+
+        bed_filename, bim_filename, fam_filename = [f'{output_prepend}{x}' for x in ['.bed', '.bim', '.fam']]
+
+        if self.genotypes is None:
+            warnings.warn("Genotypes where not loaded."
+                          "Reading them now, this could take prohibitively long or use a lot of memory",
+                          RuntimeWarning)
+            self.read_bed_file_into_numpy_array()
+
+        self.bim_data._write_bim(bim_filename)
+        self.fam_data._write_fam(fam_filename)
+
+        write_encoder = self._decoder
+        write_encoder[self._missing_encoding] = bitarray.bitarray('10')
+
+
+        if self._allele_2_as_zero:
+            tmp_geno = copy.deepcopy(self.genotypes)
+            tmp_geno[self.genotypes == 2] = 0
+            tmp_geno[self.genotypes == 0] = 2
+            genotypes = tmp_geno
+        else:
+            genotypes = self.genotypes
+
+
+
+
+        #now the harder part, write the bed file.
+        with open(bed_filename, 'wb') as f:
+            f.write(b'l\x1b\x01')
+            for i in np.arange(genotypes.shape[1]):
+                genotype_vector = genotypes[:,i]
+                bits = bitarray.bitarray(endian="little")
+                bits.encode(write_encoder, genotype_vector)
+                f.write(bits.tobytes())
+
+
+
     def harmonize_genotypes(self, other_plink_file):
         """
         Harmonizes the other plink file to the alleles of self.
@@ -301,6 +402,9 @@ class PlinkFile:
                 )
 
         return other_plink_file, other_plink_file.genotypes
+
+
+
 
 
 
