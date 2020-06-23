@@ -1,8 +1,13 @@
+import copy
 import scipy.stats
 import numpy as np
 import statsmodels.api  as sm
-from sklearn.linear_model import BayesianRidge, LassoCV, LogisticRegression
+from sklearn.linear_model import BayesianRidge
 
+"""
+ Unused functionality was deleted on the 17th of June, if you are interested in it, 
+ please go back to a commit before that date.
+"""
 
 def remove_highly_correlated_snps(r_sq_mat, r_sq_threshold=0.95):
     """
@@ -85,7 +90,8 @@ def make_mr_link_design_matrix(outcome_geno,
                                   r_sq_mat,
                                   exposure_betas,
                                   causal_exposure_indices,
-                                  upper_r_sq_threshold=0.99):
+                                  upper_r_sq_threshold=0.99,
+                                  output_selected_variants = False):
     """
 
     :param outcome_geno: genotype matrix of the outcome
@@ -107,10 +113,13 @@ def make_mr_link_design_matrix(outcome_geno,
     design_mat[:,0] = (outcome_geno[:,causal_exposure_indices] @ exposure_betas) / exposure_betas.shape[0]
     design_mat[:,np.arange(1, design_mat.shape[1])] = geno_masked / np.sqrt(geno_masked.shape[1])
 
-    return design_mat
+    if output_selected_variants:
+        return design_mat, masked_instruments
+    else:
+        return design_mat
 
 
-def mr_link_ols_old(outcome_geno,
+def mr_link_ols(outcome_geno,
                 r_sq_mat,
                 exposure_betas,
                 causal_exposure_indices,
@@ -150,7 +159,7 @@ def mr_link_ridge(outcome_geno,
     """
 
     Does MR-link solved by ridge regression.
-    Please note that the p value and se is uncorrected. so these is usually _very_ conservative.
+    Please note that the p value and se is uncorrected. so these are usually _very_ conservative.
     See the MR-link manuscript for details.
 
     :param outcome_geno: outcome genotypes
@@ -177,3 +186,143 @@ def mr_link_ridge(outcome_geno,
     p_val = 2 * scipy.stats.norm.sf(t_stat)
 
     return ridge_fit.coef_[0], np.sqrt(ridge_fit.sigma_[0,0]), p_val
+
+
+def make_knockoff_genotypes(plinkfile, tmp_loc='tmp_files_fastphase'):
+    """
+    This makes knockoff genotypes.
+    in the first step, fastphase is run
+    in the second step, the knockoff methodology is performed.
+
+    it will return a genotype matrix e
+
+    :param plinkfile: PlinkFile object from which knockoffs will be created.
+    :param tmp_loc:  temporary location where to store run files/
+    :return: a genotype matrix of the same size as the PlinkFile.maf object
+    """
+
+    fastphase_file = f'{tmp_loc}_input.inp'
+    with open(fastphase_file, 'w') as f:
+        f.write(f'{len(plinkfile.fam_data.sample_names)}\n')
+        f.write(f'{len(plinkfile.bim_data.snp_names)}\n')
+        position_string = \
+            f'P {" ".join(plinkfile.bim_data.bim_results[x].position for x in plinkfile.bim_data.snp_names)}'
+        f.write(f'{position_string}\n')
+        for i, sample in enumerate(plinkfile.fam_data.sample_names):
+            f.write(f'# {sample}\n')
+            genotypes = plinkfile.genotypes[i, :]
+            first_line = ''.join(['0' if int(x) == 0 else '1' for x in genotypes])
+            second_line = ''.join(['0' if int(x) == 2 else '1' for x in genotypes])
+            f.write(f'{first_line}\n')
+            f.write(f'{second_line}\n')
+
+    fastphase_out = f'{tmp_loc}_fastphase_output'
+
+    subprocess.run(['fastPHASE',
+                    '-Pp',
+                    '-T1',
+                    '-K15',  # this is the amount of haplotype clusters there are.
+                    '-g',
+                    '-H-4',
+                    '-C20',  # this is the number of iterations
+                    f'-o{fastphase_out}',
+                    fastphase_file
+                    ], check=True)
+
+    r_file = f"{fastphase_out}_rhat.txt"
+    alpha_file = f"{fastphase_out}_alphahat.txt"
+    theta_file = f"{fastphase_out}_thetahat.txt"
+    char_file = f"{fastphase_out}_origchars"
+    hmm = loadHMM(r_file, alpha_file, theta_file, char_file, compact=True)
+
+    knockoffs_gen = SNPknock.knockoffGenotypes(hmm['r'], hmm['alpha'], hmm['theta'])
+    Xk = knockoffs_gen.sample(plinkfile.genotypes)
+
+    # clean up.
+    [os.remove(x) for x in [r_file, alpha_file, theta_file, char_file, fastphase_file]]
+    return Xk
+
+
+def knockoff_filter_threshold(w_vector, fdr=0.05, offset=1):
+    """
+    R function this is based off. from the SNPknock package by Matteo Sesia
+
+    knockoff.threshold < - function(W, fdr=0.10, offset=1)
+    {
+    if (offset != 1 & & offset != 0)
+    {
+        stop('Input offset must be either 0 or 1')
+    }
+    ts = sort(c(0, abs(W)))
+    ratio = sapply(ts, function(t)
+    (offset + sum(W <= -t)) / max(1, sum(W >= t)))
+    ok = which(ratio <= fdr)
+    ifelse(length(ok) > 0, ts[ok[1]], Inf)
+    }
+
+    :param w_vector:
+    :param fdr:
+    :param offset:
+    :return: threshold for the W vector.
+    """
+
+    if offset not in [0, 1]:
+        raise ValueError("Offset should be in the set 0 or 1")
+    ts = np.asarray(np.abs([0] + list(w_vector)), dtype=float)
+    ratios = np.asarray([(offset + np.sum(w_vector <= -t)) / max([1, np.sum(w_vector >= t)]) for t in ts], dtype=float)
+    threshold = np.min(ts[np.logical_and(ratios < fdr, ts > 0)])
+    return threshold
+
+
+def mr_link_knockoffs(
+        outcome_plinkfile,
+        scaled_outcome_geno,
+        outcome_ld_r_sq,
+        beta_effects,
+        iv_selection,
+        outcome_phenotypes,
+        tmp_file='tmp_for_mr_link_knockoffs',
+        upper_r_sq_threshold=0.99
+):
+    design_matrix, tag_indices = make_mr_link_design_matrix(scaled_outcome_geno,
+                                                             outcome_ld_r_sq,
+                                                             beta_effects,
+                                                             iv_selection,
+                                                             upper_r_sq_threshold,
+                                                             output_selected_variants=True)
+
+    # all indices contains the tag snps and the ivs.
+    tag_snp_names = np.asarray(outcome_plinkfile.bim_data.snp_names, dtype=str)[tag_indices]
+    iv_snp_names = np.asarray(outcome_plinkfile.bim_data.snp_names, dtype=str)[iv_selection]
+
+    snps_to_keep = list(iv_snp_names) + list(tag_snp_names)
+
+    pruned_outcome_plinkfile = copy.copy(outcome_plinkfile)
+    pruned_outcome_plinkfile.prune_for_a_list_of_snps(snps_to_keep)
+    knockoff_genotypes = make_knockoff_genotypes(pruned_outcome_plinkfile, tmp_loc=tmp_file + "_knockoff_intermediates")
+
+    iv_indices = np.asarray([pruned_outcome_plinkfile.bim_data.snp_names.index(x) for x in iv_snp_names], dtype=int)
+    tag_indices = np.asarray([pruned_outcome_plinkfile.bim_data.snp_names.index(x) for x in tag_snp_names], dtype=int)
+
+    knockoff_design_mat = np.zeros(design_matrix.shape, dtype=float)
+    knockoff_design_mat[:, 0] = (knockoff_genotypes[:, iv_indices] @ beta_effects) / beta_effects.shape[0]
+    knockoff_design_mat[:, np.arange(1, knockoff_design_mat.shape[1])] = knockoff_genotypes[:, tag_indices] / np.sqrt(
+        tag_indices.shape[0])
+
+    mr_link_orig_and_knockoff_joint = BayesianRidge(fit_intercept=False)
+    mr_link_orig_and_knockoff_joint.fit(np.concatenate([design_matrix, knockoff_design_mat], axis=1),
+                                        outcome_phenotypes)
+
+    all_t_stats = np.abs(
+        mr_link_orig_and_knockoff_joint.coef_ / np.sqrt(np.diag(mr_link_orig_and_knockoff_joint.sigma_)))
+    # all_ws = all_t_stats[:design_matrix.shape[1]] - all_t_stats[design_matrix.shape[1]:] #W in the Candes / Barbes nomenclature
+    all_p_vals = 2 * scipy.stats.norm.sf(all_t_stats)
+
+    print(f'mr_link orig joint {mr_link_orig_and_knockoff_joint.coef_[0]:.3f}, {all_p_vals[0]:.3e}')
+    print(
+        f'mr_link knockoffs joint {mr_link_orig_and_knockoff_joint.coef_[design_matrix.shape[1]]:.3f}, {all_p_vals[design_matrix.shape[1]]:.3e}')
+
+    all_ws = np.abs(mr_link_orig_and_knockoff_joint.coef_[:144]) - np.abs(mr_link_orig_and_knockoff_joint.coef_[144:])
+    w_threshold = knockoff_filter_threshold(all_ws, fdr=0.05, offset=1)
+
+    return mr_link_orig_and_knockoff_joint, all_ws, w_threshold, pruned_outcome_plinkfile.bim_data.snp_names

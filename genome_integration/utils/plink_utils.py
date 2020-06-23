@@ -243,17 +243,7 @@ class PlinkFile:
             else:
                 variants_to_delete.append(snp_name)
 
-        indices_to_keep = np.asarray([self.bim_data.snp_names.index(x) for x in variants_to_keep], dtype=int)
-
-        # Remove the variants
-        for snp_name_to_remove in variants_to_delete:
-            self.bim_data.snp_names.remove(snp_name_to_remove)
-            del self.bim_data.bim_results[snp_name_to_remove]
-
-        # Keep the remaining genotypes
-        self.genotypes = self.genotypes[:,indices_to_keep]
-
-        return self
+        return self.prune_for_a_list_of_snps(variants_to_keep)
 
 
     def prune_for_a_list_of_snps(self, snp_list, verbose=False):
@@ -281,15 +271,14 @@ class PlinkFile:
         elif verbose == True:
             print(f"Pruning for variants, keeping {len(snps_to_keep)} snps")
 
-        ##prune the bim data
-        indices_to_keep = np.asarray([self.bim_data.snp_names.index(x) for x in snps_to_keep], dtype=int)
+        ##prune the bim data, this needs to be sorted by position, as this is retained by plink
+        indices_to_keep = sorted(np.asarray([self.bim_data.snp_names.index(x) for x in snps_to_keep], dtype=int))
         # Remove the variants
 
-        variants_to_remove = [x for x in self.bim_data.snp_names if x in snps_to_keep]
+        variants_to_remove = [x for x in self.bim_data.snp_names if x not in snps_to_keep]
         for snp_name_to_remove in variants_to_remove:
             self.bim_data.snp_names.remove(snp_name_to_remove)
             del self.bim_data.bim_results[snp_name_to_remove]
-
 
         # Keep the remaining genotypes
         self.genotypes = self.genotypes[:,indices_to_keep]
@@ -327,8 +316,6 @@ class PlinkFile:
             genotypes = tmp_geno
         else:
             genotypes = self.genotypes
-
-
 
 
         #now the harder part, write the bed file.
@@ -402,13 +389,6 @@ class PlinkFile:
                 )
 
         return other_plink_file, other_plink_file.genotypes
-
-
-
-
-
-
-
 
 
 def read_region_from_plink(bed_file, out_location, region, variants=None):

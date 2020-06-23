@@ -306,7 +306,8 @@ if __name__ == '__main__':
                 f"{len(exposure_cojo.ma_results)}\t"
                 f"{iv_summary_string}\n")
 
-    print(f"Uncalibrated MR-link results: beta: {mr_link_results[0]:.4f}, se: {mr_link_results[1]:.5f}, p value: {mr_link_results[2]:.2e}")
+    print(f"Uncalibrated MR-link results: beta: {mr_link_results[0]:.4f}, se: {mr_link_results[1]:.5f}, "
+          f"p value: {mr_link_results[2]:.2e}")
 
 
 
