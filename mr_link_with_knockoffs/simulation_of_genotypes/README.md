@@ -1,1 +1,0 @@
-Please refer to `../../docs/guids/simulation_for_mr_link.md` on how this directory can be used.
