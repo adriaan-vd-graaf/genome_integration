@@ -4,6 +4,10 @@ import numpy as np
 import statsmodels.api  as sm
 from sklearn.linear_model import BayesianRidge
 
+from SNPknock.fastphase import loadHMM
+import SNPknock
+import os
+import subprocess
 """
  Unused functionality was deleted on the 17th of June, if you are interested in it, 
  please go back to a commit before that date.
