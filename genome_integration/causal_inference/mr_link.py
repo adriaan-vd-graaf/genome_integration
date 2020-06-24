@@ -271,7 +271,7 @@ def knockoff_filter_threshold(w_vector, fdr=0.05, offset=1):
     ts = np.asarray(np.abs([0] + list(w_vector)), dtype=float)
     ratios = np.asarray([(offset + np.sum(w_vector <= -t)) / max([1, np.sum(w_vector >= t)]) for t in ts], dtype=float)
     threshold = np.min(ts[np.logical_and(ratios < fdr, ts > 0)])
-    return threshold
+    return threshold, ratios
 
 
 def mr_link_knockoffs(
@@ -282,8 +282,9 @@ def mr_link_knockoffs(
         iv_selection,
         outcome_phenotypes,
         tmp_file='tmp_for_mr_link_knockoffs',
-        upper_r_sq_threshold=0.99
-):
+        upper_r_sq_threshold=0.99,
+        fdr=0.05):
+
     design_matrix, tag_indices = make_mr_link_design_matrix(scaled_outcome_geno,
                                                              outcome_ld_r_sq,
                                                              beta_effects,
@@ -323,6 +324,6 @@ def mr_link_knockoffs(
         f'mr_link knockoffs joint {mr_link_orig_and_knockoff_joint.coef_[design_matrix.shape[1]]:.3f}, {all_p_vals[design_matrix.shape[1]]:.3e}')
 
     all_ws = np.abs(mr_link_orig_and_knockoff_joint.coef_[:144]) - np.abs(mr_link_orig_and_knockoff_joint.coef_[144:])
-    w_threshold = knockoff_filter_threshold(all_ws, fdr=0.05, offset=1)
+    w_threshold, ratios = knockoff_filter_threshold(all_ws, fdr=fdr, offset=1)
 
-    return mr_link_orig_and_knockoff_joint, all_ws, w_threshold, pruned_outcome_plinkfile.bim_data.snp_names
+    return mr_link_orig_and_knockoff_joint, all_ws, w_threshold, ratios
