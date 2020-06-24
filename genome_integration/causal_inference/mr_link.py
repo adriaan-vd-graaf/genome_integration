@@ -4,10 +4,10 @@ import numpy as np
 import statsmodels.api  as sm
 from sklearn.linear_model import BayesianRidge
 
-from SNPknock.fastphase import loadHMM
-import SNPknock
 import os
 import subprocess
+
+
 """
  Unused functionality was deleted on the 17th of June, if you are interested in it, 
  please go back to a commit before that date.
@@ -237,13 +237,26 @@ def make_knockoff_genotypes(plinkfile, tmp_loc='tmp_files_fastphase'):
     alpha_file = f"{fastphase_out}_alphahat.txt"
     theta_file = f"{fastphase_out}_thetahat.txt"
     char_file = f"{fastphase_out}_origchars"
-    hmm = loadHMM(r_file, alpha_file, theta_file, char_file, compact=True)
+    genotype_file = f'{fastphase_out}_genotypes'
+    knockoff_genotype_file = f'{fastphase_out}_kgeno'
 
-    knockoffs_gen = SNPknock.knockoffGenotypes(hmm['r'], hmm['alpha'], hmm['theta'])
-    Xk = knockoffs_gen.sample(plinkfile.genotypes)
+    np.savetxt(genotype_file, plinkfile.genotypes, delimiter='\t')
+
+    subprocess.run([
+        'Rscript',
+        r_file,
+        alpha_file,
+        theta_file,
+        char_file,
+        genotype_file,
+        knockoff_genotype_file
+    ])
+
+    Xk = np.genfromtxt(knockoff_genotype_file, dtype=int, delimiter='\t')
 
     # clean up.
-    [os.remove(x) for x in [r_file, alpha_file, theta_file, char_file, fastphase_file]]
+    [os.remove(x) for x in [r_file, alpha_file, theta_file, char_file,
+                            fastphase_file, genotype_file, knockoff_genotype_file]]
     return Xk
 
 
