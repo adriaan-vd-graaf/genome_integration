@@ -225,7 +225,7 @@ def make_knockoff_genotypes(plinkfile, tmp_loc='tmp_files_fastphase'):
     subprocess.run(['fastPHASE',
                     '-Pp',
                     '-T1',
-                    '-K15',  # this is the amount of haplotype clusters there are.
+                    '-K25',  # this is the amount of haplotype clusters there are.
                     '-g',
                     '-H-4',
                     '-C20',  # this is the number of iterations
@@ -238,21 +238,23 @@ def make_knockoff_genotypes(plinkfile, tmp_loc='tmp_files_fastphase'):
     theta_file = f"{fastphase_out}_thetahat.txt"
     char_file = f"{fastphase_out}_origchars"
     genotype_file = f'{fastphase_out}_genotypes'
-    knockoff_genotype_file = f'{fastphase_out}_kgeno'
+    knockoff_genotype_file = f'{fastphase_out}_geno'
 
-    np.savetxt(genotype_file, plinkfile.genotypes, delimiter='\t')
+    np.savetxt(genotype_file, plinkfile.genotypes, delimiter='\t', fmt='%i')
 
     subprocess.run([
-        'Rscript',
+        'Rscript', '/'.join(__file__.split('/')[:-1] + ['make_knockoffs.R']),
         r_file,
         alpha_file,
         theta_file,
         char_file,
         genotype_file,
         knockoff_genotype_file
-    ])
+    ], check=True)
 
-    Xk = np.genfromtxt(knockoff_genotype_file, dtype=int, delimiter='\t')
+    Xk = np.genfromtxt(knockoff_genotype_file,
+                       dtype=int,
+                       delimiter='\t')
 
     # clean up.
     [os.remove(x) for x in [r_file, alpha_file, theta_file, char_file,
@@ -287,7 +289,12 @@ def knockoff_filter_threshold(w_vector, fdr=0.05, offset=1):
         raise ValueError("Offset should be in the set 0 or 1")
     ts = np.asarray(np.abs([0] + list(w_vector)), dtype=float)
     ratios = np.asarray([(offset + np.sum(w_vector <= -t)) / max([1, np.sum(w_vector >= t)]) for t in ts], dtype=float)
-    threshold = np.min(ts[np.logical_and(ratios < fdr, ts > 0)])
+
+    if len(ts[np.logical_and(ratios < fdr, ts > 0)]):
+        threshold = np.min(ts[np.logical_and(ratios < fdr, ts > 0)])
+    else:
+        threshold = np.inf
+
     return threshold, ratios
 
 
@@ -340,7 +347,7 @@ def mr_link_knockoffs(
     print(
         f'mr_link knockoffs joint {mr_link_orig_and_knockoff_joint.coef_[design_matrix.shape[1]]:.3f}, {all_p_vals[design_matrix.shape[1]]:.3e}')
 
-    all_ws = np.abs(mr_link_orig_and_knockoff_joint.coef_[:144]) - np.abs(mr_link_orig_and_knockoff_joint.coef_[144:])
+    all_ws = np.abs(mr_link_orig_and_knockoff_joint.coef_[:design_matrix.shape[1]]) - np.abs(mr_link_orig_and_knockoff_joint.coef_[design_matrix.shape[1]:])
     w_threshold, ratios = knockoff_filter_threshold(all_ws, fdr=fdr, offset=1)
 
     return mr_link_orig_and_knockoff_joint, all_ws, w_threshold, ratios

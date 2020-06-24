@@ -9,7 +9,6 @@ from os import path
 
 here = path.abspath(path.dirname(__file__))
 
-
 # Get the long description from the README file
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
@@ -27,7 +26,7 @@ setup(
     version=version,
     python_requires='!=3.0.*, !=3.1.*, !=3.2.*,!=3.3.*, !=3.4.*, !=3.5.*, >=3.6.*, <4',
 
-    description='Genome integration, a personal library',
+    description='Genome integration',
     long_description=long_description,
 
     # The project's main homepage.

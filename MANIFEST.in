@@ -1,1 +1,2 @@
 include genome_integration/resources/ensembl_data/2018_05_18_ensembl_gene_information.txt.gz
+include genome_integration/causal_inference/make_knockoffs.R
