@@ -192,7 +192,7 @@ def mr_link_ridge(outcome_geno,
     return ridge_fit.coef_[0], np.sqrt(ridge_fit.sigma_[0,0]), p_val
 
 
-def make_knockoff_genotypes(plinkfile, tmp_loc='tmp_files_fastphase'):
+def make_knockoff_genotypes(plinkfile, tmp_loc='tmp_files_fastphase', n_clusters=20, n_iterations=20):
     """
     This makes knockoff genotypes.
     in the first step, fastphase is run
@@ -225,10 +225,10 @@ def make_knockoff_genotypes(plinkfile, tmp_loc='tmp_files_fastphase'):
     subprocess.run(['fastPHASE',
                     '-Pp',
                     '-T1',
-                    '-K15',  # this is the amount of haplotype clusters there are.
+                    f'-K{n_clusters}',  # this is the amount of haplotype clusters there are.
                     '-g',
                     '-H-4',
-                    '-C20',  # this is the number of iterations
+                    f'-C{n_iterations}',  # this is the number of iterations
                     f'-o{fastphase_out}',
                     fastphase_file
                     ], check=True)
@@ -291,7 +291,9 @@ def mr_link_knockoffs(
         outcome_phenotypes,
         tmp_file='tmp_for_mr_link_knockoffs',
         upper_r_sq_threshold=0.99,
-        fdr=0.05):
+        fdr=0.05,
+        n_clusters=20,
+        n_iterations=15, threshold_offset=0):
 
     design_matrix, tag_indices = make_mr_link_design_matrix(scaled_outcome_geno,
                                                              outcome_ld_r_sq,
@@ -308,7 +310,9 @@ def mr_link_knockoffs(
 
     pruned_outcome_plinkfile = copy.copy(outcome_plinkfile)
     pruned_outcome_plinkfile.prune_for_a_list_of_snps(snps_to_keep)
-    knockoff_genotypes = make_knockoff_genotypes(pruned_outcome_plinkfile, tmp_loc=tmp_file + "_knockoff_intermediates")
+    knockoff_genotypes = make_knockoff_genotypes(pruned_outcome_plinkfile,
+                                                 tmp_loc=tmp_file + "_knockoff_intermediates",
+                                                 n_iterations=n_iterations, n_clusters=n_clusters)
 
     iv_indices = np.asarray([pruned_outcome_plinkfile.bim_data.snp_names.index(x) for x in iv_snp_names], dtype=int)
     tag_indices = np.asarray([pruned_outcome_plinkfile.bim_data.snp_names.index(x) for x in tag_snp_names], dtype=int)
@@ -331,7 +335,7 @@ def mr_link_knockoffs(
     print(
         f'mr_link knockoffs joint {mr_link_orig_and_knockoff_joint.coef_[design_matrix.shape[1]]:.3f}, {all_p_vals[design_matrix.shape[1]]:.3e}')
 
-    all_ws = np.abs(mr_link_orig_and_knockoff_joint.coef_[:144]) - np.abs(mr_link_orig_and_knockoff_joint.coef_[144:])
-    w_threshold, ratios = knockoff_filter_threshold(all_ws, fdr=fdr, offset=1)
+    all_ws = np.abs(mr_link_orig_and_knockoff_joint.coef_[:design_matrix.shape[1]]) - np.abs(mr_link_orig_and_knockoff_joint.coef_[design_matrix.shape[1]:])
+    w_threshold, ratios = knockoff_filter_threshold(all_ws, fdr=fdr, offset=threshold_offset)
 
     return mr_link_orig_and_knockoff_joint, all_ws, w_threshold, ratios
