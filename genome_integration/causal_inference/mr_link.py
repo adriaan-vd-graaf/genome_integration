@@ -274,7 +274,11 @@ def knockoff_filter_threshold(w_vector, fdr=0.05, offset=1):
         raise ValueError("Offset should be in the set 0 or 1")
     ts = np.asarray(np.abs([0] + list(w_vector)), dtype=float)
     ratios = np.asarray([(offset + np.sum(w_vector <= -t)) / max([1, np.sum(w_vector >= t)]) for t in ts], dtype=float)
-    threshold = np.min(ts[np.logical_and(ratios < fdr, ts > 0)])
+    if len(ts[np.logical_and(ratios < fdr, ts > 0)]):
+        threshold = np.min(ts[np.logical_and(ratios < fdr, ts > 0)])
+    else:
+        threshold = np.inf
+
     return threshold, ratios
 
 
