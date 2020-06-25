@@ -4,8 +4,6 @@ import numpy as np
 import statsmodels.api  as sm
 from sklearn.linear_model import BayesianRidge
 
-from SNPknock.fastphase import loadHMM
-import SNPknock
 import os
 import subprocess
 """
@@ -283,7 +281,7 @@ def knockoff_filter_threshold(w_vector, fdr=0.05, offset=1):
 
 
 def mr_link_knockoffs(
-        outcome_plinkfile,
+        outcome_plinkfile_full,
         scaled_outcome_geno,
         outcome_ld_r_sq,
         beta_effects,
@@ -295,6 +293,7 @@ def mr_link_knockoffs(
         n_clusters=20,
         n_iterations=15, threshold_offset=0):
 
+    outcome_plinkfile = copy.deepcopy(outcome_plinkfile_full)
     design_matrix, tag_indices = make_mr_link_design_matrix(scaled_outcome_geno,
                                                              outcome_ld_r_sq,
                                                              beta_effects,
