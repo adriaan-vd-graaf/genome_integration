@@ -132,7 +132,9 @@ def mr_link_ols(outcome_geno,
                 exposure_betas,
                 causal_exposure_indices,
                 outcome_phenotype,
-                upper_r_sq_threshold=0.99
+                upper_r_sq_threshold=0.99,
+                lower_r_sq_threshold=0.1,
+                prune_r_sq_threshold=0.95,
                 ):
     """
     Does MR-link solved by ordinary least squares.
@@ -150,7 +152,10 @@ def mr_link_ols(outcome_geno,
                                             r_sq_mat,
                                             exposure_betas,
                                             causal_exposure_indices,
-                                            upper_r_sq_threshold)
+                                            upper_r_sq_threshold=upper_r_sq_threshold,
+                                            lower_r_sq_threshold=lower_r_sq_threshold,
+                                            prune_r_sq_threshold=prune_r_sq_threshold
+                                            )
 
     ols_fit = sm.OLS(endog=outcome_phenotype, exog=design_mat).fit()
 
@@ -162,7 +167,9 @@ def mr_link_ridge(outcome_geno,
                  exposure_betas,
                  causal_exposure_indices,
                  outcome_phenotype,
-                 upper_r_sq_threshold=0.99
+                 upper_r_sq_threshold=0.99,
+                 lower_r_sq_threshold=0.1,
+                 prune_r_sq_threshold=0.95,
                  ):
     """
 
@@ -183,7 +190,10 @@ def mr_link_ridge(outcome_geno,
                                             r_sq_mat,
                                             exposure_betas,
                                             causal_exposure_indices,
-                                            upper_r_sq_threshold)
+                                            upper_r_sq_threshold=upper_r_sq_threshold,
+                                            lower_r_sq_threshold=lower_r_sq_threshold,
+                                            prune_r_sq_threshold=prune_r_sq_threshold
+                                            )
 
     ridge_fit = BayesianRidge(fit_intercept=False)
 
@@ -287,32 +297,30 @@ def knockoff_filter_threshold(w_vector, fdr=0.05, offset=1):
     return threshold, ratios
 
 
-def mr_link_knockoffs(
+def make_mr_link_design_matrix_knockoff(
         outcome_plinkfile_full,
         scaled_outcome_geno,
         outcome_ld_r_sq,
         beta_effects,
         iv_selection,
-        outcome_phenotypes,
         tmp_file='tmp_for_mr_link_knockoffs',
         upper_r_sq_threshold=0.99,
         lower_r_sq_threshold=0.95,
         prune_r_sq_threshold=0.1,
-        fdr=0.05,
         n_clusters=20,
-        n_iterations=15,
-        threshold_offset=0):
+        n_iterations=15):
+
 
     outcome_plinkfile = copy.deepcopy(outcome_plinkfile_full)
     design_matrix, tag_indices = make_mr_link_design_matrix(scaled_outcome_geno,
-                                                             outcome_ld_r_sq,
-                                                             beta_effects,
-                                                             iv_selection,
-                                                             output_selected_variants=True,
-                                                             upper_r_sq_threshold=upper_r_sq_threshold,
-                                                             lower_r_sq_threshold=lower_r_sq_threshold,
-                                                             prune_r_sq_threshold=prune_r_sq_threshold
-                                                             )
+                                                            outcome_ld_r_sq,
+                                                            beta_effects,
+                                                            iv_selection,
+                                                            output_selected_variants=True,
+                                                            upper_r_sq_threshold=upper_r_sq_threshold,
+                                                            lower_r_sq_threshold=lower_r_sq_threshold,
+                                                            prune_r_sq_threshold=prune_r_sq_threshold
+                                                            )
 
     # all indices contains the tag snps and the ivs.
     tag_snp_names = np.asarray(outcome_plinkfile.bim_data.snp_names, dtype=str)[tag_indices]
@@ -334,13 +342,48 @@ def mr_link_knockoffs(
     knockoff_design_mat[:, np.arange(1, knockoff_design_mat.shape[1])] = knockoff_genotypes[:, tag_indices] / np.sqrt(
         tag_indices.shape[0])
 
+    return knockoff_design_mat
+
+def mr_link_knockoffs(
+        outcome_plinkfile_full,
+        scaled_outcome_geno,
+        outcome_ld_r_sq,
+        beta_effects,
+        iv_selection,
+        outcome_phenotypes,
+        tmp_file='tmp_for_mr_link_knockoffs',
+        upper_r_sq_threshold=0.99,
+        lower_r_sq_threshold=0.95,
+        prune_r_sq_threshold=0.1,
+        fdr=0.05,
+        n_clusters=20,
+        n_iterations=15,
+        threshold_offset=0):
+
+
+    design_matrix, tag_indices = make_mr_link_design_matrix(scaled_outcome_geno,
+                                                             outcome_ld_r_sq,
+                                                             beta_effects,
+                                                             iv_selection,
+                                                             output_selected_variants=True,
+                                                             upper_r_sq_threshold=upper_r_sq_threshold,
+                                                             lower_r_sq_threshold=lower_r_sq_threshold,
+                                                             prune_r_sq_threshold=prune_r_sq_threshold
+                                                             )
+
+    knockoff_design_mat = make_mr_link_design_matrix_knockoff(outcome_plinkfile_full, scaled_outcome_geno, outcome_ld_r_sq,
+                                                        beta_effects, iv_selection, tmp_file, upper_r_sq_threshold,
+                                                        lower_r_sq_threshold, prune_r_sq_threshold, n_clusters,
+                                                        n_iterations)
+
+
     mr_link_orig_and_knockoff_joint = BayesianRidge(fit_intercept=False)
     mr_link_orig_and_knockoff_joint.fit(np.concatenate([design_matrix, knockoff_design_mat], axis=1),
                                         outcome_phenotypes)
 
     all_t_stats = np.abs(
         mr_link_orig_and_knockoff_joint.coef_ / np.sqrt(np.diag(mr_link_orig_and_knockoff_joint.sigma_)))
-    # all_ws = all_t_stats[:design_matrix.shape[1]] - all_t_stats[design_matrix.shape[1]:] #W in the Candes / Barbes nomenclature
+
     all_p_vals = 2 * scipy.stats.norm.sf(all_t_stats)
 
     print(f'mr_link orig joint {mr_link_orig_and_knockoff_joint.coef_[0]:.3f}, {all_p_vals[0]:.3e}')
@@ -351,3 +394,4 @@ def mr_link_knockoffs(
     w_threshold, ratios = knockoff_filter_threshold(all_ws, fdr=fdr, offset=threshold_offset)
 
     return mr_link_orig_and_knockoff_joint, all_ws, w_threshold, ratios
+
