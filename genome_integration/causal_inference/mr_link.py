@@ -95,6 +95,8 @@ def make_mr_link_design_matrix(outcome_geno,
                                   exposure_betas,
                                   causal_exposure_indices,
                                   upper_r_sq_threshold=0.99,
+                                  lower_r_sq_threshold=0.1,
+                                  prune_r_sq_threshold=0.95,
                                   output_selected_variants = False):
     """
 
@@ -108,7 +110,9 @@ def make_mr_link_design_matrix(outcome_geno,
 
     masked_instruments = mask_instruments_in_ld(r_sq_mat,
                                                 causal_exposure_indices,
-                                                upper_r_sq_threshold)
+                                                upper_r_sq_thresh=upper_r_sq_threshold,
+                                                lower_r_sq_thresh=lower_r_sq_threshold,
+                                                prune_r_sq_thresh=prune_r_sq_threshold)
 
 
     geno_masked = outcome_geno[:,masked_instruments]
@@ -292,6 +296,8 @@ def mr_link_knockoffs(
         outcome_phenotypes,
         tmp_file='tmp_for_mr_link_knockoffs',
         upper_r_sq_threshold=0.99,
+        lower_r_sq_threshold=0.95,
+        prune_r_sq_threshold=0.1,
         fdr=0.05,
         n_clusters=20,
         n_iterations=15,
@@ -302,8 +308,11 @@ def mr_link_knockoffs(
                                                              outcome_ld_r_sq,
                                                              beta_effects,
                                                              iv_selection,
-                                                             upper_r_sq_threshold,
-                                                             output_selected_variants=True)
+                                                             output_selected_variants=True,
+                                                             upper_r_sq_threshold=upper_r_sq_threshold,
+                                                             lower_r_sq_threshold=lower_r_sq_threshold,
+                                                             prune_r_sq_threshold=prune_r_sq_threshold
+                                                             )
 
     # all indices contains the tag snps and the ivs.
     tag_snp_names = np.asarray(outcome_plinkfile.bim_data.snp_names, dtype=str)[tag_indices]
