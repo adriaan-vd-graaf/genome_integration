@@ -4,20 +4,23 @@ import statsmodels.api as sm
 from . import geno_functions
 
 
-def simulate_phenotypes_binary_outcome(exposure_1_causal, exposure_2_causal,
-                                        exposure_1_n_causal, exposure_2_n_causal,
-                                        exposure_geno, exposure_ld,
-                                        outcome_geno,
-                                        overlapping_causal_snps = 0,
-                                        error_sd = 1.0,
-                                        confounder_sd = 0.5,
-                                        inside_phi = 0.0,
-                                        directional_pleiotropy = True,
-                                        proportion_cases=0.5
-                                        ):
+def simulate_phenotypes_binary_outcome(
+        exposure_1_causal, exposure_2_causal,
+        exposure_1_n_causal, exposure_2_n_causal,
+        exposure_geno, exposure_ld,
+        outcome_geno,
+        exposure_ld_r_sq = None,
+        overlapping_causal_snps = 0,
+        error_sd = 1.0,
+        confounder_sd = 0.5,
+        inside_phi = 0.0,
+        directional_pleiotropy = True,
+        known_exposure_lower_ld_bound=0.0,
+        proportion_cases=0.5
+        ):
     """
 
-    This function simulates two binary phenotypes in cohorts which are under the same genetic control
+    This function simulates two binary outcome phenotypes in cohorts which are under the same genetic control
     This function is present to ensure that across simulation scenarios, the same parameters are used.
 
     Step by step:
@@ -103,21 +106,24 @@ def simulate_phenotypes_binary_outcome(exposure_1_causal, exposure_2_causal,
     exposure_phenotype, outcome_phenotype, \
         exposure_1_causal_snps, exposure_1_betas, \
         exposure_2_causal_snps, exposure_2_betas =  simulate_phenotypes(
-                        exposure_1_causal, exposure_2_causal,
-                        exposure_1_n_causal, exposure_2_n_causal,
-                        exposure_geno, exposure_ld,
-                        outcome_geno,
-                        overlapping_causal_snps,
-                        error_sd,
-                        confounder_sd,
-                        inside_phi,
-                        directional_pleiotropy
-                        )
+                                                        exposure_1_causal, exposure_2_causal,
+                                                        exposure_1_n_causal, exposure_2_n_causal,
+                                                        exposure_geno, exposure_ld,
+                                                        outcome_geno,
+                                                        exposure_ld_r_sq,
+                                                        overlapping_causal_snps,
+                                                        error_sd,
+                                                        confounder_sd,
+                                                        inside_phi,
+                                                        directional_pleiotropy,
+                                                        known_exposure_lower_ld_bound
+                                                        )
 
     phenotype_cut = np.quantile(outcome_phenotype, 1-proportion_cases)
 
     outcome_phenotype[outcome_phenotype > phenotype_cut] = 1
     outcome_phenotype[outcome_phenotype <= phenotype_cut] = 0
+    outcome_phenotype = np.asarray(outcome_phenotype, dtype=int)
 
     return exposure_phenotype, outcome_phenotype, \
            exposure_1_causal_snps, exposure_1_betas, \
