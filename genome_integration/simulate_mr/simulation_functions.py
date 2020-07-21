@@ -121,7 +121,7 @@ def simulate_phenotypes_binary_outcome(
                                                         known_exposure_lower_ld_bound
                                                         )
 
-    outcome_phenotype_logistic = np.asarray([1 / 1 + np.exp(-x) for x in outcome_phenotype], dtype=float)
+    outcome_phenotype_logistic = np.asarray([1 / (1 + np.exp(-x)) for x in outcome_phenotype], dtype=float)
     outcome_phenotype = binom.rvs(1, outcome_phenotype_logistic)
 
     return exposure_phenotype, outcome_phenotype, \
