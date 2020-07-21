@@ -1,6 +1,8 @@
 import copy
+from scipy.stats import binom
 import numpy as np
 import statsmodels.api as sm
+
 from . import geno_functions
 
 
@@ -119,11 +121,8 @@ def simulate_phenotypes_binary_outcome(
                                                         known_exposure_lower_ld_bound
                                                         )
 
-    phenotype_cut = np.quantile(outcome_phenotype, 1-proportion_cases)
-
-    outcome_phenotype[outcome_phenotype > phenotype_cut] = 1
-    outcome_phenotype[outcome_phenotype <= phenotype_cut] = 0
-    outcome_phenotype = np.asarray(outcome_phenotype, dtype=int)
+    outcome_phenotype_logistic = np.asarray([1 / 1 + np.exp(x) for x in outcome_phenotype], dtype=float)
+    outcome_phenotype = binom.rvs(1, outcome_phenotype_logistic)
 
     return exposure_phenotype, outcome_phenotype, \
            exposure_1_causal_snps, exposure_1_betas, \
