@@ -15,8 +15,8 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 name = 'genome_integration'
-version = '0.1.0.dev0'
-release = '0.1alpha'
+version = '1.0'
+release = '1.0'
 
 setup(
     name=name,
@@ -46,19 +46,19 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
 
         # Indicate who your project is intended for
-        'Intended Audience :: Author',
+        'Intended Audience :: Investigators interested in causal inference',
         'Topic :: Genome analysis :: multiomics integration',
 
         # Pick your license as you wish (should match "license" above)
-        'License :: Copyright 2019 Adriaan van der Graaf',
+        'License :: MIT licence 2020',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: >=3.6',
-        'Programming Language :: Python :: 3.6'
+        'Programming Language :: Python :: >=3.7',
+        'Programming Language :: Python :: 3.7'
     ],
 
     # What does your project relate to?
