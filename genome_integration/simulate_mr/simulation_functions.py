@@ -23,7 +23,6 @@ def simulate_phenotypes_binary_outcome(
     """
 
     This function simulates two binary outcome phenotypes in cohorts which are under the same genetic control
-    This function is present to ensure that across simulation scenarios, the same parameters are used.
 
     Step by step:
 
@@ -45,6 +44,10 @@ def simulate_phenotypes_binary_outcome(
         in the exposure cohort, and the outcome cohort independently.
 
     6.
+        The outcome phenotypes are transformed using a logistic function. 
+        The they are converted into case control variables following the binomial function with the logistically transformed variables as probabilities.
+    
+    7.
         returning the following:
             exposure_phenotype, outcome_phenotype,
             exposure_1_causal_snps, exposure_1_betas,
@@ -121,7 +124,10 @@ def simulate_phenotypes_binary_outcome(
                                                         known_exposure_lower_ld_bound
                                                         )
 
-    outcome_phenotype_logistic = np.asarray([1 / (1 + np.exp(-x)) for x in outcome_phenotype], dtype=float)
+    outcome_phenotype_logistic = np.asarray(
+            [1 / (1 + np.exp(-x)) for x in outcome_phenotype], 
+            dtype=float)
+    
     outcome_phenotype = binom.rvs(1, outcome_phenotype_logistic)
 
     return exposure_phenotype, outcome_phenotype, \
