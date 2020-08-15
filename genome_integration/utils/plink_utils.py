@@ -26,9 +26,11 @@ class FamSample(Sample):
 
     """
     def __init__(self, fid, iid, sex, name, phenotype=None):
+        if phenotype == "-9":
+            phenotype = None
 
         super().__init__(name, phenotype)
-        self.fid =  fid
+        self.fid = fid
         self.iid = iid
         self.sex = sex
         self.phenotype = phenotype
@@ -66,19 +68,31 @@ class FamFile:
 
 
         with open(fam_loc, "r") as f:
-            for line in f:
-                split = line.split()
-                sample_name = f'{split[0]}~__~{split[1]}'
-                if sample_name in self.sample_names:
-                    raise ValueError(f"{self.fam_loc} contains multiple individuals with the same ID.")
+            full_file_bytes = f.read()
 
-                if split[5] == "-9":
-                    this_individual = FamSample(split[0], split[1], split[4], sample_name)
-                else:
-                    this_individual = FamSample(split[0], split[1], split[4], sample_name, split[5])
+        lines = full_file_bytes.split("\n")
+        if len(lines[-1]) == 0:
+            lines.pop()
 
-                self.sample_names.append(this_individual.name)
-                self.fam_samples[this_individual.name] = this_individual
+        splits_array = [x.split() for x in lines]
+        self.sample_names = [f'{split[0]}~__~{split[1]}' for split in splits_array]
+        self.fam_samples = {self.sample_names[i]: FamSample(x[0], x[1], x[4], self.sample_names[i], x[5])
+                            for i,x in enumerate(splits_array)}
+
+        #old array.
+        # for line in lines:
+        #     split = line.split()
+        #     sample_name = f'{split[0]}~__~{split[1]}'
+        #     if sample_name in self.sample_names:
+        #         raise ValueError(f"{self.fam_loc} contains multiple individuals with the same ID.")
+        #
+        #     if split[5] == "-9":
+        #         this_individual =  (split[0], split[1], split[4], sample_name)
+        #     else:
+        #         this_individual = FamSample(split[0], split[1], split[4], sample_name, split[5])
+        #
+        #     self.sample_names.append(this_individual.name)
+        #     self.fam_samples[this_individual.name] = this_individual
 
     def _write_fam(self, file_name):
         with open(file_name, 'w') as f:
