@@ -76,6 +76,11 @@ class FamFile:
 
         splits_array = [x.split() for x in lines]
         self.sample_names = [f'{split[0]}~__~{split[1]}' for split in splits_array]
+
+        if len(set(self.sample_names))  != len(self.sample_names):
+            raise ValueError(f"{self.fam_loc} contains multiple individuals with the same ID.")
+
+
         self.fam_samples = {self.sample_names[i]: FamSample(x[0], x[1], x[4], self.sample_names[i], x[5])
                             for i,x in enumerate(splits_array)}
 
