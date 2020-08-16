@@ -386,25 +386,36 @@ class BimFile:
     """
 
     def __init__(self, file_name):
-        self.bim_results = {}
-        self.bim_results_by_pos = {}
-        self.snp_names = []
+
         with open(file_name, 'r') as f:
-            for line in f:
+            all_bim_lines = f.read()
 
-                split = [x for x in line[:-1].split() if x != ""]
-                tmp = SNP(snp_name=split[1],
-                            chromosome=split[0],
-                            position=split[3],
-                            major_allele=split[5],
-                            minor_allele=split[4],
-                            minor_allele_frequency=None
-                            )
+        lines = all_bim_lines.split('\n')
+        if lines[-1] == "":
+            lines.pop()
 
-                posname = str(tmp.chromosome) + ":" + str(tmp.position)
-                self.snp_names.append(tmp.snp_name)
-                self.bim_results[tmp.snp_name] = tmp
-                self.bim_results_by_pos[posname] = tmp
+        splits_per_line = [[x for x in line.split() if x != ""] for line in lines]
+
+
+        self.bim_results = {split[1]:
+                                        SNP(snp_name=split[1],
+                                        chromosome=split[0],
+                                        position=split[3],
+                                        major_allele=split[5],
+                                        minor_allele=split[4],
+                                        minor_allele_frequency=None)
+                            for split in splits_per_line}
+        self.bim_results_by_pos = {f'{split[0]}:{split[3]}':
+
+                                        SNP(snp_name=split[1],
+                                        chromosome=split[0],
+                                        position=split[3],
+                                        major_allele=split[5],
+                                        minor_allele=split[4],
+                                        minor_allele_frequency=None)
+                                   for split in splits_per_line}
+        self.snp_names = [split[1] for split in splits_per_line]
+
 
     def _write_bim(self, file_name):
         with open(file_name,'w') as f:
