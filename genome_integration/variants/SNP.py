@@ -396,6 +396,7 @@ class BimFile:
 
         splits_per_line = [[x for x in line.split() if x != ""] for line in lines]
 
+        self.snp_names = [split[1] for split in splits_per_line]
 
         self.bim_results = {split[1]:
                                         SNP(snp_name=split[1],
@@ -405,8 +406,8 @@ class BimFile:
                                         minor_allele=split[4],
                                         minor_allele_frequency=None)
                             for split in splits_per_line}
-        self.bim_results_by_pos = {f'{split[0]}:{split[3]}':
 
+        self.bim_results_by_pos = {f'{split[0]}:{split[3]}':
                                         SNP(snp_name=split[1],
                                         chromosome=split[0],
                                         position=split[3],
@@ -414,7 +415,6 @@ class BimFile:
                                         minor_allele=split[4],
                                         minor_allele_frequency=None)
                                    for split in splits_per_line}
-        self.snp_names = [split[1] for split in splits_per_line]
 
 
     def _write_bim(self, file_name):
