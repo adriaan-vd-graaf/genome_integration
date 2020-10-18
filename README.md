@@ -6,8 +6,8 @@ between gene expression and complex traits, implicitly correcting for unobserved
 single instrumental variable available.
 
 The MR-link has been published in [Nature Communications](https://www.nature.com/articles/s41467-020-18716-x)
-If you use our publication, please cite us.
-_van der Graaf, A., Claringbould, A., Rimbert, A. et al. Mendelian randomization while jointly modeling cis genetics identifies causal relationships between gene expression and lipids. Nat Commun 11, 4930 (2020). https://doi.org/10.1038/s41467-020-18716-x _
+
+van der Graaf, A., Claringbould, A., Rimbert, A. et al. Mendelian randomization while jointly modeling cis genetics identifies causal relationships between gene expression and lipids. Nat Commun 11, 4930 (2020). https://doi.org/10.1038/s41467-020-18716-x 
 
 #### Table of contents
  This readme contains the following information
