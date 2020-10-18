@@ -26,7 +26,7 @@ van der Graaf, A., Claringbould, A., Rimbert, A. et al. Mendelian randomization 
  
  
 `genome_integration` is the library and the folder `./mr_link/` has the programs for an implementation of MR-link.
-Please find more details of the method in our **[preprint](https://www.biorxiv.org/content/10.1101/671537v1)**
+Please find more details of the method in our **[paper](https://www.nature.com/articles/s41467-020-18716-x)**
 If you want to contribute, or have any questions please don't hesitate to file a pull request, or submit an issue in github issue tracker.
 
 ## Requirements
