@@ -167,6 +167,7 @@ the outcome cohort.
 
 Phenotype files need to be a tab delimited file with the following columns.
 Phenotypes need to be quantitative and should be corrected for covariates before hand.
+Furthermore, phenotypes should be standardized to mean 0
  
 1. `FID` -- family ID that is matched with the plink genotype column.
 2. `IID` -- individual ID that is matched with the plink genotype column.
