@@ -5,7 +5,7 @@ This package contains MR-link, a Mendelian randomization (MR) method that effici
 between gene expression and complex traits, implicitly correcting for unobserved pleiotropy even if there is only a 
 single instrumental variable available.
 
-The MR-link has been published in [Nature Communications](https://www.nature.com/articles/s41467-020-18716-x)
+Our paper explaining, testing and applying MR-link has been published in [Nature Communications](https://www.nature.com/articles/s41467-020-18716-x)
 
 van der Graaf, A., Claringbould, A., Rimbert, A. et al. Mendelian randomization while jointly modeling cis genetics identifies causal relationships between gene expression and lipids. Nat Commun 11, 4930 (2020). https://doi.org/10.1038/s41467-020-18716-x 
 
