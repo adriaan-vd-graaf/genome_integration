@@ -5,6 +5,10 @@ This package contains MR-link, a Mendelian randomization (MR) method that effici
 between gene expression and complex traits, implicitly correcting for unobserved pleiotropy even if there is only a 
 single instrumental variable available.
 
+Our paper explaining, testing and applying MR-link has been published in [Nature Communications](https://www.nature.com/articles/s41467-020-18716-x)
+
+van der Graaf, A., Claringbould, A., Rimbert, A. et al. Mendelian randomization while jointly modeling cis genetics identifies causal relationships between gene expression and lipids. Nat Commun 11, 4930 (2020). https://doi.org/10.1038/s41467-020-18716-x 
+
 #### Table of contents
  This readme contains the following information
 * [Introduction](#Introduction)
@@ -22,7 +26,7 @@ single instrumental variable available.
  
  
 `genome_integration` is the library and the folder `./mr_link/` has the programs for an implementation of MR-link.
-Please find more details of the method in our **[preprint](https://www.biorxiv.org/content/10.1101/671537v1)**
+Please find more details of the method in our **[paper](https://www.nature.com/articles/s41467-020-18716-x)**
 If you want to contribute, or have any questions please don't hesitate to file a pull request, or submit an issue in github issue tracker.
 
 ## Requirements
@@ -163,6 +167,7 @@ the outcome cohort.
 
 Phenotype files need to be a tab delimited file with the following columns.
 Phenotypes need to be quantitative and should be corrected for covariates before hand.
+Furthermore, phenotypes should be standardized to mean 0
  
 1. `FID` -- family ID that is matched with the plink genotype column.
 2. `IID` -- individual ID that is matched with the plink genotype column.
