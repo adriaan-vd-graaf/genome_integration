@@ -36,9 +36,9 @@ class BgenReader_using_library:
         self.geno_expectations = None
 
         if not os.path.exists(self.bgen_location):
-            raise ValueError(f"No file present in {self.bgen_location=}")
+            raise ValueError(f"No file present in {self.bgen_location}")
         if not os.path.exists(self.sample_location):
-            raise ValueError(f"No file present in {self.sample_location=}")
+            raise ValueError(f"No file present in {self.sample_location}")
 
         self.bgen_handle = bgen_reader.open_bgen(self.bgen_location, self.sample_location, verbose=False)
 
