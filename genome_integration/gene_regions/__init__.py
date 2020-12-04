@@ -155,7 +155,7 @@ class StartEndRegions:
 
     """
     def __init__(self, list_of_regions):
-        self.gene_regions = [StartEndRegion] * len(list_of_regions)
+        self.gene_regions = list([StartEndRegion] * len(list_of_regions))
         i = 0
         for region in list_of_regions:
             tmp = StartEndRegion(region)
@@ -202,3 +202,13 @@ class StartEndRegions:
 
         return StartEndRegions(new_list)
 
+    def __next__(self):
+        self.i +=1
+        if self.i > len(self.gene_regions):
+            raise StopIteration
+        else:
+            return self.gene_regions[self.i-1]
+
+    def __iter__(self):
+        self.i = 0
+        return self

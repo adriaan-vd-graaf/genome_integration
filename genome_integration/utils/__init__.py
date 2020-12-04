@@ -9,4 +9,5 @@ from genome_integration.utils.gcta_cojo_utils import *
 from genome_integration.utils.gcta_ma_utils import *
 from genome_integration.utils.file_utils import  *
 from genome_integration.utils.plink_utils import *
+from genome_integration.utils.bgen_reader import *
 
