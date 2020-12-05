@@ -1,8 +1,8 @@
 import copy
-from scipy.stats import binom
+from scipy.stats import binom, norm
+from scipy.optimize import minimize_scalar
 import numpy as np
 import statsmodels.api as sm
-
 from . import geno_functions
 
 
@@ -11,15 +11,16 @@ def simulate_phenotypes_binary_outcome(
         exposure_1_n_causal, exposure_2_n_causal,
         exposure_geno, exposure_ld,
         outcome_geno,
-        exposure_ld_r_sq = None,
-        overlapping_causal_snps = 0,
-        error_sd = 1.0,
-        confounder_sd = 0.5,
-        inside_phi = 0.0,
-        directional_pleiotropy = True,
+        exposure_ld_r_sq=None,
+        overlapping_causal_snps=0,
+        error_sd=1.0,
+        confounder_sd=0.5,
+        inside_phi=0.0,
+        directional_pleiotropy=True,
         known_exposure_lower_ld_bound=0.0,
-        proportion_cases=0.5
-        ):
+        proportion_cases=0.5,
+        known_covariates = None
+):
     """
 
     This function simulates two binary outcome phenotypes in cohorts which are under the same genetic control
@@ -44,9 +45,12 @@ def simulate_phenotypes_binary_outcome(
         in the exposure cohort, and the outcome cohort independently.
 
     6.
-        The outcome phenotypes are transformed using a logistic function. 
+        The outcome phenotypes are transformed using a logistic function.
         The they are converted into case control variables following the binomial function with the logistically transformed variables as probabilities.
-    
+
+        If the parameter proportion_cases is not 0.5, we shift the simulated phenotypes by a factor so that the proportion cases is correct.
+        As far as I know, there is no analytical solution to this, so this is done using an optimization function.
+
     7.
         returning the following:
             exposure_phenotype, outcome_phenotype,
@@ -108,32 +112,58 @@ def simulate_phenotypes_binary_outcome(
 
     """
 
+
+
     exposure_phenotype, outcome_phenotype, \
-        exposure_1_causal_snps, exposure_1_betas, \
-        exposure_2_causal_snps, exposure_2_betas =  simulate_phenotypes(
-                                                        exposure_1_causal, exposure_2_causal,
-                                                        exposure_1_n_causal, exposure_2_n_causal,
-                                                        exposure_geno, exposure_ld,
-                                                        outcome_geno,
-                                                        exposure_ld_r_sq,
-                                                        overlapping_causal_snps,
-                                                        error_sd,
-                                                        confounder_sd,
-                                                        inside_phi,
-                                                        directional_pleiotropy,
-                                                        known_exposure_lower_ld_bound
-                                                        )
+    exposure_1_causal_snps, exposure_1_betas, \
+    exposure_2_causal_snps, exposure_2_betas = simulate_phenotypes(
+        exposure_1_causal, exposure_2_causal,
+        exposure_1_n_causal, exposure_2_n_causal,
+        exposure_geno, exposure_ld,
+        outcome_geno,
+        exposure_ld_r_sq,
+        overlapping_causal_snps,
+        error_sd,
+        confounder_sd,
+        inside_phi,
+        directional_pleiotropy,
+        known_exposure_lower_ld_bound
+    )
 
-    outcome_phenotype_logistic = np.asarray(
-            [1 / (1 + np.exp(-x)) for x in outcome_phenotype], 
-            dtype=float)
-    
-    outcome_phenotype = binom.rvs(1, outcome_phenotype_logistic)
+    #Here we make the phenotype dependent on some covariate
 
-    return exposure_phenotype, outcome_phenotype, \
+
+
+
+    #identify the factor by which to shift the quantitative phenotypes to get the desired case control proportion.
+    if proportion_cases != 0.5:
+        def optimizer(scale_variable):
+            tmp_case_control_corrected_outcome_phenotype = outcome_phenotype + scale_variable  # this sets the median, now I want to set the mean.
+            tmp_outcome_phenotype_logistic = 1 / (1 + np.exp(-1 * tmp_case_control_corrected_outcome_phenotype))
+            bin_outcome_phenotype = binom.rvs(1, tmp_outcome_phenotype_logistic)
+            return abs((np.sum(bin_outcome_phenotype)/bin_outcome_phenotype.shape[0]) - proportion_cases)
+
+        optimization_result = minimize_scalar(optimizer)
+        if not optimization_result.success:
+            raise ValueError("Could not find a correct case control optimization")
+
+        case_control_corrected_outcome_phenotype = outcome_phenotype + optimization_result.x #this sets the median, now I want to set the mean.
+    else:
+        case_control_corrected_outcome_phenotype = outcome_phenotype
+
+    #here the case control phenotype is simulated.
+    outcome_phenotype_logistic = 1 / (1 + np.exp(-1 * case_control_corrected_outcome_phenotype))
+    bin_outcome_phenotype = binom.rvs(1, outcome_phenotype_logistic)
+    optimization_case_control_result = np.sum(bin_outcome_phenotype) / bin_outcome_phenotype.shape[0]
+
+    if np.abs(optimization_case_control_result - proportion_cases) > 0.05 or optimization_case_control_result == 0.0 or optimization_case_control_result == 1.0:
+        raise ValueError(f"Case control optimization was secretly not succesful, even though the optimizer said it was\n"
+                         f"Optimized to a case control ratio of {optimization_case_control_result}, while {proportion_cases} was the target")
+
+
+    return exposure_phenotype, bin_outcome_phenotype, \
            exposure_1_causal_snps, exposure_1_betas, \
            exposure_2_causal_snps, exposure_2_betas
-
 
 
 
