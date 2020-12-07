@@ -85,7 +85,7 @@ def do_gwas_on_scaled_variants_fast(geno_vec, dependent, remove_three_encoding =
     x = np.asarray([np.ones(x.shape[0]), x]).T
     inv_x_t_x = np.linalg.inv(x.T @ x)
     beta = (inv_x_t_x @ x.T @ dependent)[1]
-    se = inv_x_t_x[1, 1]
+    se = np.sqrt(inv_x_t_x[1, 1])
 
     return beta, se
 
