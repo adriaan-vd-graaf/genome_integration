@@ -19,7 +19,8 @@ def simulate_phenotypes_binary_outcome(
         directional_pleiotropy=True,
         known_exposure_lower_ld_bound=0.0,
         proportion_cases=0.5,
-        known_covariates = None
+        known_outcome_covariate=None,
+        known_outcome_covariate_effect_size=None
 ):
     """
 
@@ -127,15 +128,17 @@ def simulate_phenotypes_binary_outcome(
         confounder_sd,
         inside_phi,
         directional_pleiotropy,
-        known_exposure_lower_ld_bound
+        known_exposure_lower_ld_bound,
+        center_phenotypes=True, # Necessary for the binary phenotypes.
+        known_outcome_covariate = known_outcome_covariate,
+        known_outcome_covariate_effect_size = known_outcome_covariate_effect_size
     )
 
-    #Here we make the phenotype dependent on some covariate
+    # Identify the factor by which to shift the quantitative phenotypes to get the desired case control proportion.
+    # According to wikipedia, the logistic normal distribution does not have an easily identifyable mean, and therefore
+    # we use numerical optimization to find a mean for our untransformed distribution and get an approximately correct
+    # case control ratio.
 
-
-
-
-    #identify the factor by which to shift the quantitative phenotypes to get the desired case control proportion.
     if proportion_cases != 0.5:
         def optimizer(scale_variable):
             tmp_case_control_corrected_outcome_phenotype = outcome_phenotype + scale_variable  # this sets the median, now I want to set the mean.
@@ -143,8 +146,14 @@ def simulate_phenotypes_binary_outcome(
             bin_outcome_phenotype = binom.rvs(1, tmp_outcome_phenotype_logistic)
             return abs((np.sum(bin_outcome_phenotype)/bin_outcome_phenotype.shape[0]) - proportion_cases)
 
-        optimization_result = minimize_scalar(optimizer)
-        if not optimization_result.success:
+        max_tries = 20
+        i=0
+        while i < max_tries:
+            optimization_result = minimize_scalar(optimizer)
+            if optimization_result.success and optimization_result.fun < 0.02:
+                break
+            i+=1
+        if i == max_tries:
             raise ValueError("Could not find a correct case control optimization")
 
         case_control_corrected_outcome_phenotype = outcome_phenotype + optimization_result.x #this sets the median, now I want to set the mean.
@@ -156,9 +165,7 @@ def simulate_phenotypes_binary_outcome(
     bin_outcome_phenotype = binom.rvs(1, outcome_phenotype_logistic)
     optimization_case_control_result = np.sum(bin_outcome_phenotype) / bin_outcome_phenotype.shape[0]
 
-    if np.abs(optimization_case_control_result - proportion_cases) > 0.05 or optimization_case_control_result == 0.0 or optimization_case_control_result == 1.0:
-        raise ValueError(f"Case control optimization was secretly not succesful, even though the optimizer said it was\n"
-                         f"Optimized to a case control ratio of {optimization_case_control_result}, while {proportion_cases} was the target")
+
 
 
     return exposure_phenotype, bin_outcome_phenotype, \
@@ -177,7 +184,10 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
                         confounder_sd = 0.5,
                         inside_phi = 0.0,
                         directional_pleiotropy = True,
-                        known_exposure_lower_ld_bound=0.0
+                        known_exposure_lower_ld_bound=0.0,
+                        center_phenotypes=True,
+                        known_outcome_covariate=None,
+                        known_outcome_covariate_effect_size=None
                         ):
     """
     This function simulates two cohorts which are under the same genetic control
@@ -247,6 +257,24 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
     :param directional_pleiotropy:
     if there should be directional pleiotropy or not.
 
+    :param known_exposure_lower_ld_bound
+        float in the range 0-1
+        The lower LD bound to find the instruments for. May make it more difficult to find causal variants if this value
+        is large. Default: 0.0
+
+    :param center_phenotypes
+        Boolean indicating if phenotypes need to be centered
+        default=True
+
+    :param known_outcome_covariate,
+        list or numpy array of the same size as there are individuals in the outcome genotypes.
+        This will add a covariate to the phenotype simulation that the causal inference method will need to account for.
+        default: None (No covariate will be applied to the outcome)
+
+    :param known_outcome_covariate_effect_size
+        float, The effect size for the known covariate specified in.
+        defualt: None (No covariate will be applied to the outcome.)
+
     :return:
     Returns a tuple of the following numpy arrays:
 
@@ -266,6 +294,27 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
     if overlapping_causal_snps > exposure_2_n_causal:
         raise RuntimeError("The total number of overlapping snps cannot be larger than the number of causal snps for " +
                            "exposure 2 ")
+
+    #make sure the known covariate array is of the right type, and it's of the right size.
+    if known_outcome_covariate is not None:
+
+        #also need to specify an effect size otherwise it won't work
+        if known_outcome_covariate_effect_size is None:
+            raise ValueError("Cannot provide outcome covariates without also specifying effect size")
+        known_outcome_covariate_effect_size = float(known_outcome_covariate_effect_size)
+
+        if not isinstance(known_outcome_covariate,(list,np.ndarray)):
+             raise ValueError(
+                 "Outcome known covariate array should be a list or a numpy array"
+             )
+
+        if known_outcome_covariate.shape[0] != outcome_geno.shape[0]:
+            raise ValueError("known_outcome_covariate array should be of the same size as the number of outcome individuals")
+
+        known_outcome_covariate = np.asarray(known_outcome_covariate, dtype=float)
+
+    if known_outcome_covariate is None and known_outcome_covariate_effect_size is not None:
+        raise ValueError("Cannot specify an outcome covariate effect size without passing through the covariate vector.")
 
     exposure_beta_limits = (-.5, .5) # the limits of the normal distribution for the exposure.
 
@@ -287,6 +336,7 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
     #make sure the exposure Causal SNPs are not in > upper_ld_bound R^2 with another.
     exposure_1_causal_snps = np.zeros([exposure_1_n_causal], dtype=int)
     i=0
+    #choose the first causal SNP
     exposure_1_causal_snps[i] = np.random.choice(exposure_geno.shape[1], 1, replace=False)
     i += 1
 
@@ -363,7 +413,7 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
     if inside_phi != 0.0:
         phi_values = np.random.uniform(0, inside_phi, (1, len(exposure_2_causal_snps)))
         confounder_exposure_cohort += (exposure_geno[:,exposure_2_causal_snps] @ phi_values).reshape(exposure_geno.shape[0])
-        confounder_outcome_cohort += (outcome_geno[:,exposure_2_causal_snps] @phi_values).reshape(outcome_geno.shape[0])
+        confounder_outcome_cohort += (outcome_geno[:,exposure_2_causal_snps] @ phi_values).reshape(outcome_geno.shape[0])
 
 
     """
@@ -398,8 +448,9 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
                                                    confounder=confounder_exposure_cohort
                                                    )
     # center to zero, set variance to 1
-    exposure_phenotype -= np.mean(exposure_phenotype)
-    exposure_phenotype /= np.std(exposure_phenotype)
+    if center_phenotypes:
+        exposure_phenotype -= np.mean(exposure_phenotype)
+        exposure_phenotype /= np.std(exposure_phenotype)
 
     _, _, outcome_phenotype = simulate_phenotypes_extended(outcome_geno,
                                                   exposure_1_causal_snps=exposure_1_causal_snps,
@@ -412,9 +463,14 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
                                                   confounder=confounder_outcome_cohort
                                                   )
 
+    #Add in a known covariate to identify correctness.
+    if known_outcome_covariate is not None:
+        outcome_phenotype = outcome_phenotype + (known_outcome_covariate * known_outcome_covariate_effect_size)
+
     # center to zero, set variance to 1
-    outcome_phenotype -= np.mean(outcome_phenotype)
-    outcome_phenotype /= np.std(outcome_phenotype)
+    if center_phenotypes:
+        outcome_phenotype -= np.mean(outcome_phenotype)
+        outcome_phenotype /= np.std(outcome_phenotype)
 
     return exposure_phenotype, outcome_phenotype, \
            exposure_1_causal_snps, exposure_1_betas, \
