@@ -146,24 +146,34 @@ def simulate_phenotypes_binary_outcome(
             bin_outcome_phenotype = binom.rvs(1, tmp_outcome_phenotype_logistic)
             return abs((np.sum(bin_outcome_phenotype)/bin_outcome_phenotype.shape[0]) - proportion_cases)
 
-        max_tries = 20
+        max_tries = 100
         i=0
         while i < max_tries:
+            i += 1
+
             optimization_result = minimize_scalar(optimizer)
-            if optimization_result.success and optimization_result.fun < 0.02:
+            case_control_corrected_outcome_phenotype = outcome_phenotype + optimization_result.x  # this sets the median, now I want to set the mean.
+
+            outcome_phenotype_logistic = 1 / (1 + np.exp(-1 * case_control_corrected_outcome_phenotype))
+            bin_outcome_phenotype = binom.rvs(1, outcome_phenotype_logistic)
+            optimization_case_control_result = np.sum(bin_outcome_phenotype) / bin_outcome_phenotype.shape[0]
+
+            if optimization_case_control_result == 0.0:
+                continue
+
+            if optimization_result.success and optimization_result.fun < 0.005:
                 break
-            i+=1
+
         if i == max_tries:
             raise ValueError("Could not find a correct case control optimization")
-
-        case_control_corrected_outcome_phenotype = outcome_phenotype + optimization_result.x #this sets the median, now I want to set the mean.
     else:
         case_control_corrected_outcome_phenotype = outcome_phenotype
-
+        outcome_phenotype_logistic = 1 / (1 + np.exp(-1 * case_control_corrected_outcome_phenotype))
+        bin_outcome_phenotype = binom.rvs(1, outcome_phenotype_logistic)
+        optimization_case_control_result = np.sum(bin_outcome_phenotype) / bin_outcome_phenotype.shape[0]
+        if optimization_case_control_result == 0.0:
+            raise ValueError("optimzization went wrong, need to redo")
     #here the case control phenotype is simulated.
-    outcome_phenotype_logistic = 1 / (1 + np.exp(-1 * case_control_corrected_outcome_phenotype))
-    bin_outcome_phenotype = binom.rvs(1, outcome_phenotype_logistic)
-    optimization_case_control_result = np.sum(bin_outcome_phenotype) / bin_outcome_phenotype.shape[0]
 
 
 
