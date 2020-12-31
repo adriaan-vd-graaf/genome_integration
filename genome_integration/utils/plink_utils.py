@@ -513,7 +513,8 @@ def plink_isolate_clump(bed_file, associations, threshold, r_sq=0.5  ,tmploc="",
 
 
 def isolate_snps_of_interest_make_bed(ma_file, exposure_name, b_file,
-                                      snp_file_out, plink_files_out, calculate_ld = False):
+                                      snp_file_out, plink_files_out, calculate_ld = False,
+                                      individuals_to_isolate=None, no_palindromic=False):
     """
 
     Isolate snps of interest for a gene, and make a bed file
@@ -527,11 +528,12 @@ def isolate_snps_of_interest_make_bed(ma_file, exposure_name, b_file,
     :return: the name_of the bedfile with only the snps
     """
 
-
     ma_data = MaFile(ma_file, exposure_name)
 
     # write the snps to isolate
-    write_list_to_newline_separated_file(ma_data.snp_names(no_palindromic=True), snp_file_out)
+    write_list_to_newline_separated_file(ma_data.snp_names(no_palindromic=no_palindromic), snp_file_out)
+
+
     if calculate_ld:
         # now run plink to isolate the files, and return the snplist, plink filename and eqtl ma file.
         tmp = subprocess.run(['plink',
