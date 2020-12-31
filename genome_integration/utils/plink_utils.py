@@ -513,7 +513,7 @@ def plink_isolate_clump(bed_file, associations, threshold, r_sq=0.5  ,tmploc="",
 
 
 def isolate_snps_of_interest_make_bed(ma_file, exposure_name, b_file,
-                                      snp_file_out, plink_files_out, calculate_ld = False,
+                                      tmp_file_prepend, plink_files_out, calculate_ld = False,
                                       individuals_to_isolate=None, no_palindromic=False):
     """
 
@@ -522,7 +522,7 @@ def isolate_snps_of_interest_make_bed(ma_file, exposure_name, b_file,
     :param ma_file:
     :param exposure_name:
     :param b_file:
-    :param snp_file_out:
+    :param tmp_file_prepend:
     :param plink_files_out:
     :param calculate_ld:
     :return: the name_of the bedfile with only the snps
@@ -530,44 +530,46 @@ def isolate_snps_of_interest_make_bed(ma_file, exposure_name, b_file,
 
     ma_data = MaFile(ma_file, exposure_name)
 
-    # write the snps to isolate
-    write_list_to_newline_separated_file(ma_data.snp_names(no_palindromic=no_palindromic), snp_file_out)
+    snps_file =  tmp_file_prepend + "_snps"
 
+    # write the snps to isolate
+    write_list_to_newline_separated_file(ma_data.snp_names(no_palindromic=no_palindromic), snps_file)
+
+    #basic command list, will be appended to if other options are specified.
+    command_list = ['plink',
+                     '--bfile', b_file,
+                     '--extract', snps_file,
+                     '--make-bed',
+                     '--out', plink_files_out
+                    ]
 
     if calculate_ld:
-        # now run plink to isolate the files, and return the snplist, plink filename and eqtl ma file.
-        tmp = subprocess.run(['plink',
-                              '--bfile', b_file,
-                              '--extract', snp_file_out,
-                              '--make-bed',
-                              '--r', 'square',
-                              '--out', plink_files_out
-                             ],
-                             check=True,
-                             stdout=subprocess.DEVNULL,  # to DEVNULL, because plink saves a log of everything
-                             stderr=subprocess.DEVNULL
-                             )
+        command_list += ['--r', 'square',]
 
-        bim_file = BimFile(plink_files_out + '.bim')
+    if individuals_to_isolate is not None:
+        # make a file with individuals.
+        if not isinstance(individuals_to_isolate, list):
+            raise ValueError("individuals for isolation needs to be a list of strings.")
 
-        return ma_data, bim_file
+        # write the file
+        individuals_file = tmp_file_prepend + "_iids"
+        with open(individuals_file, 'w') as f:
+            for individual in individuals_to_isolate:
+                f.write(f'{individual}\n')
 
-    else:
-        # now run plink to isolate the files, and return the snplist, plink filename and eqtl ma file.
-        tmp = subprocess.run(['plink',
-                              '--bfile', b_file,
-                              '--extract', snp_file_out,
-                              '--make-bed',
-                              '--out', plink_files_out
-                              ],
-                             check=True,
-                             stdout=subprocess.DEVNULL,  # to DEVNULL, because plink saves a log of everything
-                             stderr=subprocess.DEVNULL
-                             )
+        # now add it to the command
+        command_list += ['--keep', individuals_file]
 
-        bim_file = BimFile(plink_files_out + '.bim')
+    # now run plink to isolate the files, and return the snplist, plink filename and eqtl ma file.
+    tmp = subprocess.run(command_list,
+                         check=True,
+                         stdout=subprocess.DEVNULL,  # to DEVNULL, because plink saves a log of everything
+                         stderr=subprocess.DEVNULL
+                         )
 
-        return ma_data, bim_file
+    bim_file = BimFile(plink_files_out + '.bim')
+
+    return ma_data, bim_file
 
 
 def score_individuals(genetic_associations, bed_file, tmp_file = "tmp_score", p_value_thresh = 1):

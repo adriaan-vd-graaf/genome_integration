@@ -184,86 +184,13 @@ def do_gcta_cojo_joint(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0
     return tmp_cojo
 
 
-def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepend,
-                                         p_val_thresh=0.05, maf=0.01, calculate_ld = False,
-                                         clump=False, create_tmp_subset_of_bed=True):
-    """
-    :param genetic_associations: a dict of genetic associations,  keys should be explantory name
-    :param bfile: plink bed file
-    :param tmp_prepend: temporary name of files where to store.
-    :param p_val_thresh: p value threshold as a float
-    :param maf: minor allele frequency as a float
-
-    :return: Cojo results a Cojo CMA file object, which is an extension of the geneticassociation file.
-    """
-
-
-    # define the names.
-    ma_name = tmp_prepend + "_temp.ma"
-    snp_out = tmp_prepend + "_snp_list.txt"
-    plink_pruned = tmp_prepend + "_plink_pruned"
-    cojo_out = tmp_prepend + "_cojo_out"
-
-    #clump.
-    if clump:
-        clumped_snps = plink_isolate_clump(bed_file=bfile,
-                                                   associations=genetic_associations,
-                                                   threshold=p_val_thresh,
-                                                   r_sq=0.5,
-                                                   tmploc=tmp_prepend
-                                                   )
-    else:
-        clumped_snps = list(genetic_associations.keys())
-
-    snps = list(genetic_associations.keys())
-    try:
-        gene_name = genetic_associations[snps[0]].dependent_name.decode("utf8")
-    except AttributeError:
-        gene_name = genetic_associations[snps[0]].dependent_name
-
-
-    ma_lines = [make_gcta_ma_header()]
-
-    [
-        ma_lines.append(make_gcta_ma_line(genetic_associations[x])) for x in genetic_associations
-        if genetic_associations[x].snp_name in clumped_snps
-    ]
-
-    write_list_to_newline_separated_file(ma_lines, ma_name)
-    if create_tmp_subset_of_bed:
-        try:
-            isolate_snps_of_interest_make_bed(ma_file=ma_name, exposure_name=gene_name, b_file=bfile,
-                                                          snp_file_out=snp_out, plink_files_out=plink_pruned,
-                                                          calculate_ld=calculate_ld)
-
-        except Exception as x:
-            print("isolating snps raised an exception while processing " + gene_name )
-            # subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
-            raise x
-    else:
-        plink_pruned = bfile
-
-
-    try:
-        cojo_eqtl = do_gcta_cojo_slct(plink_pruned, ma_name, cojo_out, p_val='{:6.2e}'.format(p_val_thresh), maf='{:8.6f}'.format(maf))
-    except Exception as x:
-        print("GCTA cojo raised an exceptqion while processing" + gene_name)
-        # subprocess.run(["rm {} {} {}* {}*".format(ma_name, snp_out, plink_pruned, cojo_out)], shell=True, check=True)
-        raise x
-    if create_tmp_subset_of_bed:
-        subprocess.run(["rm -f {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)
-    else:
-        subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, cojo_out)], shell=True, check=True)
-
-    return cojo_eqtl
-
-
 def do_gcta_cojo_joint_on_genetic_associations(genetic_associations, bfile, tmp_prepend,
                                          p_val_thresh=0.05,
                                          maf=0.01,
                                          calculate_ld = False,
                                          clump=False,
-                                         _keep_ma_files=False):
+                                         _keep_ma_files=False,
+                                         individuals_to_analyze=None):
     """
     :param genetic_associations: a dict of genetic associations,  keys should be explantory name
     :param bfile: plink bed file
@@ -312,8 +239,8 @@ def do_gcta_cojo_joint_on_genetic_associations(genetic_associations, bfile, tmp_
 
     try:
         isolate_snps_of_interest_make_bed(ma_file=ma_name, exposure_name=gene_name, b_file=bfile,
-                                                      snp_file_out=snp_out, plink_files_out=plink_pruned,
-                                                      calculate_ld=calculate_ld)
+                                          tmp_file_prepend=snp_out, plink_files_out=plink_pruned,
+                                          calculate_ld=calculate_ld, individuals_to_isolate=individuals_to_analyze)
 
     except Exception as x:
         print("isolating snps raised an exception while processing " + gene_name )
@@ -332,6 +259,83 @@ def do_gcta_cojo_joint_on_genetic_associations(genetic_associations, bfile, tmp_
         subprocess.run(["rm -f {} {}* {}*".format(snp_out,plink_pruned,cojo_out)], shell=True, check = True)
     else:
         subprocess.run(["rm -f {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)
+
+    return cojo_eqtl
+
+
+def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepend,
+                                         p_val_thresh=0.05, maf=0.01, calculate_ld = False,
+                                         clump=False,
+                                         create_tmp_subset_of_bed=True,
+                                         individuals_to_analyze=None):
+    """
+    :param genetic_associations: a dict of genetic associations,  keys should be explantory name
+    :param bfile: plink bed file
+    :param tmp_prepend: temporary name of files where to store.
+    :param p_val_thresh: p value threshold as a float
+    :param maf: minor allele frequency as a float
+
+    :return: Cojo results a Cojo CMA file object, which is an extension of the geneticassociation file.
+    """
+
+
+    # define the names.
+    ma_name = tmp_prepend + "_temp.ma"
+    snp_out = tmp_prepend + "_snp_list.txt"
+    plink_pruned = tmp_prepend + "_plink_pruned"
+    cojo_out = tmp_prepend + "_cojo_out"
+
+    #clump.
+    if clump:
+        clumped_snps = plink_isolate_clump(bed_file=bfile,
+                                                   associations=genetic_associations,
+                                                   threshold=p_val_thresh,
+                                                   r_sq=0.5,
+                                                   tmploc=tmp_prepend
+                                                   )
+    else:
+        clumped_snps = list(genetic_associations.keys())
+
+    snps = list(genetic_associations.keys())
+    try:
+        gene_name = genetic_associations[snps[0]].dependent_name.decode("utf8")
+    except AttributeError:
+        gene_name = genetic_associations[snps[0]].dependent_name
+
+
+    ma_lines = [make_gcta_ma_header()]
+
+    [
+        ma_lines.append(make_gcta_ma_line(genetic_associations[x])) for x in genetic_associations
+        if genetic_associations[x].snp_name in clumped_snps
+    ]
+
+    write_list_to_newline_separated_file(ma_lines, ma_name)
+    if create_tmp_subset_of_bed:
+        try:
+            isolate_snps_of_interest_make_bed(ma_file=ma_name, exposure_name=gene_name, b_file=bfile,
+                                              tmp_file_prepend=snp_out, plink_files_out=plink_pruned,
+                                              calculate_ld=calculate_ld, individuals_to_isolate=individuals_to_analyze)
+
+        except Exception as x:
+            print("isolating snps raised an exception while processing " + gene_name )
+            # subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
+            raise x
+    else:
+        plink_pruned = bfile
+
+
+    try:
+        cojo_eqtl = do_gcta_cojo_slct(plink_pruned, ma_name, cojo_out, p_val='{:6.2e}'.format(p_val_thresh), maf='{:8.6f}'.format(maf))
+    except Exception as x:
+        print("GCTA cojo raised an exceptqion while processing" + gene_name)
+        # subprocess.run(["rm {} {} {}* {}*".format(ma_name, snp_out, plink_pruned, cojo_out)], shell=True, check=True)
+        raise x
+
+    if create_tmp_subset_of_bed:
+        subprocess.run(["rm -f {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check=True)
+    else:
+        subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, cojo_out)], shell=True, check=True)
 
     return cojo_eqtl
 
@@ -415,8 +419,8 @@ def do_gcta_cojo_snp_conditional_on_genetic_associations(genetic_associations,
     #isolate
     try:
         isolate_snps_of_interest_make_bed(ma_file=ma_name, exposure_name=gene_name, b_file=bfile,
-                                                      snp_file_out=snp_out, plink_files_out=plink_pruned,
-                                                      calculate_ld=False)
+                                          tmp_file_prepend=snp_out, plink_files_out=plink_pruned,
+                                          calculate_ld=False)
     except Exception as x:
         print("isolating snps raised an exception while processing " + gene_name )
         subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
@@ -526,8 +530,8 @@ def do_gcta_cojo_joint_on_only_snps_genetic_associations(
     #isolate
     try:
         isolate_snps_of_interest_make_bed(ma_file=ma_name, exposure_name=gene_name, b_file=bfile,
-                                                      snp_file_out=snp_out, plink_files_out=plink_pruned,
-                                                      calculate_ld=False)
+                                          tmp_file_prepend=snp_out, plink_files_out=plink_pruned,
+                                          calculate_ld=False)
     except Exception as x:
         print("isolating snps raised an exception while processing " + gene_name )
         subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
