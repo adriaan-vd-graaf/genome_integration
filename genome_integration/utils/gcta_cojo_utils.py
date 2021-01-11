@@ -110,7 +110,7 @@ class CojoCmaLine(association.GeneticAssociation):
 
 
 
-def do_gcta_cojo_slct(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.01', gc=1.0):
+def do_gcta_cojo_slct(bfile_prepend, ma_file, out_prepend, p_val=1e-8, maf=0.01, gc=1.0, n_threads=1):
     """
     Doeas GCTA COJO stepwise selection (no joint effects)
 
@@ -130,10 +130,10 @@ def do_gcta_cojo_slct(bfile_prepend, ma_file, out_prepend, p_val='1e-8', maf='0.
                     '--cojo-file', ma_file,
                     '--cojo-slct',
                     '--cojo-gc', str(gc),
-                    '--out',    out_prepend,
-                    '--cojo-p', p_val,
-                    '--maf', maf,
-                    '--thread-num', '1'
+                    '--out',  out_prepend,
+                    '--cojo-p', str(p_val),
+                    '--maf', str(maf),
+                    '--thread-num', str(n_threads),
                     ],
                    stdout=subprocess.DEVNULL,
                    stderr=subprocess.DEVNULL,
@@ -244,7 +244,7 @@ def do_gcta_cojo_joint_on_genetic_associations(genetic_associations, bfile, tmp_
 
     except Exception as x:
         print("isolating snps raised an exception while processing " + gene_name )
-        subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
+        subprocess.run(["rm {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
         raise x
 
 
@@ -256,9 +256,9 @@ def do_gcta_cojo_joint_on_genetic_associations(genetic_associations, bfile, tmp_
         raise x
 
     if _keep_ma_files:
-        subprocess.run(["rm -f {} {}* {}*".format(snp_out,plink_pruned,cojo_out)], shell=True, check = True)
+        subprocess.run(["rm  {} {}* {}*".format(snp_out,plink_pruned,cojo_out)], shell=True, check = True)
     else:
-        subprocess.run(["rm -f {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)
+        subprocess.run(["rm  {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)
 
     return cojo_eqtl
 
@@ -319,7 +319,7 @@ def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepen
 
         except Exception as x:
             print("isolating snps raised an exception while processing " + gene_name )
-            # subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
+            # subprocess.run(["rm  {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
             raise x
     else:
         plink_pruned = bfile
@@ -333,9 +333,9 @@ def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepen
         raise x
 
     if create_tmp_subset_of_bed:
-        subprocess.run(["rm -f {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check=True)
+        subprocess.run(["rm  {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check=True)
     else:
-        subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, cojo_out)], shell=True, check=True)
+        subprocess.run(["rm  {} {} {}*".format(ma_name, snp_out, cojo_out)], shell=True, check=True)
 
     return cojo_eqtl
 
@@ -423,7 +423,7 @@ def do_gcta_cojo_snp_conditional_on_genetic_associations(genetic_associations,
                                           calculate_ld=False)
     except Exception as x:
         print("isolating snps raised an exception while processing " + gene_name )
-        subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
+        subprocess.run(["rm  {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
         raise x
 
     try:
@@ -432,7 +432,7 @@ def do_gcta_cojo_snp_conditional_on_genetic_associations(genetic_associations,
                 f.write(f'{snp}\n')
     except Exception as x:
         print("writing the conditioning snps did not work for " + gene_name )
-        subprocess.run(["rm -f {} {} {} {}*".format(ma_name, snp_out, conditioning_snps_file, plink_pruned)],
+        subprocess.run(["rm  {} {} {} {}*".format(ma_name, snp_out, conditioning_snps_file, plink_pruned)],
                        shell=True, check=True)
         raise x
 
@@ -448,9 +448,9 @@ def do_gcta_cojo_snp_conditional_on_genetic_associations(genetic_associations,
         raise x
 
     if _keep_ma_files:
-        subprocess.run(["rm -f {} {} {}* {}*".format(snp_out, conditioning_snps_file, plink_pruned,cojo_out)], shell=True, check=True)
+        subprocess.run(["rm {} {} {}* {}*".format(snp_out, conditioning_snps_file, plink_pruned,cojo_out)], shell=True, check=True)
     else:
-        subprocess.run(["rm -f {} {} {} {}* {}*".format(ma_name, conditioning_snps_file, snp_out,plink_pruned,cojo_out)], shell=True, check=True)
+        subprocess.run(["rm {} {} {} {}* {}*".format(ma_name, conditioning_snps_file, snp_out,plink_pruned,cojo_out)], shell=True, check=True)
 
     return cojo_eqtl
 
@@ -534,7 +534,7 @@ def do_gcta_cojo_joint_on_only_snps_genetic_associations(
                                           calculate_ld=False)
     except Exception as x:
         print("isolating snps raised an exception while processing " + gene_name )
-        subprocess.run(["rm -f {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
+        subprocess.run(["rm {} {} {}*".format(ma_name, snp_out, plink_pruned)], shell=True, check=True)
         raise x
 
     try:
@@ -548,9 +548,12 @@ def do_gcta_cojo_joint_on_only_snps_genetic_associations(
         raise x
 
     if _keep_ma_files:
-        subprocess.run(["rm -f {} {} {}* {}*".format(snp_out, conditioning_snps_file, plink_pruned,cojo_out)], shell=True, check=True)
+        subprocess.run(["rm {} {} {}* {}*".format(snp_out, conditioning_snps_file, plink_pruned,
+                                                     cojo_out)], shell=True, check=True)
     else:
-        subprocess.run(["rm -f {} {} {} {}* {}*".format(ma_name, conditioning_snps_file, snp_out,plink_pruned,cojo_out)], shell=True, check=True)
+        subprocess.run(["rm {} {} {} {}* {}*".format(ma_name, conditioning_snps_file, snp_out,
+                                                        plink_pruned,
+                                                        cojo_out)], shell=True, check=True)
 
     return cojo_eqtl
 

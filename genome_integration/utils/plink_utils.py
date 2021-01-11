@@ -634,7 +634,7 @@ def score_individuals(genetic_associations, bed_file, tmp_file = "tmp_score", p_
             split = line.split()
             pheno_score[split[1]] = (float(split[2]), float(split[5]))
 
-    subprocess.run(['rm -f ' + file_for_scoring + " " + pos_name_scoring + " " + prepend_for_plink + ".*"], shell=True, check=True)
+    subprocess.run(['rm ' + file_for_scoring + " " + pos_name_scoring + " " + prepend_for_plink + ".*"], shell=True, check=True)
 
     return pheno_score
 
