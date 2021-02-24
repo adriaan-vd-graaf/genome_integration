@@ -530,7 +530,7 @@ def isolate_snps_of_interest_make_bed(ma_file, exposure_name, b_file,
 
     ma_data = MaFile(ma_file, exposure_name)
 
-    snps_file =  tmp_file_prepend + "_snps"
+    snps_file = tmp_file_prepend + "_snps"
 
     # write the snps to isolate
     write_list_to_newline_separated_file(ma_data.snp_names(no_palindromic=no_palindromic), snps_file)
