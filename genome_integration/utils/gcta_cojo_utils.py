@@ -252,13 +252,13 @@ def do_gcta_cojo_joint_on_genetic_associations(genetic_associations, bfile, tmp_
         cojo_eqtl = do_gcta_cojo_joint(plink_pruned, ma_name, cojo_out, p_val='{:6.2e}'.format(p_val_thresh), maf='{:8.6f}'.format(maf))
     except Exception as x:
         print("GCTA cojo raised an exception while processing " + gene_name)
-        subprocess.run(["rm {} {} {}* {}*".format(ma_name, snp_out, plink_pruned, cojo_out)], shell=True, check=True)
+        subprocess.run(["rm {} {}* {}* {}*".format(ma_name, snp_out, plink_pruned, cojo_out)], shell=True, check=True)
         raise x
 
     if _keep_ma_files:
-        subprocess.run(["rm  {} {}* {}*".format(snp_out,plink_pruned,cojo_out)], shell=True, check = True)
+        subprocess.run(["rm  {}* {}* {}*".format(snp_out,plink_pruned,cojo_out)], shell=True, check = True)
     else:
-        subprocess.run(["rm  {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)
+        subprocess.run(["rm  {} {}* {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check = True)
 
     return cojo_eqtl
 
@@ -333,9 +333,9 @@ def do_gcta_cojo_on_genetic_associations(genetic_associations, bfile, tmp_prepen
         raise x
 
     if create_tmp_subset_of_bed:
-        subprocess.run(["rm  {} {} {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check=True)
+        subprocess.run(["rm  {} {}* {}* {}*".format(ma_name,snp_out,plink_pruned,cojo_out)], shell=True, check=True)
     else:
-        subprocess.run(["rm  {} {} {}*".format(ma_name, snp_out, cojo_out)], shell=True, check=True)
+        subprocess.run(["rm  {} {}* {}*".format(ma_name, snp_out, cojo_out)], shell=True, check=True)
 
     return cojo_eqtl
 
