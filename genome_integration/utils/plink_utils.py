@@ -182,7 +182,7 @@ class PlinkFile:
                          3: bitarray.bitarray('10'),  # missing
                          }
 
-    def read_bed_file_into_numpy_array(self, allele_2_as_zero=True, missing_encoding=3):
+    def read_bed_file_into_numpy_array(self, allele_2_as_zero=True, missing_encoding=3, dtype=float):
         """
         Reads a bed file into a numpy array
 
@@ -231,7 +231,7 @@ class PlinkFile:
             tmp_geno[genotypes == 0] = 2
             genotypes = tmp_geno
 
-        genotypes = np.array(genotypes, dtype=float)
+        genotypes = np.array(genotypes, dtype=dtype)
         genotypes[genotypes == 3] = missing_encoding
 
         self.genotypes = genotypes
