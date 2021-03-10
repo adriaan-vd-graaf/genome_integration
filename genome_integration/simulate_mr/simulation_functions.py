@@ -183,6 +183,105 @@ def simulate_phenotypes_binary_outcome(
            exposure_2_causal_snps, exposure_2_betas
 
 
+def choose_exposure_snps(exposure_1_n_causal, exposure_2_n_causal,
+                         overlapping_causal_snps, exposure_geno, exposure_ld,
+                         upper_ld_bound, known_exposure_lower_ld_bound, lower_ld_bound):
+
+    """
+    This is a helper function for simulate_phenotypes to choose which indices will be considered for causal SNPs.
+    It's in it's own function because it can fail to find SNPs from a selection, so we make the parent function more
+    robust to failures.
+
+    It implements steps 1 and 2 in the simulation function:
+
+    1.
+        exposure 1 SNPs are chosen, and they are chosen not to be in higher ld than 0.95 R ^ 2
+
+    2.
+        exposure 2 SNPs are chosen in two ways. `overlapping_causal_snps` are chosen without replacement from the
+        exposure 1 SNPs, the rest are chosen from SNPs that are in LD with exposure 1.
+
+    :param exposure_1_n_causal:
+    :param exposure_2_n_causal:
+    :param overlapping_causal_snps:
+    :param exposure_geno:
+    :param exposure_ld:
+    :param upper_ld_bound:
+    :param known_exposure_lower_ld_bound:
+    :param lower_ld_bound:
+    :return:
+    """
+    # make sure the exposure Causal SNPs are not in > upper_ld_bound R^2 with another.
+    exposure_1_causal_snps = np.zeros([exposure_1_n_causal], dtype=int)
+    i = 0
+    # choose the first causal SNP
+    exposure_1_causal_snps[i] = np.random.choice(exposure_geno.shape[1], 1, replace=False)
+    i += 1
+
+    # i indicates how many snps have been chosen
+    while i < exposure_1_n_causal:
+        # choosing SNPS that are not in full linkage (R**2 > 0.95) with one another, but do share some linkage.
+        lower_than_upper = np.sum(exposure_ld[exposure_1_causal_snps[:i], :] < upper_ld_bound, axis=0) == i
+
+        if known_exposure_lower_ld_bound >= 0.0:  # this part tries to find causal exposure variants in high LD.
+            higher_than_lower = np.sum(exposure_ld[exposure_1_causal_snps[:i], :] >= known_exposure_lower_ld_bound,
+                                       axis=0) >= 1
+            if sum(higher_than_lower) == 0:
+                raise ValueError("Could not find known exposure variants within the lower LD bound")
+            if sum(higher_than_lower & lower_than_upper) == 0:
+                raise ValueError("Could not find known exposure variants within the lower AND higher LD bound")
+            choice = np.random.choice(np.where(higher_than_lower & lower_than_upper)[0], 1, replace=False)
+        else:
+            choice = np.random.choice(np.where(lower_than_upper)[0], 1, replace=False)
+
+        exposure_1_causal_snps[i] = choice
+        i += 1
+
+    """
+    Step 2.
+        Select overlapping.
+        If there are non overlapping SNPs left, select SNPs in LD with exposure 1.
+    """
+    # Here, the snps of exposure are overlapped, depending on the `overlapping_causal_snps` number, could be zero.
+    exposure_2_overlapping_snps = np.random.choice(exposure_1_causal_snps, overlapping_causal_snps, replace=False)
+
+    """
+        Here we select SNPs for exposure 2, that are in LD with exposure 1.
+        But we do not look for LD with already overlapping causal snps for exposure 1.
+
+        Only if there are no overlapping snps left for exposure 2 will we just sat our exposure 2 causal snps are done.
+    """
+    if exposure_2_n_causal - overlapping_causal_snps > 0:
+
+        exposure_1_causal_snps_non_overlapping = np.asarray(
+            [x for x in exposure_1_causal_snps if x not in exposure_2_overlapping_snps],
+            dtype=int)
+
+        # permute this vector, so ordering is random.
+        permuted_exposure_1_causal_non_overlapping = np.random.permutation(exposure_1_causal_snps_non_overlapping)
+        exposure_2_ld_snps = np.zeros((exposure_2_n_causal - overlapping_causal_snps), dtype=int)
+
+        # iterate over all causal snps, and choose one that is within the ld window
+        i = 0
+        while i < (exposure_2_n_causal - overlapping_causal_snps):
+
+            ld_with_causal = exposure_ld[permuted_exposure_1_causal_non_overlapping[i], :]
+
+            try:
+                chosen_indice = np.random.choice(
+                    np.where((ld_with_causal > lower_ld_bound) & (ld_with_causal < upper_ld_bound))[0], 1)
+                exposure_2_ld_snps[i] = chosen_indice
+                i += 1
+            except:
+                raise ValueError("Could not find SNPs in an ld window around the exposure snp.")
+
+        exposure_2_causal_snps = np.concatenate((exposure_2_overlapping_snps, exposure_2_ld_snps))
+
+    else:
+        exposure_2_causal_snps = exposure_2_overlapping_snps
+
+    return exposure_1_causal_snps, exposure_2_causal_snps
+
 
 def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
                         exposure_1_n_causal, exposure_2_n_causal,
@@ -197,7 +296,8 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
                         known_exposure_lower_ld_bound=0.0,
                         center_phenotypes=True,
                         known_outcome_covariate=None,
-                        known_outcome_covariate_effect_size=None
+                        known_outcome_covariate_effect_size=None,
+                        max_tries=100
                         ):
     """
     This function simulates two cohorts which are under the same genetic control
@@ -285,6 +385,10 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
         float, The effect size for the known covariate specified in.
         defualt: None (No covariate will be applied to the outcome.)
 
+    :param max_tries
+        int: the number of tries to give the instrument selection.
+        default 100
+
     :return:
     Returns a tuple of the following numpy arrays:
 
@@ -340,76 +444,21 @@ def simulate_phenotypes(exposure_1_causal, exposure_2_causal,
         raise ValueError("Programmer Error")
 
     """
-    Step 1.
+    Step 1. and 2. Perform as a separate function to redo a couple of times if it fails until it finds variants that
+    statisfy the necessary conditions.
     """
-
-    #make sure the exposure Causal SNPs are not in > upper_ld_bound R^2 with another.
-    exposure_1_causal_snps = np.zeros([exposure_1_n_causal], dtype=int)
-    i=0
-    #choose the first causal SNP
-    exposure_1_causal_snps[i] = np.random.choice(exposure_geno.shape[1], 1, replace=False)
-    i += 1
-
-    #i indicates how many snps have been chosen
-    while i < exposure_1_n_causal:
-        # choosing SNPS that are not in full linkage (R**2 > 0.95) with one another, but do share some linkage.
-        lower_than_upper = np.sum(exposure_ld[exposure_1_causal_snps[:i], :] < upper_ld_bound, axis=0) == i
-
-        if known_exposure_lower_ld_bound >= 0.0: #this part tries to find causal exposure variants in high LD.
-            higher_than_lower = np.sum(exposure_ld[exposure_1_causal_snps[:i], :] >= known_exposure_lower_ld_bound, axis=0) >= 1
-            if sum(higher_than_lower) == 0:
-                raise ValueError("Could not find known exposure variants within the lower LD bound")
-            if sum(higher_than_lower & lower_than_upper) == 0:
-                raise ValueError("Could not find known exposure variants within the lower AND higher LD bound")
-            choice = np.random.choice(np.where(higher_than_lower & lower_than_upper)[0], 1, replace=False)
-        else:
-            choice = np.random.choice(np.where(lower_than_upper)[0], 1, replace=False)
-
-        exposure_1_causal_snps[i] = choice
-        i += 1
-
-    """
-    Step 2.
-        Select overlapping.
-        If there are non overlapping SNPs left, select SNPs in LD with exposure 1.
-    """
-    #Here, the snps of exposure are overlapped, depending on the `overlapping_causal_snps` number, could be zero.
-    exposure_2_overlapping_snps = np.random.choice(exposure_1_causal_snps, overlapping_causal_snps, replace=False)
-
-    """
-        Here we select SNPs for exposure 2, that are in LD with exposure 1.
-        But we do not look for LD with already overlapping causal snps for exposure 1.
-        
-        Only if there are no overlapping snps left for exposure 2 will we just sat our exposure 2 causal snps are done.
-    """
-    if exposure_2_n_causal - overlapping_causal_snps > 0:
-
-        exposure_1_causal_snps_non_overlapping = np.asarray(
-            [x for x in exposure_1_causal_snps if x not in exposure_2_overlapping_snps],
-            dtype=int)
-
-        #permute this vector, so ordering is random.
-        permuted_exposure_1_causal_non_overlapping = np.random.permutation(exposure_1_causal_snps_non_overlapping)
-        exposure_2_ld_snps = np.zeros((exposure_2_n_causal - overlapping_causal_snps), dtype=int)
-
-        #iterate over all causal snps, and choose one that is within the ld window
-        i = 0
-        while i < (exposure_2_n_causal - overlapping_causal_snps):
-
-            ld_with_causal = exposure_ld[permuted_exposure_1_causal_non_overlapping[i],:]
-
-            try:
-                chosen_indice = np.random.choice(np.where((ld_with_causal > lower_ld_bound) & (ld_with_causal < upper_ld_bound))[0], 1)
-                exposure_2_ld_snps[i] = chosen_indice
-                i+=1
-            except:
-                raise ValueError("Could not find SNPs in an ld window around the exposure snp.")
-
-
-        exposure_2_causal_snps = np.concatenate((exposure_2_overlapping_snps, exposure_2_ld_snps))
-
-    else:
-        exposure_2_causal_snps = exposure_2_overlapping_snps
+    for i in range(max_tries):
+        try:
+            exposure_1_causal_snps, exposure_2_causal_snps = choose_exposure_snps(exposure_1_n_causal, exposure_2_n_causal,
+                                                                              overlapping_causal_snps, exposure_geno,
+                                                                              exposure_ld, upper_ld_bound,
+                                                                              known_exposure_lower_ld_bound, lower_ld_bound)
+            break
+        except ValueError:
+            if i < (max_tries-1):
+                pass
+            else:
+                raise ValueError(f"Unable to perform instrument selection after trying {max_tries} times")
 
 
     """
