@@ -102,7 +102,7 @@ The MR-link output will indicate that the exposure is not causal to the outcome.
 Results can be found in the `no_causal_effect_example.txt` file. 
 The stdout of the program will contain the following line with the MR-link result for this example. 
 ```
-Uncalibrated MR-link results: beta: -0.0128, se: 0.10784, p value: 9.06e-01
+Uncalibrated MR-link results: beta: 0.0088, se: 0.10919, p value: 9.36e-01
 ```
 Note that the _p_ value is approximately 0.9. 
 The input and output file formats are fully documented below.
@@ -123,7 +123,7 @@ python3 MRlink.py --outcome_bed_file example_genotypes/outcome_cohort \
 Results will be in the `yes_causal_effect_example.txt` file.
 The stdout  will contain the following line with the result for this example. 
 ```
-Uncalibrated MR-link results: beta: 0.4150, se: 0.14734, p value: 4.85e-03
+Uncalibrated MR-link results: beta: 0.4195, se: 0.14682, p value: 4.27e-03
 ```
 The _p_ value for the causal effect of the exposure ENSG00000000000 is 4.9e-03. 
 
