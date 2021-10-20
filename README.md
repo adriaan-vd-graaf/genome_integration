@@ -1,5 +1,7 @@
 # MR-link and `genome_integration`
 
+This is a development Branch that contains code that is untested and may be difficult install.
+
 ## Introduction
 This package contains MR-link, a Mendelian randomization (MR) method that efficiently identifies causal relationships 
 between gene expression and complex traits, implicitly correcting for unobserved pleiotropy even if there is only a 
