@@ -26,9 +26,11 @@ class FamSample(Sample):
 
     """
     def __init__(self, fid, iid, sex, name, phenotype=None):
+        if phenotype == "-9":
+            phenotype = None
 
         super().__init__(name, phenotype)
-        self.fid =  fid
+        self.fid = fid
         self.iid = iid
         self.sex = sex
         self.phenotype = phenotype
@@ -66,19 +68,36 @@ class FamFile:
 
 
         with open(fam_loc, "r") as f:
-            for line in f:
-                split = line.split()
-                sample_name = f'{split[0]}~__~{split[1]}'
-                if sample_name in self.sample_names:
-                    raise ValueError(f"{self.fam_loc} contains multiple individuals with the same ID.")
+            full_file_bytes = f.read()
 
-                if split[5] == "-9":
-                    this_individual = FamSample(split[0], split[1], split[4], sample_name)
-                else:
-                    this_individual = FamSample(split[0], split[1], split[4], sample_name, split[5])
+        lines = full_file_bytes.split("\n")
+        if len(lines[-1]) == 0:
+            lines.pop()
 
-                self.sample_names.append(this_individual.name)
-                self.fam_samples[this_individual.name] = this_individual
+        splits_array = [x.split() for x in lines]
+        self.sample_names = [f'{split[0]}~__~{split[1]}' for split in splits_array]
+
+        if len(set(self.sample_names))  != len(self.sample_names):
+            raise ValueError(f"{self.fam_loc} contains multiple individuals with the same ID.")
+
+
+        self.fam_samples = {self.sample_names[i]: FamSample(x[0], x[1], x[4], self.sample_names[i], x[5])
+                            for i,x in enumerate(splits_array)}
+
+        #old array.
+        # for line in lines:
+        #     split = line.split()
+        #     sample_name = f'{split[0]}~__~{split[1]}'
+        #     if sample_name in self.sample_names:
+        #         raise ValueError(f"{self.fam_loc} contains multiple individuals with the same ID.")
+        #
+        #     if split[5] == "-9":
+        #         this_individual =  (split[0], split[1], split[4], sample_name)
+        #     else:
+        #         this_individual = FamSample(split[0], split[1], split[4], sample_name, split[5])
+        #
+        #     self.sample_names.append(this_individual.name)
+        #     self.fam_samples[this_individual.name] = this_individual
 
     def _write_fam(self, file_name):
         with open(file_name, 'w') as f:
@@ -163,7 +182,7 @@ class PlinkFile:
                          3: bitarray.bitarray('10'),  # missing
                          }
 
-    def read_bed_file_into_numpy_array(self, allele_2_as_zero=True, missing_encoding=3):
+    def read_bed_file_into_numpy_array(self, allele_2_as_zero=True, missing_encoding=3, dtype=float):
         """
         Reads a bed file into a numpy array
 
@@ -212,7 +231,7 @@ class PlinkFile:
             tmp_geno[genotypes == 0] = 2
             genotypes = tmp_geno
 
-        genotypes = np.array(genotypes, dtype=float)
+        genotypes = np.array(genotypes, dtype=dtype)
         genotypes[genotypes == 3] = missing_encoding
 
         self.genotypes = genotypes
@@ -494,7 +513,8 @@ def plink_isolate_clump(bed_file, associations, threshold, r_sq=0.5  ,tmploc="",
 
 
 def isolate_snps_of_interest_make_bed(ma_file, exposure_name, b_file,
-                                      snp_file_out, plink_files_out, calculate_ld = False):
+                                      tmp_file_prepend, plink_files_out, calculate_ld = False,
+                                      individuals_to_isolate=None, no_palindromic=False):
     """
 
     Isolate snps of interest for a gene, and make a bed file
@@ -502,51 +522,54 @@ def isolate_snps_of_interest_make_bed(ma_file, exposure_name, b_file,
     :param ma_file:
     :param exposure_name:
     :param b_file:
-    :param snp_file_out:
+    :param tmp_file_prepend:
     :param plink_files_out:
     :param calculate_ld:
     :return: the name_of the bedfile with only the snps
     """
 
-
     ma_data = MaFile(ma_file, exposure_name)
 
+    snps_file = tmp_file_prepend + "_snps"
+
     # write the snps to isolate
-    write_list_to_newline_separated_file(ma_data.snp_names(no_palindromic=True), snp_file_out)
+    write_list_to_newline_separated_file(ma_data.snp_names(no_palindromic=no_palindromic), snps_file)
+
+    #basic command list, will be appended to if other options are specified.
+    command_list = ['plink',
+                     '--bfile', b_file,
+                     '--extract', snps_file,
+                     '--make-bed',
+                     '--out', plink_files_out
+                    ]
+
     if calculate_ld:
-        # now run plink to isolate the files, and return the snplist, plink filename and eqtl ma file.
-        tmp = subprocess.run(['plink',
-                              '--bfile', b_file,
-                              '--extract', snp_file_out,
-                              '--make-bed',
-                              '--r', 'square',
-                              '--out', plink_files_out
-                             ],
-                             check=True,
-                             stdout=subprocess.DEVNULL,  # to DEVNULL, because plink saves a log of everything
-                             stderr=subprocess.DEVNULL
-                             )
+        command_list += ['--r', 'square',]
 
-        bim_file = BimFile(plink_files_out + '.bim')
+    if individuals_to_isolate is not None:
+        # make a file with individuals.
+        if not isinstance(individuals_to_isolate, list):
+            raise ValueError("individuals for isolation needs to be a list of strings.")
 
-        return ma_data, bim_file
+        # write the file
+        individuals_file = tmp_file_prepend + "_iids"
+        with open(individuals_file, 'w') as f:
+            for individual in individuals_to_isolate:
+                f.write(f'{individual}\n')
 
-    else:
-        # now run plink to isolate the files, and return the snplist, plink filename and eqtl ma file.
-        tmp = subprocess.run(['plink',
-                              '--bfile', b_file,
-                              '--extract', snp_file_out,
-                              '--make-bed',
-                              '--out', plink_files_out
-                              ],
-                             check=True,
-                             stdout=subprocess.DEVNULL,  # to DEVNULL, because plink saves a log of everything
-                             stderr=subprocess.DEVNULL
-                             )
+        # now add it to the command
+        command_list += ['--keep', individuals_file]
 
-        bim_file = BimFile(plink_files_out + '.bim')
+    # now run plink to isolate the files, and return the snplist, plink filename and eqtl ma file.
+    tmp = subprocess.run(command_list,
+                         check=True,
+                         stdout=subprocess.DEVNULL,  # to DEVNULL, because plink saves a log of everything
+                         stderr=subprocess.DEVNULL
+                         )
 
-        return ma_data, bim_file
+    bim_file = BimFile(plink_files_out + '.bim')
+
+    return ma_data, bim_file
 
 
 def score_individuals(genetic_associations, bed_file, tmp_file = "tmp_score", p_value_thresh = 1):
@@ -611,7 +634,7 @@ def score_individuals(genetic_associations, bed_file, tmp_file = "tmp_score", p_
             split = line.split()
             pheno_score[split[1]] = (float(split[2]), float(split[5]))
 
-    subprocess.run(['rm -f ' + file_for_scoring + " " + pos_name_scoring + " " + prepend_for_plink + ".*"], shell=True, check=True)
+    subprocess.run(['rm ' + file_for_scoring + " " + pos_name_scoring + " " + prepend_for_plink + ".*"], shell=True, check=True)
 
     return pheno_score
 

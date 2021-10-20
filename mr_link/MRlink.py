@@ -3,6 +3,7 @@ import numpy as np
 import scipy.stats
 import argparse
 import copy
+import os
 from genome_integration import resources
 from genome_integration import simulate_mr
 from genome_integration import causal_inference
@@ -14,13 +15,11 @@ import time
 
 
 def remove_plink_files(plink_file):
-    subprocess.run(
-        ["rm {}.*".format(plink_file)],
-        shell=True,
-        check=True,
-        # stdout=subprocess.DEVNULL,
-        # stderr=subprocess.DEVNULL:
-    )
+
+    for extension in ['.log', '.nosex', '.bed', '.bim', '.fam']:
+        filename = f'{plink_file}{extension}'
+        if os.path.exists(filename):
+            os.remove(filename)
 
 
 def read_outcome_genotypes_and_phenotypes(big_bed, tmp_loc, region,phenotype_file=None, variants_to_keep=None):
@@ -42,6 +41,7 @@ def read_outcome_genotypes_and_phenotypes(big_bed, tmp_loc, region,phenotype_fil
 
     phenotype_available = np.zeros(len(sample_names), dtype=bool)
     phenotype_vector = np.zeros(len(sample_names), dtype=float)
+    sample_name_index_dict = {sample_names[x]: x for x in range(len(sample_names))}
 
     if phenotype_file is not None:
         n = 0
@@ -55,8 +55,8 @@ def read_outcome_genotypes_and_phenotypes(big_bed, tmp_loc, region,phenotype_fil
                 fid, iid, phenotype = line.split()
                 sample_name = f"{fid}~__~{iid}"
                 try:
-                    phenotype_vector[sample_names.index(sample_name)] = float(phenotype)
-                    phenotype_available[sample_names.index(sample_name)] = True
+                    phenotype_vector[sample_name_index_dict[sample_name]] = float(phenotype)
+                    phenotype_available[sample_name_index_dict[sample_name]] = True
                 except:
                     n += 1
         if n > 0:

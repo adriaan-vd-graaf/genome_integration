@@ -155,7 +155,7 @@ class StartEndRegions:
 
     """
     def __init__(self, list_of_regions):
-        self.gene_regions = [StartEndRegion] * len(list_of_regions)
+        self.gene_regions = list([StartEndRegion] * len(list_of_regions))
         i = 0
         for region in list_of_regions:
             tmp = StartEndRegion(region)
@@ -181,24 +181,55 @@ class StartEndRegions:
 
         :return: new instance of StartEndRegions containing contiguous, non overlapping regions
         """
-        already_combined = set()
+        sorted_regions = sorted(self.gene_regions)
+        combined = False
+        non_overlapping = []
+        index = 0
 
-        new_list = []
+        tmp_region = sorted_regions[index]
 
-        for i in range(len(self.gene_regions)):
-            if i in already_combined:
-                continue
+        while index < len(sorted_regions) - 1:
+            if tmp_region.region_overlaps(sorted_regions[index + 1]):
+                tmp_region.end = sorted_regions[index+1].end # Assumes this is sorted, so we don't look at the start region
+            else:
+                non_overlapping.append(tmp_region)
+                tmp_region = sorted_regions[index+1]
 
-            region = self.gene_regions[i]
-            overlapping = [j for j in range(len(self.gene_regions)) if self.gene_regions[j].region_overlaps(region)]
+            index += 1
 
-            chromosome = region.chromosome
-            start = min([self.gene_regions[j].start for j in overlapping])
-            end = max([self.gene_regions[j].end for j in overlapping])
-            # add it to a list.
-            new_list.append([chromosome, start, end])
-            # finally remove the regions that do not have overlap.
-            [already_combined.add(j) for j in overlapping]
+        #finally, add the last tmp region to the file.
+        non_overlapping.append(tmp_region)
 
-        return StartEndRegions(new_list)
+        return StartEndRegions([str(x) for x in non_overlapping])
 
+        # already_combined = set()
+        #
+        # new_list = []
+        #
+        # for i in range(len(self.gene_regions)):
+        #     if i in already_combined:
+        #         continue
+        #
+        #     region = self.gene_regions[i]
+        #     overlapping = [j for j in range(len(self.gene_regions)) if self.gene_regions[j].region_overlaps(region)]
+        #
+        #     chromosome = region.chromosome
+        #     start = min([self.gene_regions[j].start for j in overlapping])
+        #     end = max([self.gene_regions[j].end for j in overlapping])
+        #     # add it to a list.
+        #     new_list.append([chromosome, start, end])
+        #     # finally remove the regions that do not have overlap.
+        #     [already_combined.add(j) for j in overlapping]
+        #
+        # return StartEndRegions(new_list)
+
+    def __next__(self):
+        self.i +=1
+        if self.i > len(self.gene_regions):
+            raise StopIteration
+        else:
+            return self.gene_regions[self.i-1]
+
+    def __iter__(self):
+        self.i = 0
+        return self
