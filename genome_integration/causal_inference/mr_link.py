@@ -9,7 +9,7 @@ import SNPknock
 import os
 import subprocess
 """
- Unused functionality was deleted on the 17th of June, if you are interested in it, 
+ Unused functionality was deleted on the 17th of June 2021, if you are interested in it, 
  please go back to a commit before that date.
 """
 
