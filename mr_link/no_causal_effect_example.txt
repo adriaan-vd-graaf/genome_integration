@@ -1,0 +1,2 @@
+ensembl_name	method	beta	se	p_value	n_ivs	iv_summary
+ENSG00000000000	MR-link_uncalibrated	0.00881	0.10919	9.357e-01	3	rs58572539;C;-0.40920;0.02737;0.163,rs77150110;A;0.46071;0.05314;0.037,rs6543124;A;-0.26136;0.02076;0.384
