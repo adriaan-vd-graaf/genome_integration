@@ -23,7 +23,7 @@ def test_mr_link_results_no_causal_effect():
     )
 
     correct_header = "ensembl_name\tmethod\tbeta\tse\tp_value\tn_ivs\tiv_summary\n"
-    reference_result = "ENSG00000000000\tMR-link_uncalibrated\t0.00881\t0.10919\t9.357e-01\t3\trs58572539;C;-0.40920;0.02737;0.163,rs77150110;A;0.46071;0.05314;0.037,rs6543124;A;-0.26136;0.02076;0.384\n"
+    reference_result = 'ENSG00000000000\tMR-link_uncalibrated\t-0.01278\t0.10784\t9.057e-01\t3\trs58572539;C;-0.40832;0.02737;0.163,rs77150110;A;0.48895;0.05324;0.037,rs3771166;A;-0.26576;0.02074;0.393\n'
 
     with open(output_file, 'r') as f:
         header = f.readline()
@@ -54,7 +54,7 @@ def test_mr_link_results_yes_causal_effect():
     )
 
     correct_header = "ensembl_name\tmethod\tbeta\tse\tp_value\tn_ivs\tiv_summary\n"
-    reference_result = "ENSG00000000000\tMR-link_uncalibrated\t0.41953\t0.14682\t4.269e-03\t2\trs11679856;G;0.31514;0.02760;0.197,rs56793250;C;-0.74040;0.02757;0.197\n"
+    reference_result = 'ENSG00000000000\tMR-link_uncalibrated\t0.41500\t0.14734\t4.852e-03\t2\trs11679856;G;0.31542;0.02761;0.197,rs62156384;G;-0.73949;0.02757;0.197\n'
 
     with open(output_file, 'r') as f:
         header = f.readline()
