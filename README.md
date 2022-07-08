@@ -9,6 +9,14 @@ Our paper explaining, testing and applying MR-link has been published in [Nature
 
 van der Graaf, A., Claringbould, A., Rimbert, A. et al. Mendelian randomization while jointly modeling cis genetics identifies causal relationships between gene expression and lipids. Nat Commun 11, 4930 (2020). https://doi.org/10.1038/s41467-020-18716-x 
 
+
+**New in 8th of July 2022**
+MR-link provides the option to run the file for user specified regions, instead of only Ensembl IDs.
+Use the `--region` specifier with a region in the format of `<chr>:<start>-<end>`. 
+It now becomes possible to specify arbitrary regions.
+**N.b.** Please make sure the regions are large enough (at least a few megabases) so that pleiotropy correction for 
+MR-link happens correctly
+
 #### Table of contents
  This readme contains the following information
 * [Introduction](#Introduction)
@@ -23,7 +31,6 @@ van der Graaf, A., Claringbould, A., Rimbert, A. et al. Mendelian randomization 
 * [Example simulation of causal phenotypes](#Example-simulation-of-causal-phenotypes)
 
 **If something is not clear, or if you want more information, please see our more extensive [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/Introduction.html).**
- 
  
 `genome_integration` is the library and the folder `./mr_link/` has the programs for an implementation of MR-link.
 Please find more details of the method in our **[paper](https://www.nature.com/articles/s41467-020-18716-x)**
@@ -77,7 +84,7 @@ Testing the genome integration library is done with the following command:
 ```shell script
 python3 setup.py test
 ```
-Which should pass all tests. If it doesn't, please submit an issue to the issue tracker. 
+Which should pass all tests. If it doesn't, please submit an issue to the issue tracker on Github. 
 
 ## MR-link
 
@@ -105,7 +112,7 @@ The stdout of the program will contain the following line with the MR-link resul
 Uncalibrated MR-link results: beta: 0.0088, se: 0.10919, p value: 9.36e-01
 ```
 Note that the _p_ value is approximately 0.9. 
-The input and output file formats are fully documented below.
+The input and output file formats are documented below.
 
 Running the command below will run MR-link using an example data set where the gene was simulated to have a causal effect.
 ```shell script
@@ -126,6 +133,13 @@ The stdout  will contain the following line with the result for this example.
 Uncalibrated MR-link results: beta: 0.4195, se: 0.14682, p value: 4.27e-03
 ```
 The _p_ value for the causal effect of the exposure ENSG00000000000 is 4.9e-03. 
+
+**New in 8th of July 2022**
+MR-link provides the option to run the file for user specified regions, instead of only Ensembl IDs.
+Use the `--region` specifier with a region in the format of `<chr>:<start>-<end>`. 
+It now becomes possible to specify arbitrary regions.
+**N.b.** Please make sure the regions are large enough (at least a few megabases) so that pleiotropy correction for 
+MR-link happens correctly
 
 A full description of the input and output formats of MR-link is located in our
 [readthedocs documentation](https://genome-integration.readthedocs.io/en/latest/about_mr_link.html) 

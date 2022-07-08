@@ -17,6 +17,14 @@ If you want to simulate your own genotypes and phenotypes, it is possible to sim
 [here](simulation_for_mr_link.md). Please set the ensg_id option to: `--ensg_id simulated_run`, as simulations
 do not represent any gene locations.
 
+**New as of 8th of July 2022**
+
+MR-link provides the option to run the file for user specified regions, instead of only Ensembl IDs.
+Use the `--region` specifier with a region in the format of `<chr>:<start>-<end>`. 
+It now becomes possible to specify arbitrary regions.
+**N.b.** Please make sure the regions are large enough (at least a few megabases) so that pleiotropy correction for 
+MR-link happens correctly
+
 
 ## Quick examples to run MR-link
 

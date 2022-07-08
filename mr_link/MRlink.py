@@ -136,12 +136,25 @@ if __name__ == '__main__':
                         required=True,
                         help="eQTL summary statistics file of the exposure summary statistics"
                         )
+
     parser.add_argument("--ensg_id",
                         type=str,
-                        required=True,
+                        required=False,
+                        default='NA',
                         help="ENSG id, so we can identify the region used and isolate "
                              "this from the reference and the outcome bed files."
+                             "Please use the --region option to specify custom regions"
                         )
+
+    parser.add_argument('--region',
+                        type=str,
+                        required=False,
+                        default='NA',
+                        help='A string that contains a genomic region. <chr>:<start_position>-<end_position>'
+                             'Can be used as an alternative to --ensg_id.'
+                             'An example would be to supply "2:1000-1100", which would indicate to take 1000 to 1100 on chromosome 2'
+                             'this will later be padded with 1.5Mb of SNPs'
+    )
 
     parser.add_argument("--temporary_location_prepend",
                         type=str,
@@ -163,34 +176,64 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     tmp_dir = args.temporary_location_prepend
-    ensg_name = args.ensg_id
+    run_name = args.ensg_id if args.ensg_id != 'NA' else args.region
     big_outcome_bed_file = args.outcome_bed_file
     big_reference_bed_file = args.reference_bed_file
 
-    tmp_subset_bed_outcome = f"{tmp_dir}{ensg_name}_subset_bed_outcome"
-    tmp_subset_bed_reference = f"{tmp_dir}{ensg_name}_subset_bed_reference"
-    ref_geno_for_cojo = f"{tmp_dir}{ensg_name}_subset_bed_reference_cojo"
-    tmp_cojo = f"{tmp_dir}{ensg_name}_subset_bed_reference_tmp_cojo"
+    tmp_subset_bed_outcome = f"{tmp_dir}{run_name}_subset_bed_outcome"
+    tmp_subset_bed_reference = f"{tmp_dir}{run_name}_subset_bed_reference"
+    ref_geno_for_cojo = f"{tmp_dir}{run_name}_subset_bed_reference_cojo"
+    tmp_cojo = f"{tmp_dir}{run_name}_subset_bed_reference_tmp_cojo"
     outcome_pheno_file = args.outcome_phenotype_file
 
     gene_info = resources.read_gene_information()
 
-    if args.ensg_id == "simulated_run" or args.ensg_id == 'ENSG00000000000':
-        ensg_info = gene_regions.StartEndRegion(["2", 100000000, 105000000])
+    ## define the region that is used.
+    if args.ensg_id == 'NA' and args.region == 'NA':
+        raise ValueError('Please supply an argument to --ensg_id or to --region to determine the region that is analyzed.')
+    elif args.ensg_id != 'NA' and args.region != 'NA':
+        raise ValueError(
+            'Please supply _ONE_ argument to _EITHER_ --ensg_id or to --region to determine the region that is analyzed.')
+    elif args.ensg_id != 'NA' and args.region == 'NA':
+        ##provided an ensembl ID.
+        if args.ensg_id == "simulated_run" or args.ensg_id == 'ENSG00000000000':
+            ensg_info = gene_regions.StartEndRegion(["2", 100000000, 105000000])
 
-        region_of_interest = copy.deepcopy(ensg_info)
-    else:
-        # start end region.
-        ensg_info = gene_info.str_to_full(args.ensg_id)
+            region_of_interest = copy.deepcopy(ensg_info)
+        else:
+            # start end region.
+            ensg_info = gene_info.str_to_full(args.ensg_id)
 
+            try:
+                region_of_interest = gene_regions.StartEndRegion([ensg_info.chromosome,
+                                                                  ensg_info.start - 1500000,
+                                                                  ensg_info.end + 1500000])
+            except:
+                region_of_interest = gene_regions.StartEndRegion([ensg_info.chromosome,
+                                                                  0,
+                                                                  ensg_info.end + 1500000])
+    elif args.ensg_id == 'NA' and args.region != 'NA':
+        # try to match region specification
         try:
-            region_of_interest = gene_regions.StartEndRegion([ensg_info.chromosome,
-                                                              ensg_info.start - 1500000,
-                                                              ensg_info.end + 1500000])
-        except:
-            region_of_interest = gene_regions.StartEndRegion([ensg_info.chromosome,
-                                                              0,
-                                                              ensg_info.end + 1500000])
+            chr, _, start_end = args.region.partition(':')
+            start, end = start_end.split('-')
+            start = int(start)
+            end = int(end)
+        except Exception as x:
+            raise ValueError(f'Could not parse {args.region} into the "<chr>:<start>-<end>" format.\n'
+                             f'Exception message:{x}')
+
+        region_of_interest = gene_regions.StartEndRegion([chr, start, end])
+        region_size = region_of_interest.end - region_of_interest.start
+        if region_of_interest.end - region_of_interest.start < 3000000:
+            print(
+                'WARNING: you specified a region that is smaller than 3Mb, for optimal results, please pad the edges of your region with a sufficient amount of SNPs.')
+    else:
+        raise ValueError('Programming logic error, please contact maintainer.')
+
+
+
+
 
     #read in exposure summary statistics
     exposure_assocs = read_summary_statistic_file(args.exposure_summary_statistics)
@@ -287,7 +330,7 @@ if __name__ == '__main__':
         outcome_phenotypes,
         )
 
-    print(f"Finished MR-link for {ensg_name} in {time.time() - mr_link_start_time} seconds.")
+    print(f"Finished MR-link for {run_name} in {time.time() - mr_link_start_time} seconds.")
 
     with open(args.output_file, "w") as f:
         iv_summary_string = ','.join(
@@ -298,7 +341,7 @@ if __name__ == '__main__':
              f'{exposure_cojo.ma_results[x].minor_allele_frequency:.3f}' for x in iv_names])
         f.write("ensembl_name\tmethod\tbeta\tse\tp_value\tn_ivs\tiv_summary\n")
 
-        f.write(f"{ensg_name}\t"
+        f.write(f"{run_name}\t"
                 f"MR-link_uncalibrated\t"
                 f"{mr_link_results[0]:.5f}\t"
                 f"{mr_link_results[1]:.5f}\t"
